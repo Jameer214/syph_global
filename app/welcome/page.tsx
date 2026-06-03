@@ -1,10 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, MapPin, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import {
+  signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
+} from 'firebase/auth';
 import { useAppStore } from '@/store';
 import { auth } from '@/lib/firebase';
 import { createOrUpdateUserProfile } from '@/lib/firestore';
@@ -22,25 +24,62 @@ export default function WelcomePage() {
     }
   };
 
+  const processUser = async (firebaseUser: import('firebase/auth').User) => {
+    const profile = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      displayName: firebaseUser.displayName ?? '',
+      photoUrl: firebaseUser.photoURL ?? undefined,
+    };
+    await createOrUpdateUserProfile(profile);
+    setUser(profile);
+    afterAuth();
+  };
+
+  // Handle result after signInWithRedirect comes back
+  useEffect(() => {
+    setLoading(true);
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) return processUser(result.user);
+      })
+      .catch((err) => {
+        const code = (err as { code?: string }).code ?? '';
+        if (code === 'auth/unauthorized-domain') {
+          toast.error('This domain is not authorised. Contact support.');
+        } else if (code && code !== 'auth/no-auth-event') {
+          toast.error('Google sign-in failed. Please try again.');
+        }
+      })
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleGoogle = async () => {
     setLoading(true);
+    const provider = new GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
     try {
-      const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-      const profile = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        displayName: firebaseUser.displayName ?? '',
-        photoUrl: firebaseUser.photoURL ?? undefined,
-      };
-      await createOrUpdateUserProfile(profile);
-      setUser(profile);
-      afterAuth();
-    } catch {
-      toast.error('Google sign-in failed. Please try again.');
-    } finally {
-      setLoading(false);
+      await processUser(result.user);
+    } catch (err) {
+      const code = (err as { code?: string }).code ?? '';
+      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user') {
+        // Fall back to redirect — page will navigate away
+        await signInWithRedirect(auth, provider);
+      } else if (code === 'auth/unauthorized-domain') {
+        toast.error('This domain is not authorised in Firebase. Add it in the Firebase Console → Authentication → Settings → Authorised domains.');
+        setLoading(false);
+      } else if (code === 'auth/operation-not-allowed') {
+        toast.error('Google sign-in is not enabled. Enable it in Firebase Console.');
+        setLoading(false);
+      } else if (code === 'auth/cancelled-popup-request') {
+        setLoading(false);
+      } else {
+        toast.error('Google sign-in failed. Please try again.');
+        setLoading(false);
+      }
     }
   };
 
