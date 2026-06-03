@@ -16,6 +16,7 @@ import { useAppStore } from '@/store';
 import { db } from '@/lib/firebase';
 import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
+import MenuDrawer from '@/components/MenuDrawer';
 import type { Listing } from '@/types';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -406,6 +407,7 @@ export default function HomePage() {
     timeSort: 'newest', priceSort: 'none', rating: 'any', openNow: false, nearMe: false,
   });
   const [exploreCount, setExploreCount] = useState(8);
+  const [menuOpen, setMenuOpen] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const country = locationSet ? selectedCountry : undefined;
@@ -519,6 +521,7 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 80 }}>
+      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
       {/* ── Top App Bar ── */}
       <div style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
@@ -540,7 +543,7 @@ export default function HomePage() {
               <LayoutGrid size={16} color="#fff" />
               <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>Category</span>
             </Link>
-            <button style={{
+            <button onClick={() => setMenuOpen(true)} style={{
               background: 'rgba(255,255,255,0.18)', borderRadius: 10, padding: '7px 10px',
               border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
             }}>
