@@ -2,12 +2,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { UserProfile } from '@/types';
+import { getCurrencyForCountry } from '@/lib/currency';
 
 interface AppStore {
   user: UserProfile | null;
   savedIds: string[];
   selectedCountry: string;
-  selectedCurrency: string;
+  selectedCurrency: string;   // effective display currency code
+  isAutoCurrency: boolean;    // true = derived from country, false = manual override
   selectedLanguage: string;
   sellerMode: boolean;
   locationSet: boolean;
@@ -18,6 +20,8 @@ interface AppStore {
   isSaved: (id: string) => boolean;
   setCountry: (c: string) => void;
   setCurrency: (c: string) => void;
+  setManualCurrency: (c: string) => void;
+  setAutoCurrency: () => void;
   setLanguage: (l: string) => void;
   setSellerMode: (v: boolean) => void;
   setLocationSet: (v: boolean, location?: string) => void;
@@ -31,6 +35,7 @@ export const useAppStore = create<AppStore>()(
       savedIds: [],
       selectedCountry: '',
       selectedCurrency: 'USD',
+      isAutoCurrency: true,
       selectedLanguage: 'en',
       sellerMode: false,
       locationSet: false,
@@ -46,8 +51,19 @@ export const useAppStore = create<AppStore>()(
         });
       },
       isSaved: (id) => get().savedIds.includes(id),
-      setCountry: (c) => set({ selectedCountry: c }),
+      setCountry: (c) => {
+        const { isAutoCurrency } = get();
+        set({
+          selectedCountry: c,
+          ...(isAutoCurrency ? { selectedCurrency: getCurrencyForCountry(c) } : {}),
+        });
+      },
       setCurrency: (c) => set({ selectedCurrency: c }),
+      setManualCurrency: (c) => set({ selectedCurrency: c, isAutoCurrency: false }),
+      setAutoCurrency: () => {
+        const country = get().selectedCountry;
+        set({ isAutoCurrency: true, selectedCurrency: getCurrencyForCountry(country) });
+      },
       setLanguage: (l) => set({ selectedLanguage: l }),
       setSellerMode: (v) => set({ sellerMode: v }),
       setLocationSet: (v, location) =>
