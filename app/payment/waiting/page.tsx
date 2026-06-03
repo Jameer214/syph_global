@@ -1,0 +1,146 @@
+'use client';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
+
+type Status = 'waiting' | 'success' | 'failed';
+
+function Step({ done, pending, label }: { done: boolean; pending?: boolean; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+      <div style={{ width: 32, height: 32, borderRadius: '50%', background: done ? '#E6F9EF' : '#F0F4FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {done ? (
+          <span style={{ fontSize: 16 }}>✓</span>
+        ) : pending ? (
+          <div style={{ width: 14, height: 14, border: '2px solid #C4D0E0', borderTop: '2px solid #2F6BFF', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        ) : (
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#C4D0E0' }} />
+        )}
+      </div>
+      <span style={{ fontWeight: 700, fontSize: 13.5, color: done ? '#1B8F4E' : '#182033' }}>{label}</span>
+    </div>
+  );
+}
+
+function WaitingContent() {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const paymentId = sp.get('paymentId') ?? '';
+  const amount = sp.get('amount') ?? '0';
+  const currency = sp.get('currency') ?? 'USD';
+
+  const [status, setStatus] = useState<Status>('waiting');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [pollCount, setPollCount] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef(0);
+
+  useEffect(() => {
+    const start = setTimeout(() => {
+      timerRef.current = setInterval(async () => {
+        pollRef.current += 1;
+        setPollCount(pollRef.current);
+
+        if (pollRef.current >= 36) {
+          clearInterval(timerRef.current!);
+          setStatus('failed');
+          setErrorMessage('Payment timed out. Please try again.');
+          return;
+        }
+
+        try {
+          const verify = httpsCallable(functions, 'verifyPaymentStatus');
+          const result = await verify({ paymentId }) as { data: { status?: string; message?: string } };
+          const s = result.data.status;
+          if (s === 'confirmed') {
+            clearInterval(timerRef.current!);
+            setStatus('success');
+          } else if (s === 'failed') {
+            clearInterval(timerRef.current!);
+            setStatus('failed');
+            setErrorMessage(result.data.message ?? 'Payment failed. Please try again.');
+          }
+        } catch {
+          // silent — keep polling
+        }
+      }, 5000);
+    }, 3000);
+
+    return () => {
+      clearTimeout(start);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [paymentId]);
+
+  if (status === 'success') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
+        <div style={{ width: 110, height: 110, borderRadius: '50%', background: 'linear-gradient(135deg, #1B8F4E, #2DBE7F)', boxShadow: '0 0 24px #1B8F4E4D', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 32 }}>
+          <span style={{ fontSize: 54, color: '#fff' }}>✓</span>
+        </div>
+        <div style={{ fontWeight: 900, fontSize: 24, color: '#182033', marginBottom: 10 }}>Payment Successful!</div>
+        <div style={{ fontWeight: 700, fontSize: 15, color: '#1B8F4E', marginBottom: 10 }}>{currency} {Number(amount).toLocaleString()} paid</div>
+        <div style={{ fontWeight: 600, fontSize: 14, color: '#6B7A99', textAlign: 'center', lineHeight: 1.5, marginBottom: 32 }}>
+          Your listing has been submitted for admin review.<br />You&apos;ll be notified once it&apos;s approved and live.
+        </div>
+        <button onClick={() => router.replace('/dashboard')} style={{ width: '100%', maxWidth: 360, padding: '16px', background: '#1B8F4E', border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
+        <div style={{ width: 110, height: 110, borderRadius: '50%', background: 'linear-gradient(135deg, #E53935, #FF6B6B)', boxShadow: '0 0 24px #E5393540', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 32 }}>
+          <span style={{ fontSize: 54, color: '#fff' }}>✕</span>
+        </div>
+        <div style={{ fontWeight: 900, fontSize: 24, color: '#182033', marginBottom: 10 }}>Payment Failed</div>
+        <div style={{ fontWeight: 600, fontSize: 14, color: '#6B7A99', textAlign: 'center', lineHeight: 1.5, marginBottom: 32, padding: '0 32px' }}>
+          {errorMessage || 'Something went wrong. Please try again.'}
+        </div>
+        <button onClick={() => router.back()} style={{ width: '100%', maxWidth: 360, padding: '16px', background: '#E53935', border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{transform:scale(0.9)} 50%{transform:scale(1.1)}}`}</style>
+      <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg, #2F6BFF, #6B9FFF)', boxShadow: '0 0 24px #2F6BFF4D', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 32, animation: 'pulse 1.2s ease-in-out infinite' }}>
+        <span style={{ fontSize: 46, filter: 'brightness(10)' }}>💳</span>
+      </div>
+      <div style={{ fontWeight: 900, fontSize: 22, color: '#182033', marginBottom: 10 }}>Processing Payment</div>
+      <div style={{ fontWeight: 600, fontSize: 14, color: '#6B7A99', textAlign: 'center', lineHeight: 1.5, marginBottom: 32 }}>
+        Please wait while we confirm your payment.<br />This usually takes less than a minute.
+      </div>
+
+      <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #DCE7F5', padding: 16, width: '100%', maxWidth: 360, marginBottom: 20 }}>
+        <Step done={true} label="Payment request sent" />
+        <Step done={false} pending label="Awaiting your approval" />
+        <Step done={false} label="Listing will be submitted" />
+      </div>
+
+      <div style={{ fontWeight: 600, fontSize: 12, color: '#9AA0B2' }}>
+        {pollCount > 0 ? `Checking... (${pollCount})` : 'Starting check soon...'}
+      </div>
+    </div>
+  );
+}
+
+export default function PaymentWaitingPage() {
+  return (
+    <div style={{ minHeight: '100dvh', background: '#F0F4FA', maxWidth: 480, margin: '0 auto' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center' }}>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>Processing...</span>
+      </div>
+      <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#6B7A99', fontWeight: 700 }}>Loading...</div>}>
+        <WaitingContent />
+      </Suspense>
+    </div>
+  );
+}

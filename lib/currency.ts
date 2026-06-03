@@ -1,3 +1,14 @@
+const COUNTRY_CURRENCY: Record<string, string> = {
+  Uganda: 'UGX', Kenya: 'KES', Tanzania: 'TZS', Rwanda: 'RWF',
+  Nigeria: 'NGN', Ghana: 'GHS', 'South Africa': 'ZAR', Ethiopia: 'ETB',
+  Egypt: 'EGP', Morocco: 'MAD', 'United Kingdom': 'GBP',
+  Germany: 'EUR', France: 'EUR', Italy: 'EUR', Spain: 'EUR',
+};
+
+export function getCurrencyForCountry(country: string): string {
+  return COUNTRY_CURRENCY[country] ?? 'USD';
+}
+
 export const CURRENCIES: { code: string; symbol: string; name: string }[] = [
   { code: 'USD', symbol: '$',    name: 'US Dollar' },
   { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling' },
