@@ -6,7 +6,7 @@ import {
   ArrowLeft, Bookmark, BookmarkCheck, Eye, Share2,
   MessageCircle, Star, Handshake, Zap, Award,
   MapPin, Store, Flag, ChevronRight, Grid3x3,
-  FileText, Info, List, Navigation,
+  FileText, Info, List, Navigation, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -16,14 +16,119 @@ import {
 import { db, auth } from '@/lib/firebase';
 import { useAppStore } from '@/store';
 import { getListing, getListingReviews, getRelatedListings } from '@/lib/firestore';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import type { Listing, Review } from '@/types';
+
+// ─── Report Modal ─────────────────────────────────────────────────────────────
+
+function ReportModal({ listingId, onClose }: { listingId: string; onClose: () => void }) {
+  const REASONS = ['Fake listing', 'Wrong category', 'Spam / scam', 'Offensive content', 'Already sold', 'Other'];
+  const [reason, setReason] = useState('');
+  const [details, setDetails] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
+    const uid = auth.currentUser?.uid;
+    if (!uid) { toast.error('Sign in to report.'); return; }
+    if (!reason) { toast.error('Select a reason.'); return; }
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'reports'), {
+        listingId, reporterUid: uid,
+        reporterName: auth.currentUser?.displayName || 'User',
+        reason, details: details.trim(), status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+      toast.success('Report submitted. Thank you!');
+      onClose();
+    } catch { toast.error('Failed to submit.'); }
+    finally { setSubmitting(false); }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 480, padding: '20px 20px 40px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F2B6E' }}>Report Listing</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="#6B7A99" /></button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+          {REASONS.map((r) => (
+            <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', borderRadius: 12, border: `1.5px solid ${reason === r ? '#2E5BFF' : '#e2e8f0'}`, background: reason === r ? '#EEF3FF' : '#fafafa' }}>
+              <input type="radio" checked={reason === r} onChange={() => setReason(r)} style={{ accentColor: '#2E5BFF' }} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{r}</span>
+            </label>
+          ))}
+        </div>
+        <textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Additional details (optional)" rows={3}
+          style={{ width: '100%', borderRadius: 12, border: '1.5px solid #e2e8f0', padding: '10px 14px', fontSize: 14, outline: 'none', marginBottom: 14, resize: 'none', fontFamily: 'inherit' }} />
+        <button onClick={submit} disabled={submitting || !reason}
+          style={{ width: '100%', height: 50, borderRadius: 25, border: 'none', background: !reason || submitting ? '#9ca3af' : '#ef4444', color: '#fff', fontWeight: 800, fontSize: 15, cursor: !reason || submitting ? 'not-allowed' : 'pointer' }}>
+          {submitting ? 'Submitting…' : 'Submit Report'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Review Modal ─────────────────────────────────────────────────────────────
+
+function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sellerUid: string; onClose: () => void }) {
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
+    const u = auth.currentUser;
+    if (!u) { toast.error('Sign in to review.'); return; }
+    if (!comment.trim()) { toast.error('Add a comment.'); return; }
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'reviews'), {
+        listingId, sellerUid, buyerUid: u.uid,
+        buyerName: u.displayName || 'User',
+        rating, comment: comment.trim(),
+        status: 'pending', createdAt: serverTimestamp(),
+      });
+      toast.success('Review submitted for approval!');
+      onClose();
+    } catch { toast.error('Failed to submit review.'); }
+    finally { setSubmitting(false); }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 480, padding: '20px 20px 40px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F2B6E' }}>Share Your Review</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="#6B7A99" /></button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 18 }}>
+          {[1, 2, 3, 4, 5].map((s) => (
+            <button key={s} onClick={() => setRating(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
+              <Star size={32} fill={s <= rating ? '#FF9800' : 'none'} color={s <= rating ? '#FF9800' : '#d1d5db'} />
+            </button>
+          ))}
+        </div>
+        <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Write your experience…" rows={4}
+          style={{ width: '100%', borderRadius: 12, border: '1.5px solid #e2e8f0', padding: '10px 14px', fontSize: 14, outline: 'none', marginBottom: 14, resize: 'none', fontFamily: 'inherit' }} />
+        <button onClick={submit} disabled={submitting}
+          style={{ width: '100%', height: 50, borderRadius: 25, border: 'none', background: submitting ? '#9ca3af' : '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+          {submitting ? 'Submitting…' : 'Submit Review'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ListingDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const { user, isSaved, toggleSaved } = useAppStore();
+  const { user, isSaved, toggleSaved, selectedCurrency } = useAppStore();
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +138,8 @@ export default function ListingDetailsPage() {
   const [messageText, setMessageText] = useState('');
   const [startingChat, setStartingChat] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const viewTracked = useRef(false);
 
   // Load listing
@@ -180,11 +287,21 @@ export default function ListingDetailsPage() {
     ? listing.imageUrls
     : listing.imageUrl ? [listing.imageUrl] : [];
 
-  const price = listing.priceValue != null
-    ? `${listing.currencyCode} ${listing.priceValue.toLocaleString()}`
-    : listing.priceText?.trim() || 'Price not set';
+  let price: string;
+  if (listing.priceText?.trim()) {
+    price = listing.priceText.trim();
+  } else if (listing.priceValue != null) {
+    if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+      price = `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+    } else {
+      price = `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    }
+  } else {
+    price = 'Price not set';
+  }
 
   const saved = isSaved(listing.id);
+  const isOwner = (user?.uid ?? auth.currentUser?.uid) === listing.ownerUid;
 
   return (
     <div className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
@@ -417,7 +534,7 @@ export default function ListingDetailsPage() {
         <button
           onClick={() => {
             if (!auth.currentUser) { toast.error('Sign in to submit a review'); return; }
-            router.push(`/listing/${id}/review`);
+            setShowReview(true);
           }}
           style={{ width: '100%', padding: '15px', borderRadius: 18, background: '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
@@ -426,7 +543,10 @@ export default function ListingDetailsPage() {
 
         {/* Report button */}
         <button
-          onClick={() => router.push(`/report/${id}`)}
+          onClick={() => {
+            if (!auth.currentUser) { toast.error('Sign in to report'); return; }
+            setShowReport(true);
+          }}
           style={{ width: '100%', padding: '15px', borderRadius: 18, background: '#fff', color: '#ef4444', fontWeight: 900, fontSize: 15, border: '1.5px solid #fca5a5', cursor: 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
           <Flag size={18} /> Report this listing
@@ -471,6 +591,34 @@ export default function ListingDetailsPage() {
           </div>
         )}
       </div>
+
+      {/* ── Sticky Bottom CTA ── */}
+      {!isOwner ? (
+        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: '#fff', borderTop: '1px solid #eef2f8', padding: '10px 16px 20px', display: 'flex', gap: 10, zIndex: 30 }}>
+          <button onClick={() => toggleSaved(listing.id)}
+            style={{ width: 50, height: 50, borderRadius: 14, border: '1.5px solid #e2e8f0', background: saved ? '#EEF3FF' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {saved ? <BookmarkCheck size={20} color="#2E5BFF" /> : <Bookmark size={20} color="#6B7A99" />}
+          </button>
+          <button onClick={() => openOrCreateChat()} disabled={startingChat}
+            style={{ flex: 1, height: 50, borderRadius: 25, border: 'none', background: startingChat ? '#9ca3af' : '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: startingChat ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <MessageCircle size={18} /> {startingChat ? 'Opening…' : 'Message Seller'}
+          </button>
+        </div>
+      ) : (
+        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: '#fff', borderTop: '1px solid #eef2f8', padding: '10px 16px 20px', display: 'flex', gap: 10, zIndex: 30 }}>
+          <button onClick={() => router.push(`/dashboard/edit/${listing.id}`)}
+            style={{ flex: 1, height: 50, borderRadius: 25, border: 'none', background: '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
+            Edit Listing
+          </button>
+          <button onClick={() => router.push(`/dashboard/upgrade/${listing.id}`)}
+            style={{ flex: 1, height: 50, borderRadius: 25, border: 'none', background: '#F39C12', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
+            Promote
+          </button>
+        </div>
+      )}
+
+      {showReport && <ReportModal listingId={listing.id} onClose={() => setShowReport(false)} />}
+      {showReview && <ReviewModal listingId={listing.id} sellerUid={listing.ownerUid} onClose={() => setShowReview(false)} />}
     </div>
   );
 }
