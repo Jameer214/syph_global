@@ -8,6 +8,7 @@ interface AppStore {
   user: UserProfile | null;
   savedIds: string[];
   selectedCountry: string;
+  selectedRegion: string;
   selectedCurrency: string;   // effective display currency code
   isAutoCurrency: boolean;    // true = derived from country, false = manual override
   selectedLanguage: string;
@@ -19,6 +20,7 @@ interface AppStore {
   toggleSaved: (id: string) => void;
   isSaved: (id: string) => boolean;
   setCountry: (c: string) => void;
+  setRegion: (r: string) => void;
   setCurrency: (c: string) => void;
   setManualCurrency: (c: string) => void;
   setAutoCurrency: () => void;
@@ -34,6 +36,7 @@ export const useAppStore = create<AppStore>()(
       user: null,
       savedIds: [],
       selectedCountry: '',
+      selectedRegion: '',
       selectedCurrency: 'USD',
       isAutoCurrency: true,
       selectedLanguage: 'en',
@@ -58,6 +61,7 @@ export const useAppStore = create<AppStore>()(
           ...(isAutoCurrency ? { selectedCurrency: getCurrencyForCountry(c) } : {}),
         });
       },
+      setRegion: (r) => set({ selectedRegion: r }),
       setCurrency: (c) => set({ selectedCurrency: c }),
       setManualCurrency: (c) => set({ selectedCurrency: c, isAutoCurrency: false }),
       setAutoCurrency: () => {
