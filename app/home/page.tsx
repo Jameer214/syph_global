@@ -396,7 +396,7 @@ function FilterSheet({
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, selectedCountry, locationSet, setLocationSet } = useAppStore();
+  const { user, selectedCountry, selectedRegion, locationSet, setLocationSet } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Listing[]>([]);
@@ -569,6 +569,11 @@ export default function HomePage() {
               <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1a1a2e' }}>
                 {selectedCountry || 'All Countries'}
               </p>
+              {selectedRegion && (
+                <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 600, color: '#2E5BFF' }}>
+                  {selectedRegion} Region
+                </p>
+              )}
             </div>
           </div>
           <button

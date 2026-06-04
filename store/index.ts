@@ -70,11 +70,17 @@ export const useAppStore = create<AppStore>()(
       },
       setLanguage: (l) => set({ selectedLanguage: l }),
       setSellerMode: (v) => set({ sellerMode: v }),
-      setLocationSet: (v, location) =>
+      setLocationSet: (v, location) => {
+        const { isAutoCurrency } = get();
         set({
           locationSet: v,
-          ...(location ? { selectedLocation: location, selectedCountry: location } : {}),
-        }),
+          ...(location ? {
+            selectedLocation: location,
+            selectedCountry: location,
+            ...(isAutoCurrency ? { selectedCurrency: getCurrencyForCountry(location) } : {}),
+          } : {}),
+        });
+      },
       setUnreadMessages: (n) => set({ unreadMessages: n }),
     }),
     { name: 'syph-store' }

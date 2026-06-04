@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, Globe, X, ChevronDown, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAppStore } from '@/store';
 import { auth, db } from '@/lib/firebase';
 import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
+import MenuDrawer from '@/components/MenuDrawer';
 
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern'];
 const RECENT_KEY = 'syph-recent-countries';
@@ -35,6 +37,7 @@ export default function LocationPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detectingGPS, setDetectingGPS] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // On mount: pre-fill from store, load recents, auto-detect GPS silently
@@ -120,6 +123,7 @@ export default function LocationPage() {
     }
     setSaving(true);
     try {
+      // setLocationSet also auto-sets currency for the picked country
       setLocationSet(true, pickedCountry);
       setRegion(pickedRegion);
 
@@ -146,30 +150,62 @@ export default function LocationPage() {
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F0F4FF', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
+      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      {/* ── Top App Bar (matches home screen) ── */}
       <div style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
-        padding: '20px 20px 20px',
+        padding: '14px 16px',
+        position: 'sticky', top: 0, zIndex: 40,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 14,
-            background: 'rgba(255,255,255,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <MapPin size={22} color="#fff" />
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ color: '#fff', fontWeight: 900, fontSize: 22, lineHeight: 1 }}>Where are you?</div>
-            <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: 13, marginTop: 4, fontWeight: 500 }}>
-              Choose your country and region of interest
-            </div>
+            <p style={{ margin: 0, color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 600, letterSpacing: '0.5px' }}>
+              FIND IT. LOCATE IT. CONNECT.
+            </p>
+            <p style={{ margin: '2px 0 0', color: '#fff', fontSize: 20, fontWeight: 900, letterSpacing: '1px' }}>SYPH</p>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link href="/categories" style={{
+              background: '#F39C12', borderRadius: 10, padding: '7px 12px',
+              display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none',
+            }}>
+              <LayoutGrid size={16} color="#fff" />
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>Category</span>
+            </Link>
+            <button onClick={() => setMenuOpen(true)} style={{
+              background: 'rgba(255,255,255,0.18)', borderRadius: 10, padding: '7px 10px',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
+            }}>
+              <Menu size={18} color="#fff" />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 110px' }}>
+
+        {/* Page title section */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          marginBottom: 16,
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 14,
+            background: '#2E5BFF',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            boxShadow: '0 4px 12px rgba(46,91,255,0.3)',
+          }}>
+            <MapPin size={22} color="#fff" />
+          </div>
+          <div>
+            <div style={{ color: '#1a1a2e', fontWeight: 900, fontSize: 20, lineHeight: 1 }}>Where are you?</div>
+            <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 4, fontWeight: 500 }}>
+              Choose your country and region of interest
+            </div>
+          </div>
+        </div>
 
         {/* Country + Region card */}
         <div
