@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal, Navigation } from 'lucide-react';
+import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal, Navigation, MessageCircle, Handshake, Eye, ShoppingCart, BadgeDollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAppStore } from '@/store';
@@ -482,6 +482,136 @@ export default function LocationPage() {
             })
           )}
         </div>
+
+        {/* ── Website Info Sections ── */}
+        <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '24px 0' }} />
+
+        {/* Hero stats strip */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
+          {[
+            { value: '17+', label: 'Categories' },
+            { value: '50+', label: 'Countries' },
+            { value: '100%', label: 'Free Trial' },
+          ].map(stat => (
+            <div key={stat.label} style={{
+              flex: 1, background: '#fff', borderRadius: 14,
+              padding: '14px 8px', textAlign: 'center',
+              border: '1px solid rgba(0,0,0,0.06)',
+              boxShadow: '0 2px 8px rgba(46,91,255,0.08)',
+            }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#2E5BFF', lineHeight: 1 }}>{stat.value}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7A99', marginTop: 4, letterSpacing: '0.3px' }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* How It Works */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>How It Works</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Simple. Powerful. Global.</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>From discovery to deal — SYPH makes every step effortless.</div>
+          </div>
+          {([
+            {
+              step: '01', Icon: Search, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)',
+              title: 'Get location specific results',
+              desc: "Browse listings filtered to your exact country or region — see only what's available near you.",
+            },
+            {
+              step: '02', Icon: MessageCircle, color: '#6C63FF', bg: 'rgba(108,99,255,0.08)',
+              title: 'Contact your service provider',
+              desc: 'Message sellers directly through the platform. Ask questions and build trust before you commit.',
+            },
+            {
+              step: '03', Icon: Handshake, color: '#10B981', bg: 'rgba(16,185,129,0.08)',
+              title: 'Negotiate to a successful deal',
+              desc: "Close the deal on your own terms — negotiate price, arrange pickup or delivery, and buy with confidence.",
+            },
+          ] as const).map(({ step, Icon, color, bg, title, desc }) => (
+            <div key={step} style={{
+              background: '#fff', borderRadius: 16, padding: '16px',
+              marginBottom: 10, border: '1px solid rgba(0,0,0,0.06)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              display: 'flex', alignItems: 'flex-start', gap: 14,
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 14, background: bg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <Icon size={20} color={color} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: '0.5px', marginBottom: 4 }}>STEP {step}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4 }}>{title}</div>
+                <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, lineHeight: 1.5 }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Why SYPH */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>Why SYPH</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Find it. Locate it. Connect.</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>Discover products, services, and happenings near you.</div>
+          </div>
+
+          {/* For Sellers */}
+          <div style={{
+            background: '#fff', borderRadius: 18, padding: '20px 16px',
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            marginBottom: 12,
+          }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F0F4FF', borderRadius: 10, padding: '5px 12px', marginBottom: 14 }}>
+              <span style={{ fontSize: 15 }}>🏪</span>
+              <span style={{ fontWeight: 800, fontSize: 12, color: '#2E5BFF' }}>For Sellers</span>
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#1a1a2e', marginBottom: 4, lineHeight: 1.3 }}>Grow Globally. Sell Locally.</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginBottom: 16, lineHeight: 1.5 }}>Reach buyers across 50+ countries with zero listing fees.</div>
+            {([
+              { Icon: Globe, text: 'List products visible across 50+ countries' },
+              { Icon: Eye, text: 'Get maximum visibility with zero listing fees' },
+              { Icon: MapPin, text: 'Location-targeted reach to the right buyers' },
+            ] as const).map(({ Icon, text }) => (
+              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(46,91,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={15} color="#2E5BFF" />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#374151', lineHeight: 1.4 }}>{text}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* For Buyers */}
+          <div style={{
+            background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
+            borderRadius: 18, padding: '20px 16px',
+            boxShadow: '0 4px 20px rgba(30,77,217,0.3)',
+          }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: '5px 12px', marginBottom: 14 }}>
+              <span style={{ fontSize: 15 }}>🛒</span>
+              <span style={{ fontWeight: 800, fontSize: 12, color: '#fff' }}>For Buyers</span>
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', marginBottom: 4, lineHeight: 1.3 }}>Shop Smarter. Buy Confidently.</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 500, marginBottom: 16, lineHeight: 1.5 }}>Browse location-filtered listings and connect directly with sellers.</div>
+            {([
+              { Icon: Navigation, text: "Find exactly what's available near you" },
+              { Icon: ShoppingCart, text: 'Buy direct from sellers with no middleman fees' },
+              { Icon: BadgeDollarSign, text: 'Negotiate prices and get the best deals' },
+            ] as const).map(({ Icon, text }) => (
+              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={15} color="#fff" />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)', lineHeight: 1.4 }}>{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
       {/* Sticky Continue button */}
