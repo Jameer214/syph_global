@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu } from 'lucide-react';
+import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAppStore } from '@/store';
@@ -38,6 +38,7 @@ export default function LocationPage() {
   const [saving, setSaving] = useState(false);
   const [detectingGPS, setDetectingGPS] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [goodsSearch, setGoodsSearch] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
 
   // On mount: pre-fill from store, load recents, auto-detect GPS silently
@@ -165,7 +166,7 @@ export default function LocationPage() {
             </p>
             <p style={{ margin: '2px 0 0', color: '#fff', fontSize: 20, fontWeight: 900, letterSpacing: '1px' }}>SYPH</p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Link href="/categories" style={{
               background: '#F39C12', borderRadius: 10, padding: '7px 12px',
               display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none',
@@ -174,34 +175,74 @@ export default function LocationPage() {
               <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>Category</span>
             </Link>
             <button onClick={() => setMenuOpen(true)} style={{
-              background: 'rgba(255,255,255,0.18)', borderRadius: 10, padding: '7px 10px',
-              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
+              background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '6px',
             }}>
-              <Menu size={18} color="#fff" />
+              <Menu size={22} color="#fff" strokeWidth={2.2} />
             </button>
           </div>
         </div>
       </div>
 
       {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 110px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 110px' }}>
+
+        {/* Dark goods search bar — matches Flutter's dark search bar */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Search
+              size={17}
+              style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.55)', pointerEvents: 'none' }}
+            />
+            <input
+              type="text"
+              value={goodsSearch}
+              onChange={(e) => setGoodsSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && goodsSearch.trim()) {
+                  router.push('/home');
+                }
+              }}
+              placeholder="Search goods & services…"
+              style={{
+                width: '100%', height: 46, borderRadius: 14,
+                border: '1px solid rgba(255,255,255,0.10)',
+                background: '#1A1A1A', paddingLeft: 44, paddingRight: 14,
+                fontSize: 14, fontWeight: 600, color: '#fff', outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            style={{
+              width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+              background: '#fff', border: '1px solid rgba(0,0,0,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <SlidersHorizontal size={18} color="#1a1a2e" />
+          </button>
+        </div>
 
         {/* Page title section */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          marginBottom: 16,
+          display: 'flex', alignItems: 'center', gap: 10,
+          marginBottom: 12,
         }}>
           <div style={{
-            width: 44, height: 44, borderRadius: 14,
+            width: 38, height: 38, borderRadius: 12,
             background: '#2E5BFF',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            boxShadow: '0 4px 12px rgba(46,91,255,0.3)',
+            boxShadow: '0 4px 10px rgba(46,91,255,0.28)',
           }}>
-            <MapPin size={22} color="#fff" />
+            <MapPin size={19} color="#fff" />
           </div>
           <div>
-            <div style={{ color: '#1a1a2e', fontWeight: 900, fontSize: 20, lineHeight: 1 }}>Where are you?</div>
-            <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 4, fontWeight: 500 }}>
+            <div style={{ color: '#1a1a2e', fontWeight: 900, fontSize: 18, lineHeight: 1 }}>Where are you?</div>
+            <div style={{ color: '#6B7A99', fontSize: 12.5, marginTop: 3, fontWeight: 500 }}>
               Choose your country and region of interest
             </div>
           </div>
