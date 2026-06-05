@@ -13,18 +13,15 @@ export default function SplashScreen() {
     const timer = setTimeout(() => {
       if (routed.current) return;
       routed.current = true;
-      const hasUser = !!user;
       const hasCountry = locationSet && !!selectedCountry;
-      if (!hasUser) {
-        router.replace('/welcome');
-      } else if (!hasCountry) {
+      if (!hasCountry) {
         router.replace('/location');
       } else {
         router.replace('/home');
       }
-    }, 2500);
+    }, 2000);
     return () => clearTimeout(timer);
-  }, [router, user, selectedCountry, locationSet]);
+  }, [router, selectedCountry, locationSet]);
 
   return (
     <div style={{

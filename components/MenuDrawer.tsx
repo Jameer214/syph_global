@@ -330,7 +330,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
     try {
       await signOut(auth);
       setUser(null);
-      router.replace('/welcome');
+      router.replace('/home');
     } catch {
       toast.error('Logout failed.');
     }
@@ -457,22 +457,53 @@ export default function MenuDrawer({ open, onClose }: Props) {
           <Item icon={HeadphonesIcon} label="Contact Support" onClick={() => requireAuth('/support')} />
           <Item icon={Info} label="About SYPH" onClick={() => nav('/about')} />
 
-          {/* Logout */}
-          <div style={{ margin: '16px 8px 0', background: '#fff5f5', borderRadius: 14, overflow: 'hidden' }}>
-            <Item
-              icon={isGuest ? X : LogOut}
-              label={isGuest ? 'Exit Guest Mode' : 'Logout'}
-              destructive
-              onClick={isGuest ? () => { onClose(); router.replace('/welcome'); } : handleLogout}
-            />
-          </div>
+          {/* Logout — only for signed-in users, inside scroll area */}
+          {!isGuest && (
+            <div style={{ margin: '16px 8px 0', background: '#fff5f5', borderRadius: 14, overflow: 'hidden' }}>
+              <Item icon={LogOut} label="Logout" destructive onClick={handleLogout} />
+            </div>
+          )}
+        </div>
 
-          {/* Auth CTA for guests */}
-          {isGuest && (
-            <div style={{ margin: '12px 8px 0', background: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', borderRadius: 16, padding: '16px' }}>
-              <p style={{ color: '#fff', fontWeight: 800, fontSize: 15, margin: '0 0 12px' }}>Join SYPH</p>
-              <button onClick={() => nav('/signup')} style={{ width: '100%', padding: '10px 0', borderRadius: 12, border: 'none', background: '#fff', color: '#1E4DD9', fontWeight: 800, fontSize: 14, cursor: 'pointer', marginBottom: 8 }}>Create Account</button>
-              <button onClick={() => nav('/login')} style={{ width: '100%', padding: '10px 0', borderRadius: 12, border: '2px solid rgba(255,255,255,0.5)', background: 'none', color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>Login</button>
+        {/* ── Fixed bottom auth section ── */}
+        <div style={{
+          borderTop: '1px solid #f1f5f9',
+          padding: '14px 16px 20px',
+          background: '#fff',
+          flexShrink: 0,
+        }}>
+          {isGuest ? (
+            <div>
+              <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#9aa0b2', textAlign: 'center', letterSpacing: '0.3px' }}>
+                Join millions buying &amp; selling on SYPH
+              </p>
+              <button
+                onClick={() => nav('/welcome')}
+                style={{
+                  width: '100%', padding: '13px 0', borderRadius: 14, border: 'none',
+                  background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
+                  color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <User size={18} color="#fff" />
+                Sign In / Create Account
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: '#1c2c52', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {displayName}
+                </p>
+                <p style={{ margin: 0, fontSize: 11, color: '#9aa0b2', fontWeight: 600 }}>Signed in</p>
+              </div>
+              <button
+                onClick={() => requireAuth('/profile')}
+                style={{ padding: '8px 14px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#1E4DD9', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+              >
+                Profile
+              </button>
             </div>
           )}
         </div>
