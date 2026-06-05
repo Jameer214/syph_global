@@ -8,7 +8,6 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider,
 } from 'firebase/auth';
@@ -84,15 +83,16 @@ export default function SignupPage() {
       await processUser(result.user);
     } catch (err) {
       const code = (err as { code?: string }).code ?? '';
-      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user') {
-        await signInWithRedirect(auth, provider);
+      if (code === 'auth/popup-blocked') {
+        toast.error('Popups are blocked. Please allow popups for this site in your browser settings, then try again.');
+        setGoogleLoading(false);
+      } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setGoogleLoading(false);
       } else if (code === 'auth/unauthorized-domain') {
-        toast.error('This domain is not authorised in Firebase.');
+        toast.error('This domain is not authorised. Please use email/password sign-in.');
         setGoogleLoading(false);
       } else if (code === 'auth/operation-not-allowed') {
-        toast.error('Google sign-in is not enabled in Firebase Console.');
-        setGoogleLoading(false);
-      } else if (code === 'auth/cancelled-popup-request') {
+        toast.error('Google sign-in is not enabled. Please use email/password sign-in.');
         setGoogleLoading(false);
       } else {
         toast.error('Google sign-in failed. Please try again.');

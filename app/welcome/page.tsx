@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Lock, MapPin, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
-  signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
+  signInWithPopup, getRedirectResult, GoogleAuthProvider,
 } from 'firebase/auth';
 import { useAppStore } from '@/store';
 import { auth } from '@/lib/firebase';
@@ -65,16 +65,16 @@ export default function WelcomePage() {
       await processUser(result.user);
     } catch (err) {
       const code = (err as { code?: string }).code ?? '';
-      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user') {
-        // Fall back to redirect — page will navigate away
-        await signInWithRedirect(auth, provider);
+      if (code === 'auth/popup-blocked') {
+        toast.error('Popups are blocked. Please allow popups for this site in your browser settings, then try again.');
+        setLoading(false);
+      } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setLoading(false);
       } else if (code === 'auth/unauthorized-domain') {
-        toast.error('This domain is not authorised in Firebase. Add it in the Firebase Console → Authentication → Settings → Authorised domains.');
+        toast.error('This domain is not authorised. Please use Login or Create Account instead.');
         setLoading(false);
       } else if (code === 'auth/operation-not-allowed') {
-        toast.error('Google sign-in is not enabled. Enable it in Firebase Console.');
-        setLoading(false);
-      } else if (code === 'auth/cancelled-popup-request') {
+        toast.error('Google sign-in is not enabled. Please use Login instead.');
         setLoading(false);
       } else {
         toast.error('Google sign-in failed. Please try again.');
