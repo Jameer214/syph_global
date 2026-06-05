@@ -2,8 +2,8 @@
 
 * { box-sizing: border-box; }
 
-body {
-  background: #E8EDF5;
+html, body {
+  background: #0F2B6E;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -13,7 +13,7 @@ body {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100dvh;
-  background: #ffffff;
+  background: #0F2B6E;
   position: relative;
   overflow-x: hidden;
   box-shadow: 0 0 60px rgba(0,0,0,0.18);
