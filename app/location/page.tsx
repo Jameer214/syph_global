@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal, Navigation, MessageCircle, Handshake, Eye, ShoppingCart, BadgeDollarSign } from 'lucide-react';
+import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal, Navigation, MessageCircle, Handshake, Eye, ShoppingCart, BadgeDollarSign, Shield, Zap, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAppStore } from '@/store';
@@ -11,6 +11,28 @@ import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import MenuDrawer from '@/components/MenuDrawer';
 
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern'];
+
+const CATEGORIES = [
+  { emoji: '🏠', name: 'Real Estate' },
+  { emoji: '🚗', name: 'Vehicles' },
+  { emoji: '👗', name: 'Fashion' },
+  { emoji: '📱', name: 'Electronics' },
+  { emoji: '🍕', name: 'Food & Dining' },
+  { emoji: '💼', name: 'Services' },
+  { emoji: '💻', name: 'Technology' },
+  { emoji: '🌿', name: 'Agriculture' },
+  { emoji: '🏋️', name: 'Sports' },
+  { emoji: '🎨', name: 'Art & Crafts' },
+  { emoji: '💊', name: 'Health' },
+  { emoji: '✈️', name: 'Travel' },
+  { emoji: '🏗️', name: 'Construction' },
+  { emoji: '🎵', name: 'Music & Media' },
+  { emoji: '📚', name: 'Education' },
+  { emoji: '🐾', name: 'Pets' },
+  { emoji: '🎮', name: 'Gaming' },
+  { emoji: '💰', name: 'Finance' },
+];
+
 const RECENT_KEY = 'syph-recent-countries';
 
 function loadRecents(): string[] {
@@ -242,8 +264,15 @@ export default function LocationPage() {
           </div>
         )}
 
-        {/* spin keyframe */}
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+          @keyframes floatReverse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+          @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #4ADE80; } 50% { opacity: 0.6; box-shadow: 0 0 12px #4ADE80; } }
+          @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+          @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(46,91,255,0.25); } 50% { box-shadow: 0 0 36px rgba(46,91,255,0.55); } }
+        `}</style>
 
         {/* Dark goods search bar — matches Flutter's dark search bar */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
@@ -486,23 +515,92 @@ export default function LocationPage() {
         {/* ── Website Info Sections ── */}
         <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '24px 0' }} />
 
-        {/* Hero stats strip */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
-          {[
-            { value: '17+', label: 'Categories' },
-            { value: '50+', label: 'Countries' },
-            { value: '100%', label: 'Free Trial' },
-          ].map(stat => (
-            <div key={stat.label} style={{
-              flex: 1, background: '#fff', borderRadius: 14,
-              padding: '14px 8px', textAlign: 'center',
-              border: '1px solid rgba(0,0,0,0.06)',
-              boxShadow: '0 2px 8px rgba(46,91,255,0.08)',
-            }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#2E5BFF', lineHeight: 1 }}>{stat.value}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7A99', marginTop: 4, letterSpacing: '0.3px' }}>{stat.label}</div>
+        {/* Hero: The World's Marketplace */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0a1a4a 0%, #0F2B6E 45%, #1a3a9e 100%)',
+          borderRadius: 20, padding: '24px 18px 22px', marginBottom: 16,
+          position: 'relative', overflow: 'hidden',
+          animation: 'fadeInUp 0.5s ease forwards',
+        }}>
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(46,91,255,0.2)', animation: 'float 5s ease-in-out infinite' }} />
+          <div style={{ position: 'absolute', top: 20, right: 50, width: 55, height: 55, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', animation: 'floatReverse 7s ease-in-out infinite' }} />
+          <div style={{ position: 'absolute', bottom: -40, left: -20, width: 130, height: 130, borderRadius: '50%', background: 'rgba(46,91,255,0.12)', animation: 'float 6s ease-in-out infinite' }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 13px', marginBottom: 16, border: '1px solid rgba(255,255,255,0.18)' }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', animation: 'pulse 2s ease-in-out infinite' }} />
+              <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.9)', letterSpacing: '1.5px' }}>LIVE IN 50+ COUNTRIES</span>
             </div>
-          ))}
+            <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1.15, marginBottom: 10 }}>
+              The World&apos;s<br />Marketplace
+            </div>
+            <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.72)', fontWeight: 500, lineHeight: 1.65, marginBottom: 20 }}>
+              SYPH is a global broker connecting buyers and sellers across 50+ countries — for every service, every product, every region. No fees. No limits.
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { value: '50+', label: 'Countries' },
+                { value: '17+', label: 'Categories' },
+                { value: '100%', label: 'Free' },
+                { value: '24/7', label: 'Available' },
+              ].map(s => (
+                <div key={s.label} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '9px 4px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.14)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{s.value}</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Auto-scrolling categories ticker */}
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.8px', textTransform: 'uppercase', marginBottom: 9, paddingLeft: 2 }}>All Categories</div>
+          <div style={{ overflow: 'hidden', position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 28, background: 'linear-gradient(to right, #F0F4FF, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 28, background: 'linear-gradient(to left, #F0F4FF, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+            <div style={{ display: 'flex', gap: 7, animation: 'scrollLeft 24s linear infinite', width: 'max-content' }}>
+              {[...CATEGORIES, ...CATEGORIES].map((cat, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', borderRadius: 20, padding: '6px 12px', border: '1px solid rgba(0,0,0,0.07)', flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <span style={{ fontSize: 14 }}>{cat.emoji}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1a2e', whiteSpace: 'nowrap' }}>{cat.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Global Reach — world regions grid */}
+        <div style={{ marginBottom: 24, background: '#fff', borderRadius: 18, padding: '20px 16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(46,91,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'glow 3s ease-in-out infinite' }}>
+              <Globe size={20} color="#2E5BFF" />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Global Reach</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Every Country. Every Region.</div>
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginBottom: 16, lineHeight: 1.55 }}>
+            SYPH operates across all major world regions — wherever you are, we have you covered.
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {[
+              { flag: '🌍', region: 'Africa', count: '54 countries' },
+              { flag: '🌍', region: 'Europe', count: '44 countries' },
+              { flag: '🌎', region: 'Americas', count: '35 countries' },
+              { flag: '🌏', region: 'Asia Pacific', count: '48 countries' },
+              { flag: '🕌', region: 'Middle East', count: '18 countries' },
+              { flag: '🌊', region: 'Oceania', count: '14 countries' },
+            ].map(r => (
+              <div key={r.region} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#F8FAFF', borderRadius: 12, padding: '10px 11px', border: '1px solid rgba(46,91,255,0.08)' }}>
+                <span style={{ fontSize: 20 }}>{r.flag}</span>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#1a1a2e' }}>{r.region}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af' }}>{r.count}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* How It Works */}
@@ -513,58 +611,56 @@ export default function LocationPage() {
             <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>From discovery to deal — SYPH makes every step effortless.</div>
           </div>
           {([
-            {
-              step: '01', Icon: Search, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)',
-              title: 'Get location specific results',
-              desc: "Browse listings filtered to your exact country or region — see only what's available near you.",
-            },
-            {
-              step: '02', Icon: MessageCircle, color: '#6C63FF', bg: 'rgba(108,99,255,0.08)',
-              title: 'Contact your service provider',
-              desc: 'Message sellers directly through the platform. Ask questions and build trust before you commit.',
-            },
-            {
-              step: '03', Icon: Handshake, color: '#10B981', bg: 'rgba(16,185,129,0.08)',
-              title: 'Negotiate to a successful deal',
-              desc: "Close the deal on your own terms — negotiate price, arrange pickup or delivery, and buy with confidence.",
-            },
-          ] as const).map(({ step, Icon, color, bg, title, desc }) => (
-            <div key={step} style={{
-              background: '#fff', borderRadius: 16, padding: '16px',
-              marginBottom: 10, border: '1px solid rgba(0,0,0,0.06)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              display: 'flex', alignItems: 'flex-start', gap: 14,
-            }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 14, background: bg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <Icon size={20} color={color} />
+            { step: '01', Icon: Search, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: 'Get location specific results', desc: "Browse listings filtered to your exact country or region — see only what's available near you." },
+            { step: '02', Icon: MessageCircle, color: '#6C63FF', bg: 'rgba(108,99,255,0.08)', title: 'Contact your service provider', desc: 'Message sellers directly through the platform. Ask questions and build trust before you commit.' },
+            { step: '03', Icon: Handshake, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Negotiate to a successful deal', desc: "Close the deal on your own terms — negotiate price, arrange pickup or delivery, and buy with confidence." },
+          ] as const).map(({ step, Icon, color, bg, title, desc }, idx) => (
+            <div key={step}>
+              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 4, border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={20} color={color} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: '0.5px', marginBottom: 4 }}>STEP {step}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4 }}>{title}</div>
+                  <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, lineHeight: 1.5 }}>{desc}</div>
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: '0.5px', marginBottom: 4 }}>STEP {step}</div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4 }}>{title}</div>
-                <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, lineHeight: 1.5 }}>{desc}</div>
-              </div>
+              {idx < 2 && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+                  <div style={{ width: 2, height: 14, background: 'linear-gradient(to bottom, rgba(46,91,255,0.35), rgba(46,91,255,0.04))' }} />
+                </div>
+              )}
             </div>
           ))}
         </div>
 
+        {/* All Services & Goods grid */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>Everything on SYPH</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Every Product. Every Service.</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>From everyday essentials to rare finds — if it exists, you&apos;ll find it on SYPH.</div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {CATEGORIES.map(cat => (
+              <div key={cat.name} style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 28, marginBottom: 6 }}>{cat.emoji}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3 }}>{cat.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Why SYPH */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 24 }}>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>Why SYPH</div>
             <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Find it. Locate it. Connect.</div>
             <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>Discover products, services, and happenings near you.</div>
           </div>
-
           {/* For Sellers */}
-          <div style={{
-            background: '#fff', borderRadius: 18, padding: '20px 16px',
-            border: '1px solid rgba(0,0,0,0.06)',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-            marginBottom: 12,
-          }}>
+          <div style={{ background: '#fff', borderRadius: 18, padding: '20px 16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 12 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F0F4FF', borderRadius: 10, padding: '5px 12px', marginBottom: 14 }}>
               <span style={{ fontSize: 15 }}>🏪</span>
               <span style={{ fontWeight: 800, fontSize: 12, color: '#2E5BFF' }}>For Sellers</span>
@@ -584,13 +680,8 @@ export default function LocationPage() {
               </div>
             ))}
           </div>
-
           {/* For Buyers */}
-          <div style={{
-            background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
-            borderRadius: 18, padding: '20px 16px',
-            boxShadow: '0 4px 20px rgba(30,77,217,0.3)',
-          }}>
+          <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', borderRadius: 18, padding: '20px 16px', boxShadow: '0 4px 20px rgba(30,77,217,0.3)' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: '5px 12px', marginBottom: 14 }}>
               <span style={{ fontSize: 15 }}>🛒</span>
               <span style={{ fontWeight: 800, fontSize: 12, color: '#fff' }}>For Buyers</span>
@@ -609,6 +700,69 @@ export default function LocationPage() {
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)', lineHeight: 1.4 }}>{text}</span>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Global Broker manifesto */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #0F2B6E 55%, #1a3a9e 100%)',
+          borderRadius: 20, padding: '26px 18px', marginBottom: 16,
+          textAlign: 'center', position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(46,91,255,0.12)', animation: 'float 7s ease-in-out infinite' }} />
+          <div style={{ position: 'absolute', bottom: -30, left: -30, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: 40, marginBottom: 10, display: 'inline-block', animation: 'float 4s ease-in-out infinite' }}>🌐</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginBottom: 12 }}>
+              Your Global Broker.<br />For Everything.
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.72)', fontWeight: 500, lineHeight: 1.65, marginBottom: 20 }}>
+              Whether you&apos;re buying or selling goods, offering services, or searching for something specific — SYPH is your all-in-one global brokerage platform, available in every country, across every category, completely free.
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center' }}>
+              {['Real Estate', 'Vehicles', 'Fashion', 'Electronics', 'Services', 'Agriculture', 'Technology', 'Food & Dining', 'Health', 'Education'].map(cat => (
+                <span key={cat} style={{ background: 'rgba(255,255,255,0.11)', color: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 11px', fontSize: 11, fontWeight: 700, border: '1px solid rgba(255,255,255,0.18)' }}>{cat}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Trust pillars */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#1a1a2e' }}>Built on Trust</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', marginTop: 4, fontWeight: 500 }}>Your security and satisfaction are our priority</div>
+          </div>
+          {([
+            { Icon: Shield, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: 'Verified Listings', desc: 'Every listing is reviewed for quality and authenticity before going live on the platform.' },
+            { Icon: Zap, color: '#F39C12', bg: 'rgba(243,156,18,0.1)', title: 'Instant Connections', desc: 'Connect with sellers and buyers in real-time through our built-in messaging platform.' },
+            { Icon: CheckCircle, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Free Forever', desc: 'No listing fees. No commissions. No hidden charges. SYPH is completely free to use.' },
+          ] as const).map(({ Icon, color, bg, title, desc }) => (
+            <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 10, background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon size={20} color={color} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', marginBottom: 4 }}>{title}</div>
+                <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, lineHeight: 1.5 }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer tagline */}
+        <div style={{
+          textAlign: 'center', padding: '22px 16px',
+          background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
+          borderRadius: 20, marginBottom: 8,
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+          <div style={{ position: 'absolute', bottom: -30, left: -30, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 8, letterSpacing: '0.5px' }}>SYPH — Find it. Locate it. Connect.</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 500, lineHeight: 1.6 }}>The global marketplace for every service, every product, and every region — connecting buyers and sellers worldwide, for free.</div>
           </div>
         </div>
 
