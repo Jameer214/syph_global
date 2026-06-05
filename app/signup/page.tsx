@@ -8,6 +8,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithPopup,
+  signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider,
 } from 'firebase/auth';
@@ -84,8 +85,7 @@ export default function SignupPage() {
     } catch (err) {
       const code = (err as { code?: string }).code ?? '';
       if (code === 'auth/popup-blocked') {
-        toast.error('Popups are blocked. Please allow popups for this site in your browser settings, then try again.');
-        setGoogleLoading(false);
+        await signInWithRedirect(auth, provider);
       } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         setGoogleLoading(false);
       } else if (code === 'auth/unauthorized-domain') {
