@@ -396,7 +396,7 @@ function FilterSheet({
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, selectedCountry, selectedRegion, locationSet, setLocationSet } = useAppStore();
+  const { user, selectedCountry, selectedRegion, locationSet } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Listing[]>([]);
@@ -412,6 +412,17 @@ export default function HomePage() {
 
   const country = locationSet ? selectedCountry : undefined;
   const flag = selectedCountry ? (COUNTRY_FLAGS[selectedCountry] ?? '🌍') : '🌍';
+
+  // Pick up search query carried from the location screen's dark search bar
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const pending = sessionStorage.getItem('syph-pending-search');
+    if (pending) {
+      setSearchQuery(pending);
+      setShowSearch(true);
+      sessionStorage.removeItem('syph-pending-search');
+    }
+  }, []);
 
   // Data subscriptions
   const flashSales = useListings({ isFlashSale: true, count: 20, country });
@@ -535,7 +546,7 @@ export default function HomePage() {
             </p>
             <p style={{ margin: '2px 0 0', color: '#fff', fontSize: 20, fontWeight: 900, letterSpacing: '1px' }}>SYPH</p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Link href="/categories" style={{
               background: '#F39C12', borderRadius: 10, padding: '7px 12px',
               display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none',
@@ -544,10 +555,11 @@ export default function HomePage() {
               <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>Category</span>
             </Link>
             <button onClick={() => setMenuOpen(true)} style={{
-              background: 'rgba(255,255,255,0.18)', borderRadius: 10, padding: '7px 10px',
-              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
+              background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '6px',
             }}>
-              <Menu size={18} color="#fff" />
+              <Menu size={22} color="#fff" strokeWidth={2.2} />
             </button>
           </div>
         </div>

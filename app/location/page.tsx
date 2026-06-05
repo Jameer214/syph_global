@@ -258,6 +258,9 @@ export default function LocationPage() {
               onChange={(e) => setGoodsSearch(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && goodsSearch.trim()) {
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('syph-pending-search', goodsSearch.trim());
+                  }
                   router.push('/home');
                 }
               }}
