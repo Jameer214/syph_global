@@ -38,10 +38,12 @@ export default function WelcomePage() {
 
   // Handle result after signInWithRedirect comes back
   useEffect(() => {
-    setLoading(true);
     getRedirectResult(auth)
       .then((result) => {
-        if (result?.user) return processUser(result.user);
+        if (result?.user) {
+          setLoading(true);
+          return processUser(result.user);
+        }
       })
       .catch((err) => {
         const code = (err as { code?: string }).code ?? '';
