@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal } from 'lucide-react';
+import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal, Navigation } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAppStore } from '@/store';
@@ -37,6 +37,7 @@ export default function LocationPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detectingGPS, setDetectingGPS] = useState(false);
+  const [gpsDetectedCountry, setGpsDetectedCountry] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [goodsSearch, setGoodsSearch] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -99,7 +100,7 @@ export default function LocationPage() {
           const country = data?.address?.country ?? '';
           if (country && COUNTRIES.includes(country)) {
             selectCountry(country);
-            if (showErrors) toast.success(`Detected: ${country}`);
+            setGpsDetectedCountry(country);
           } else if (showErrors) {
             toast.error('Could not determine your country. Please select manually.');
           }
@@ -187,6 +188,62 @@ export default function LocationPage() {
 
       {/* Scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 110px' }}>
+
+        {/* GPS detection banner — matches Flutter's home country detection card */}
+        {gpsDetectedCountry ? (
+          /* Blue ribbon: detected country */
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
+            background: 'linear-gradient(135deg, #1E4DD9 0%, #2E5BFF 100%)',
+            borderRadius: 16, padding: '13px 16px',
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.18)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Navigation size={18} color="#fff" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: 700, letterSpacing: '0.3px' }}>
+                GPS DETECTED
+              </p>
+              <p style={{ margin: '2px 0 0', color: '#fff', fontSize: 15, fontWeight: 900 }}>
+                {COUNTRY_FLAGS[gpsDetectedCountry] ?? '🌍'} {gpsDetectedCountry}
+              </p>
+            </div>
+            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 22 }}>✓</span>
+          </div>
+        ) : (
+          /* White card: detect home country prompt */
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
+            background: '#fff', borderRadius: 16, padding: '13px 16px',
+            border: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          }}>
+            <Navigation size={20} color="#2E5BFF" style={{ flexShrink: 0 }} />
+            <p style={{ flex: 1, margin: 0, fontWeight: 800, fontSize: 14, color: '#1a1a2e' }}>
+              Detect home country
+            </p>
+            {detectingGPS ? (
+              <div style={{
+                width: 18, height: 18, border: '2.5px solid #2E5BFF',
+                borderTopColor: 'transparent', borderRadius: '50%',
+                animation: 'spin 0.7s linear infinite', flexShrink: 0,
+              }} />
+            ) : (
+              <button
+                onClick={() => detectGPS(true)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2E5BFF', fontWeight: 800, fontSize: 14, padding: 0, flexShrink: 0 }}
+              >
+                Detect
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* spin keyframe */}
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
         {/* Dark goods search bar — matches Flutter's dark search bar */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
@@ -374,23 +431,6 @@ export default function LocationPage() {
             </div>
           )}
         </div>
-
-        {/* GPS button */}
-        <button
-          onClick={() => detectGPS(true)}
-          disabled={detectingGPS}
-          style={{
-            width: '100%', height: 46, borderRadius: 14,
-            border: '1.5px solid #2E5BFF', background: 'transparent',
-            color: '#2E5BFF', fontWeight: 700, fontSize: 14,
-            cursor: detectingGPS ? 'default' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 8, marginBottom: 20, opacity: detectingGPS ? 0.6 : 1,
-          }}
-        >
-          <MapPin size={16} />
-          {detectingGPS ? 'Detecting location…' : 'Use my current location'}
-        </button>
 
         {/* Recent Countries */}
         <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>
