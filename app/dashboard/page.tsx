@@ -363,20 +363,8 @@ export default function DashboardPage() {
             The SYPH app gives you the full seller experience — sponsor listings, run flash sales, post happenings, track promotions, receive real-time buyer messages, and manage everything from your phone.
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <div style={{ flex: 1, background: '#1E2B45', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 20 }}>🍎</span>
-              <div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>Download on the</div>
-                <div style={{ fontSize: 13, color: '#fff', fontWeight: 800 }}>App Store</div>
-              </div>
-            </div>
-            <div style={{ flex: 1, background: '#1E2B45', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 20 }}>🤖</span>
-              <div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>Get it on</div>
-                <div style={{ fontSize: 13, color: '#fff', fontWeight: 800 }}>Google Play</div>
-              </div>
-            </div>
+            <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} style={{ flex: 1, height: 48, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
+            <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} style={{ flex: 1, height: 48, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
           </div>
         </div>
       </div>
