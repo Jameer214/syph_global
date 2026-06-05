@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  List, Store, Star, Zap, Calendar, TrendingUp, FileText,
+  Store, FileText,
   Eye, MessageCircle, Bookmark, Package, Edit3, ChevronRight,
-  ArrowLeft, BarChart2, ShieldCheck,
+  ArrowLeft, BarChart2, Smartphone,
 } from 'lucide-react';
 import Image from 'next/image';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -114,14 +114,6 @@ export default function DashboardPage() {
     );
   }
 
-  const actionTiles = [
-    { icon: <List size={28} color="#2E5BFF" />, bg: '#E8EEFF', label: 'My Listings', sub: 'View & manage', href: '/dashboard/listings' },
-    { icon: <Store size={28} color="#4A1AFF" />, bg: '#EEE8FF', label: 'Sell My Item', sub: 'New listing', href: '/dashboard/new' },
-    { icon: <Star size={28} color="#E08A00" />, bg: '#FFF4E5', label: 'Sponsor Item', sub: 'Boost visibility', href: '/dashboard/new?type=sponsor' },
-    { icon: <Zap size={28} color="#E53935" />, bg: '#FFECEC', label: 'Flash Sale', sub: 'Limited offer', href: '/dashboard/new?type=flash' },
-    { icon: <Calendar size={28} color="#2E9B55" />, bg: '#E6F7EC', label: 'Post Happening', sub: 'Share events', href: '/dashboard/happenings' },
-    { icon: <TrendingUp size={28} color="#7A5AF8" />, bg: '#F1ECFF', label: 'My Promotions', sub: 'Track boosts', href: '/dashboard/promotions' },
-  ];
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
@@ -246,24 +238,59 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Action tiles grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-          {actionTiles.map((tile, i) => (
-            <button key={i} onClick={() => router.push(tile.href)} style={{
-              background: '#fff', border: '1.2px solid #DDE6F3', borderRadius: 22, padding: '18px 14px',
-              cursor: 'pointer', textAlign: 'left', boxShadow: '0 4px 12px rgba(0,0,0,0.035)',
-              display: 'flex', flexDirection: 'column', gap: 8,
-            }}>
-              <div style={{ background: tile.bg, borderRadius: 14, padding: 10, width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {tile.icon}
+        {/* My Listings section */}
+        <div style={{ background: '#fff', borderRadius: 22, padding: 16, marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ fontWeight: 900, fontSize: 16, color: '#1E2B45' }}>My Listings</div>
+            <button onClick={() => router.push('/dashboard/new')} style={{
+              background: '#2E5BFF', border: 'none', borderRadius: 10,
+              padding: '6px 14px', color: '#fff', fontWeight: 800, fontSize: 12, cursor: 'pointer',
+            }}>+ New Listing</button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto' }}>
+            {(['all', 'pending', 'approved', 'rejected'] as ListingTab[]).map((tab) => (
+              <button key={tab} onClick={() => setListingTab(tab)} style={{
+                padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                background: listingTab === tab ? '#2E5BFF' : '#F0F4FF',
+                color: listingTab === tab ? '#fff' : '#6B7A99',
+                fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap', textTransform: 'capitalize',
+              }}>{tab}</button>
+            ))}
+          </div>
+
+          {filteredListings.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '24px 0', color: '#6B7A99', fontSize: 14 }}>
+              No {listingTab === 'all' ? '' : listingTab} listings yet.
+            </div>
+          ) : (
+            filteredListings.map((l) => (
+              <div key={l.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F4FF' }}>
+                <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#E8EDFF' }}>
+                  {l.imageUrl ? (
+                    <Image src={l.imageUrl} alt={l.title} width={56} height={56} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Package size={24} color="#6B7A99" />
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 13, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <span style={{ background: STATUS_BG[l.status] ?? '#F2F5F9', color: STATUS_COLORS[l.status] ?? '#6B7A99', fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '2px 8px', textTransform: 'capitalize' }}>{l.status}</span>
+                    <span style={{ color: '#9AA0B2', fontSize: 11 }}>👁 {l.viewsCount}</span>
+                  </div>
+                </div>
+                <button onClick={() => router.push(`/dashboard/edit/${l.id}`)} style={{ background: '#F0F4FF', border: 'none', borderRadius: 10, padding: '7px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: '#2E5BFF', fontWeight: 700, fontSize: 12 }}>
+                  <Edit3 size={13} /> Edit
+                </button>
               </div>
-              <div style={{ fontWeight: 900, fontSize: 13, color: '#1E2B45' }}>{tile.label}</div>
-              <div style={{ fontSize: 11, color: '#6B7A99', fontWeight: 600 }}>{tile.sub}</div>
-            </button>
-          ))}
+            ))
+          )}
         </div>
 
-        {/* Policy tile */}
+        {/* Listing Policies */}
         <div onClick={() => router.push('/dashboard/policy')} style={{
           background: '#F0F4FF', border: '1.2px solid #BDD0FF', borderRadius: 26, padding: '18px 16px',
           marginBottom: 16, cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.025)',
@@ -281,82 +308,76 @@ export default function DashboardPage() {
           <ChevronRight size={34} color="#6E7785" />
         </div>
 
-        {/* My Listings section */}
-        <div style={{ background: '#fff', borderRadius: 22, padding: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontWeight: 900, fontSize: 16, color: '#1E2B45', marginBottom: 12 }}>My Listings</div>
+        {/* App-Only Features */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0F2B6E 0%, #1a3a9e 100%)',
+          borderRadius: 22, padding: 20, marginBottom: 16,
+          boxShadow: '0 6px 20px rgba(15,43,110,0.25)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Smartphone size={24} color="#fff" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 900, fontSize: 16, color: '#fff' }}>More on the SYPH App</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>Exclusive mobile features</div>
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', fontWeight: 500, lineHeight: 1.65, marginBottom: 16 }}>
+            The following requesting screens are available exclusively in the SYPH mobile app and are not accessible on this website.
+          </div>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto' }}>
-            {(['all', 'pending', 'approved', 'rejected'] as ListingTab[]).map((tab) => (
-              <button key={tab} onClick={() => setListingTab(tab)} style={{
-                padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                background: listingTab === tab ? '#2E5BFF' : '#F0F4FF',
-                color: listingTab === tab ? '#fff' : '#6B7A99',
-                fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap',
-                textTransform: 'capitalize',
-              }}>{tab}</button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
+            {[
+              { emoji: '⭐', label: 'Sponsor My Item', desc: 'Boost listing visibility to the top of search results' },
+              { emoji: '⚡', label: 'Flash Sales', desc: 'Run time-limited discount offers to attract buyers fast' },
+              { emoji: '📅', label: 'Post Happenings', desc: 'Share events, markets and local happenings near you' },
+              { emoji: '📈', label: 'My Promotions', desc: 'Track and manage all your active promotional campaigns' },
+            ].map(f => (
+              <div key={f.label} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 14, padding: '13px 12px', border: '1px solid rgba(255,255,255,0.12)' }}>
+                <div style={{ fontSize: 22, marginBottom: 7 }}>{f.emoji}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 5 }}>{f.label}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4, fontWeight: 500 }}>{f.desc}</div>
+              </div>
             ))}
           </div>
 
-          {filteredListings.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: '#6B7A99', fontSize: 14 }}>
-              No {listingTab === 'all' ? '' : listingTab} listings yet.
+          <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(255,255,255,0.16)' }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: '#fff', marginBottom: 6 }}>Why app-only?</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', lineHeight: 1.6, fontWeight: 500 }}>
+              These features rely on real-time push notifications, in-app payment flows, and mobile-native interactions that deliver the best experience on the SYPH mobile app. Download the app to unlock them — it&apos;s free.
             </div>
-          ) : (
-            filteredListings.map((l) => (
-              <div key={l.id} style={{
-                display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0',
-                borderBottom: '1px solid #F0F4FF',
-              }}>
-                <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#E8EDFF' }}>
-                  {l.imageUrl ? (
-                    <Image src={l.imageUrl} alt={l.title} width={56} height={56} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Package size={24} color="#6B7A99" />
-                    </div>
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 13, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    <span style={{
-                      background: STATUS_BG[l.status] ?? '#F2F5F9',
-                      color: STATUS_COLORS[l.status] ?? '#6B7A99',
-                      fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '2px 8px',
-                      textTransform: 'capitalize',
-                    }}>{l.status}</span>
-                    <span style={{ color: '#9AA0B2', fontSize: 11 }}>👁 {l.viewsCount}</span>
-                  </div>
-                </div>
-                <button onClick={() => router.push(`/dashboard/edit/${l.id}`)} style={{
-                  background: '#F0F4FF', border: 'none', borderRadius: 10, padding: '7px 10px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-                  color: '#2E5BFF', fontWeight: 700, fontSize: 12,
-                }}>
-                  <Edit3 size={13} /> Edit
-                </button>
-              </div>
-            ))
-          )}
+          </div>
         </div>
 
-        {/* Quick actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 16 }}>
-          {[
-            { icon: <MessageCircle size={20} color="#2E5BFF" />, label: 'Messages', href: '/messages' },
-            { icon: <ShieldCheck size={20} color="#2E9B55" />, label: 'Support', href: '/support' },
-            { icon: <Store size={20} color="#7A5AF8" />, label: 'Profile', href: '/profile' },
-          ].map((q, i) => (
-            <button key={i} onClick={() => router.push(q.href)} style={{
-              background: '#fff', border: '1px solid #E0E8F0', borderRadius: 16, padding: '14px 0',
-              cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-            }}>
-              {q.icon}
-              <span style={{ color: '#4A5878', fontWeight: 700, fontSize: 11 }}>{q.label}</span>
-            </button>
-          ))}
+        {/* Download info */}
+        <div style={{ background: '#fff', borderRadius: 18, padding: '18px 16px', marginBottom: 8, border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ fontSize: 28 }}>📱</div>
+            <div>
+              <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>Get the SYPH App</div>
+              <div style={{ fontSize: 12, color: '#6B7A99', marginTop: 2 }}>Available on iOS & Android</div>
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: '#4A5878', fontWeight: 500, lineHeight: 1.65, marginBottom: 14 }}>
+            The SYPH app gives you the full seller experience — sponsor listings, run flash sales, post happenings, track promotions, receive real-time buyer messages, and manage everything from your phone.
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1, background: '#1E2B45', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 20 }}>🍎</span>
+              <div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>Download on the</div>
+                <div style={{ fontSize: 13, color: '#fff', fontWeight: 800 }}>App Store</div>
+              </div>
+            </div>
+            <div style={{ flex: 1, background: '#1E2B45', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 20 }}>🤖</span>
+              <div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>Get it on</div>
+                <div style={{ fontSize: 13, color: '#fff', fontWeight: 800 }}>Google Play</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
