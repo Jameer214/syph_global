@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal, Navigation, MessageCircle, Handshake, Eye, ShoppingCart, BadgeDollarSign, Shield, Zap, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -754,7 +755,7 @@ export default function LocationPage() {
         <div style={{
           textAlign: 'center', padding: '22px 16px',
           background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
-          borderRadius: 20, marginBottom: 8,
+          borderRadius: 20, marginBottom: 16,
           position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
@@ -763,6 +764,15 @@ export default function LocationPage() {
             <div style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
             <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 8, letterSpacing: '0.5px' }}>SYPH — Find it. Locate it. Connect.</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 500, lineHeight: 1.6 }}>The global marketplace for every service, every product, and every region — connecting buyers and sellers worldwide, for free.</div>
+          </div>
+        </div>
+
+        {/* Download badges */}
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>Available on</div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+            <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
+            <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
           </div>
         </div>
 
