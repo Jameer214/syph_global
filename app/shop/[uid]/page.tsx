@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Aw
 import { onSnapshot, doc, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import type { Listing } from '@/types';
 
@@ -216,7 +217,7 @@ function EmptyState({ icon, title, subtitle }: { icon: React.ReactNode; title: s
 export default function SellerShopPage() {
   const { uid } = useParams() as { uid: string };
   const router = useRouter();
-  const { selectedCurrency } = useAppStore();
+  const { selectedCurrency, selectedLanguage } = useAppStore();
 
   const [shop, setShop] = useState<ShopData | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -281,7 +282,7 @@ export default function SellerShopPage() {
 
   if (loadingSeller) {
     return (
-      <div style={{ minHeight: '100dvh', background: '#F0F4FA', maxWidth: 480, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FA', maxWidth: 480, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 36, height: 36, border: '3px solid #E8EDFF', borderTop: '3px solid #2F6BFF', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
@@ -307,7 +308,7 @@ export default function SellerShopPage() {
   ];
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FA', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FA', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* App bar */}
@@ -315,7 +316,7 @@ export default function SellerShopPage() {
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
           <ArrowLeft size={22} />
         </button>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>Seller Shop</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>{tr('viewShop', selectedLanguage)}</span>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 32px' }}>
@@ -349,7 +350,7 @@ export default function SellerShopPage() {
                   )}
                   {!shop?.open24Hours && hasHours && (
                     <span style={{ background: sellerIsOpen ? 'rgba(0,193,118,0.90)' : 'rgba(229,57,53,0.85)', borderRadius: 999, padding: '5px 10px', fontSize: 11, fontWeight: 900, color: '#fff' }}>
-                      {sellerIsOpen ? 'Open Now' : 'Closed'}
+                      {sellerIsOpen ? tr('openNow', selectedLanguage) : 'Closed'}
                     </span>
                   )}
                 </div>
@@ -418,10 +419,10 @@ export default function SellerShopPage() {
 
         {/* Quick stats row */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-          <StatCard icon={<Package size={20} />} count={items.length} label="Items" color="#2E67F5" />
-          <StatCard icon={<Zap size={20} />} count={happenings.length} label="Events" color="#7C3AED" />
-          <StatCard icon={<Award size={20} />} count={sponsoredCount} label="Ads" color="#F59E0B" />
-          <StatCard icon={<Flame size={20} />} count={flashSales.length} label="Flash" color="#E53935" />
+          <StatCard icon={<Package size={20} />} count={items.length} label={tr('activeListings', selectedLanguage)} color="#2E67F5" />
+          <StatCard icon={<Zap size={20} />} count={happenings.length} label={tr('happenings', selectedLanguage)} color="#7C3AED" />
+          <StatCard icon={<Award size={20} />} count={sponsoredCount} label={tr('sponsored', selectedLanguage)} color="#F59E0B" />
+          <StatCard icon={<Flame size={20} />} count={flashSales.length} label={tr('flashSales', selectedLanguage)} color="#E53935" />
         </div>
 
         {/* Tab bar */}
@@ -440,7 +441,7 @@ export default function SellerShopPage() {
         {/* Tab content */}
         {activeTab === 0 && (
           items.length === 0 ? (
-            <EmptyState icon={<Package size={28} />} title="No items yet" subtitle="This seller hasn't listed any items yet." />
+            <EmptyState icon={<Package size={28} />} title={tr('noListingsYet', selectedLanguage)} subtitle="This seller hasn't listed any items yet." />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {items.map((l) => <ItemCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} selectedCurrency={selectedCurrency} />)}
@@ -450,7 +451,7 @@ export default function SellerShopPage() {
 
         {activeTab === 1 && (
           happenings.length === 0 ? (
-            <EmptyState icon={<Calendar size={28} />} title="No events yet" subtitle="This seller has no happenings listed." />
+            <EmptyState icon={<Calendar size={28} />} title={tr('noListingsYet', selectedLanguage)} subtitle="This seller has no happenings listed." />
           ) : (
             <div>{happenings.map((l) => <HappeningCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} selectedCurrency={selectedCurrency} />)}</div>
           )
@@ -458,7 +459,7 @@ export default function SellerShopPage() {
 
         {activeTab === 2 && (
           flashSales.length === 0 ? (
-            <EmptyState icon={<Flame size={28} />} title="No flash sales" subtitle="This seller has no active flash sales." />
+            <EmptyState icon={<Flame size={28} />} title={tr('noListingsYet', selectedLanguage)} subtitle="This seller has no active flash sales." />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {flashSales.map((l) => <ItemCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} selectedCurrency={selectedCurrency} />)}
@@ -470,13 +471,13 @@ export default function SellerShopPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* About card */}
             <div style={{ background: '#fff', borderRadius: 22, border: '1px solid rgba(0,0,0,0.05)', padding: 16 }}>
-              <div style={{ fontWeight: 900, fontSize: 16, color: '#1D3D8F', marginBottom: 10 }}>About this shop</div>
+              <div style={{ fontWeight: 900, fontSize: 16, color: '#1D3D8F', marginBottom: 10 }}>{tr('viewShop', selectedLanguage)}</div>
               <p style={{ fontWeight: 600, fontSize: 14, color: 'rgba(0,0,0,0.8)', lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
                 {shop?.description?.trim() ||
                   `${sellerName} is active on SYPH with ${items.length} item(s), ${happenings.length} happening(s), and ${flashSales.length} flash sale(s) currently visible to users.`}
               </p>
               {[
-                { icon: <Phone size={17} />, label: 'Contact', value: shop?.contact || 'Not published' },
+                { icon: <Phone size={17} />, label: tr('contactSeller', selectedLanguage), value: shop?.contact || 'Not published' },
                 { icon: <Clock size={17} />, label: 'Business hours', value: shop ? hoursLabel(shop) : 'Not set' },
                 { icon: <Calendar size={17} />, label: 'Working days', value: daysLabel(shop?.workingDays ?? []) },
                 { icon: <Package size={17} />, label: 'Type', value: shop?.isServiceProvider ? 'Service Provider' : 'Seller' },
@@ -495,7 +496,7 @@ export default function SellerShopPage() {
             <div style={{ background: '#fff', borderRadius: 22, border: '1px solid rgba(0,0,0,0.05)', padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <MapPin size={18} color="#2F6BFF" />
-                <span style={{ fontWeight: 900, fontSize: 16, color: '#1D3D8F' }}>Shop Location</span>
+                <span style={{ fontWeight: 900, fontSize: 16, color: '#1D3D8F' }}>{tr('location', selectedLanguage)}</span>
               </div>
               <p style={{ fontWeight: 600, fontSize: 14, color: loc ? 'rgba(0,0,0,0.8)' : '#9AA0B2', lineHeight: 1.45, margin: 0, marginBottom: loc ? 14 : 0 }}>
                 {loc || 'Location not published'}

@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { CATEGORIES, getCategoryById } from '@/data/categories';
 import type { Listing } from '@/types';
@@ -54,7 +55,7 @@ export default function CategoryResultsPage() {
   const router = useRouter();
   const mainId = params.id as string;
 
-  const { isSaved, toggleSaved, selectedCurrency } = useAppStore();
+  const { isSaved, toggleSaved, selectedCurrency, selectedLanguage } = useAppStore();
 
   function displayPrice(listing: Listing): string {
     if (listing.priceText?.trim()) return listing.priceText.trim();
@@ -163,7 +164,7 @@ export default function CategoryResultsPage() {
   }
 
   return (
-    <div className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
+    <div className="app-shell" dir={getDir(selectedLanguage)} style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
@@ -193,7 +194,7 @@ export default function CategoryResultsPage() {
         {/* Quick filter chips */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           {[
-            { label: 'Open Now', icon: <Clock size={14} />, active: openNow, toggle: () => setOpenNow((v) => !v) },
+            { label: tr('openNow', selectedLanguage), icon: <Clock size={14} />, active: openNow, toggle: () => setOpenNow((v) => !v) },
             { label: 'Near Me', icon: <Navigation size={14} />, active: nearMe, toggle: () => { setNearMe((v) => !v); if (!nearMe) toast('Location sorting coming soon'); } },
           ].map((chip) => (
             <button key={chip.label} onClick={chip.toggle} style={{
@@ -236,11 +237,11 @@ export default function CategoryResultsPage() {
 
         {/* Results */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>Loading…</div>
+          <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>{tr('loading', selectedLanguage)}</div>
         ) : filtered.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', color: '#6B7A99' }}>
             <div style={{ fontSize: 40 }}>🔍</div>
-            <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>No results</p>
+            <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('noResults', selectedLanguage)}</p>
             <p style={{ margin: 0, fontSize: 13 }}>Try changing filters or check back later.</p>
           </div>
         ) : (
@@ -344,6 +345,7 @@ export default function CategoryResultsPage() {
 
 function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string }) {
   const router = useRouter();
+  const { selectedLanguage } = useAppStore();
   const img = l.imageUrls?.[0] ?? l.imageUrl;
   const price = priceDisplay;
 
@@ -372,7 +374,7 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay }: { listi
         <p style={{ margin: '4px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13 }}>{price}</p>
         <p style={{ margin: '0 0 6px', fontSize: 12, color: '#6B7A99', fontWeight: 700 }}>{l.regionOrCity}, {l.country}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          {l.openNow && <Badge text="Open Now" bg="#DFF5E8" fg="#1F7A3D" />}
+          {l.openNow && <Badge text={tr('openNow', selectedLanguage)} bg="#DFF5E8" fg="#1F7A3D" />}
           {l.rating != null && <Badge text={`★ ${l.rating.toFixed(1)}`} bg="#FFF8E1" fg="#B8860B" />}
         </div>
       </div>
