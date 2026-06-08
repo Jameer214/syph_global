@@ -1,0 +1,126 @@
+rules_version = '2';
+// ── SYPH Global — Firestore Security Rules ────────────────────────────────────
+// Deploy via: firebase deploy --only firestore:rules
+// Or paste into Firebase Console → Firestore → Rules
+//
+// These rules are the server-side enforcement layer.
+// Client-side auth checks in pages are UX — these rules are the real gate.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isListingOwner() {
+      return isSignedIn() && request.auth.uid == resource.data.ownerUid;
+    }
+
+    function isNewListingOwner() {
+      return isSignedIn() && request.auth.uid == request.resource.data.ownerUid;
+    }
+
+    function isApproved() {
+      return resource.data.status == 'approved';
+    }
+
+    function notChangingOwner() {
+      return request.resource.data.ownerUid == resource.data.ownerUid;
+    }
+
+    // ── Listings ────────────────────────────────────────────────────────────
+    // Public: read approved listings. Private: owner reads own, admins covered by Admin SDK.
+    match /listings/{listingId} {
+      allow read: if isApproved() || isListingOwner();
+      allow create: if isNewListingOwner()
+                    && request.resource.data.keys().hasAll(['title', 'ownerUid', 'status'])
+                    && request.resource.data.status == 'pending';
+      allow update: if isListingOwner() && notChangingOwner();
+      allow delete: if isListingOwner();
+    }
+
+    // ── Users ───────────────────────────────────────────────────────────────
+    // Users can read/write their own profile only.
+    // Public fields (displayName, photoURL, verified) can be read by anyone.
+    match /users/{userId} {
+      allow read: if true; // needed for seller profile pages
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId)
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['role', 'isAdmin', 'isBanned']);
+      allow delete: if false; // admin SDK only
+    }
+
+    // ── Chat threads ────────────────────────────────────────────────────────
+    // Only participants in the thread can read or write.
+    match /chats/{chatId} {
+      allow read: if isSignedIn()
+                  && request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn()
+                    && request.auth.uid in request.resource.data.participantIds
+                    && request.resource.data.participantIds.size() == 2;
+      allow update: if isSignedIn()
+                    && request.auth.uid in resource.data.participantIds;
+      allow delete: if false;
+
+      // Messages sub-collection
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+                    && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
+        allow create: if isSignedIn()
+                      && request.auth.uid == request.resource.data.senderUid
+                      && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
+        allow update, delete: if false;
+      }
+    }
+
+    // ── Saved listings ──────────────────────────────────────────────────────
+    match /saved/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ── Notifications ───────────────────────────────────────────────────────
+    match /notifications/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ── Reports ─────────────────────────────────────────────────────────────
+    // Anyone logged in can submit a report. Only Admin SDK can read/manage.
+    match /reports/{reportId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.reporterUid == request.auth.uid;
+      allow read, update, delete: if false; // admin SDK only
+    }
+
+    // ── Reviews ─────────────────────────────────────────────────────────────
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+                    && request.resource.data.reviewerUid == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow update, delete: if false; // admin SDK only
+    }
+
+    // ── Categories / countries (static config) ──────────────────────────────
+    match /categories/{document=**} {
+      allow read: if true;
+      allow write: if false; // admin SDK only
+    }
+
+    match /countries/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Deny everything else by default ─────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
