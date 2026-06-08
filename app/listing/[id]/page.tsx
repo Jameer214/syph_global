@@ -269,7 +269,7 @@ export default function ListingDetailsPage() {
   if (loading) {
     return (
       <div className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#6B7A99', fontWeight: 700 }}>Loading…</div>
+        <div style={{ color: '#6B7A99', fontWeight: 700 }}>{tr('loading', selectedLanguage)}</div>
       </div>
     );
   }
@@ -278,7 +278,7 @@ export default function ListingDetailsPage() {
     return (
       <div className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ background: '#fff', borderRadius: 22, padding: 24, margin: 24, textAlign: 'center' }}>
-          <p style={{ fontWeight: 900, color: '#0F2B6E' }}>Listing not found</p>
+          <p style={{ fontWeight: 900, color: '#0F2B6E' }}>{tr('listingNotFound', selectedLanguage)}</p>
         </div>
       </div>
     );
@@ -298,7 +298,7 @@ export default function ListingDetailsPage() {
       price = `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
     }
   } else {
-    price = 'Price not set';
+    price = tr('priceNotSet', selectedLanguage);
   }
 
   const saved = isSaved(listing.id);
@@ -375,11 +375,11 @@ export default function ListingDetailsPage() {
 
         {/* Stats strip */}
         <div style={{ background: '#fff', borderRadius: 20, padding: '12px 16px', boxShadow: '0 5px 12px rgba(0,0,0,0.03)', border: '1px solid #e8edf5', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
-          <StatItem icon={<Eye size={20} color="#2E5BFF" />} value={String(listing.viewsCount)} label="Views" />
+          <StatItem icon={<Eye size={20} color="#2E5BFF" />} value={String(listing.viewsCount)} label={tr('viewsLabel', selectedLanguage)} />
           <div style={{ width: 1, height: 36, background: '#e8edf5' }} />
-          <StatItem icon={<Bookmark size={20} color="#2E5BFF" />} value={String(listing.savesCount)} label="Saves" />
+          <StatItem icon={<Bookmark size={20} color="#2E5BFF" />} value={String(listing.savesCount)} label={tr('savesLabel', selectedLanguage)} />
           <div style={{ width: 1, height: 36, background: '#e8edf5' }} />
-          <StatItem icon={<MessageCircle size={20} color="#2E5BFF" />} value={String(listing.messagesCount)} label="Chats" />
+          <StatItem icon={<MessageCircle size={20} color="#2E5BFF" />} value={String(listing.messagesCount)} label={tr('chatsLabel', selectedLanguage)} />
         </div>
 
         {/* Venue directions card (happenings) */}
@@ -508,7 +508,7 @@ export default function ListingDetailsPage() {
             disabled={startingChat}
             style={{ width: '100%', marginTop: 14, padding: '16px', borderRadius: 16, background: startingChat ? '#a5b4fc' : '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer' }}
           >
-            {startingChat ? 'Opening chat…' : 'Start Chat'}
+            {startingChat ? tr('loading', selectedLanguage) : tr('sendMessage', selectedLanguage)}
           </button>
         </SectionCard>
 
@@ -609,11 +609,11 @@ export default function ListingDetailsPage() {
         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: '#fff', borderTop: '1px solid #eef2f8', padding: '10px 16px 20px', display: 'flex', gap: 10, zIndex: 30 }}>
           <button onClick={() => router.push(`/dashboard/edit/${listing.id}`)}
             style={{ flex: 1, height: 50, borderRadius: 25, border: 'none', background: '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
-            Edit Listing
+            {tr('editListing', selectedLanguage)}
           </button>
           <button onClick={() => router.push(`/dashboard/upgrade/${listing.id}`)}
             style={{ flex: 1, height: 50, borderRadius: 25, border: 'none', background: '#F39C12', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
-            Promote
+            {tr('promoteListingBtn', selectedLanguage)}
           </button>
         </div>
       )}
