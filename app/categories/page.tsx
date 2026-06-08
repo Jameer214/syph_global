@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { CATEGORIES } from '@/data/categories';
+import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 
 // ── Category color map (emoji-based fallback icons per category) ──────────────
 const CATEGORY_COLORS: Record<string, string> = {
@@ -80,12 +82,13 @@ const SUB_ICONS: Record<string, string> = {
 export default function CategoriesPage() {
   const router = useRouter();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { selectedLanguage } = useAppStore();
 
   const selectedMain = CATEGORIES[selectedIndex];
   const mainColor = CATEGORY_COLORS[selectedMain.id] ?? '#2E5BFF';
 
   return (
-    <div className="app-shell" style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', backgroundColor: '#D6ECFF' }}>
+    <div className="app-shell" style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', backgroundColor: '#D6ECFF' }} dir={getDir(selectedLanguage)}>
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
@@ -102,7 +105,7 @@ export default function CategoriesPage() {
         >
           <ArrowLeft size={22} />
         </button>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>Categories</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>{tr('categories', selectedLanguage)}</span>
       </div>
 
       {/* Body: rail + panel */}
