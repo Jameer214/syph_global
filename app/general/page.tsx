@@ -10,6 +10,7 @@ import {
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import type { Listing } from '@/types';
 
@@ -48,7 +49,7 @@ type SortMode = 'newest' | 'price_asc' | 'price_desc' | 'rating';
 
 export default function GeneralPage() {
   const router = useRouter();
-  const { selectedCountry, selectedCurrency } = useAppStore();
+  const { selectedCountry, selectedCurrency, selectedLanguage } = useAppStore();
 
   function displayPrice(listing: Listing): string {
     if (listing.priceText?.trim()) return listing.priceText.trim();
@@ -119,7 +120,7 @@ export default function GeneralPage() {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Header */}
@@ -129,7 +130,7 @@ export default function GeneralPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <Globe size={22} color="#fff" />
-          <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>Browse All</span>
+          <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>{tr('listings', selectedLanguage)}</span>
         </div>
         <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
           {selectedCountry ? `Listings in ${selectedCountry}` : 'All approved listings'}
@@ -141,7 +142,7 @@ export default function GeneralPage() {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search listings..."
+            placeholder={tr('searchHint', selectedLanguage)}
             style={{
               width: '100%', padding: '11px 40px 11px 40px', background: '#fff',
               border: 'none', borderRadius: 14, fontSize: 14, outline: 'none',
@@ -159,7 +160,7 @@ export default function GeneralPage() {
       {/* Sort bar */}
       <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, background: '#F0F4FF', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
         <SlidersHorizontal size={16} color="#6B7A99" />
-        <span style={{ color: '#6B7A99', fontSize: 13, fontWeight: 600, marginRight: 4 }}>Sort:</span>
+        <span style={{ color: '#6B7A99', fontSize: 13, fontWeight: 600, marginRight: 4 }}>{tr('filters', selectedLanguage)}:</span>
         <div style={{ position: 'relative' }}>
           <button onClick={() => setShowSortMenu(!showSortMenu)} style={{
             background: '#fff', border: '1px solid #E0E8F0', borderRadius: 20,
@@ -204,7 +205,7 @@ export default function GeneralPage() {
           <div style={{ textAlign: 'center', background: '#fff', borderRadius: 22, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <Globe size={42} color="#6B7A99" />
             <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12, color: '#1E2B45' }}>
-              {searchQuery ? 'No results found' : 'No listings yet'}
+              {searchQuery ? tr('noResults', selectedLanguage) : tr('noListingsYet', selectedLanguage)}
             </div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6 }}>
               {searchQuery ? `No listings match "${searchQuery}"` : 'Listings will appear here once approved.'}
@@ -263,7 +264,7 @@ export default function GeneralPage() {
                 background: '#fff', border: '1.5px solid #2E5BFF', color: '#2E5BFF',
                 borderRadius: 20, padding: '10px 28px', fontWeight: 800, cursor: 'pointer', fontSize: 14,
               }}>
-                Load more
+                {tr('loadMore', selectedLanguage)}
               </button>
             )}
           </div>

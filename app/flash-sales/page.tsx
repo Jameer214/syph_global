@@ -9,6 +9,7 @@ import {
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import type { Listing } from '@/types';
 
@@ -140,7 +141,7 @@ function FlashSaleCard({ item, selectedCurrency }: { item: Listing; selectedCurr
 }
 
 export default function FlashSalesPage() {
-  const { selectedCountry, selectedCurrency } = useAppStore();
+  const { selectedCountry, selectedCurrency, selectedLanguage } = useAppStore();
   const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -161,7 +162,7 @@ export default function FlashSalesPage() {
   }, [selectedCountry]);
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Header */}
@@ -171,7 +172,7 @@ export default function FlashSalesPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
           <Zap size={22} color="#fff" fill="#fff" />
-          <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>Flash Sales</span>
+          <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>{tr('flashSalesEndingSoon', selectedLanguage)}</span>
         </div>
         <div style={{ color: 'rgba(255,255,255,0.80)', fontSize: 13, fontWeight: 600 }}>
           Ending soon — grab them before they&apos;re gone!
@@ -193,7 +194,7 @@ export default function FlashSalesPage() {
         {!loading && items.length === 0 && (
           <div style={{ textAlign: 'center', background: '#fff', borderRadius: 22, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <Zap size={42} color="#6B7A99" />
-            <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12, color: '#1E2B45' }}>No flash sales yet</div>
+            <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12, color: '#1E2B45' }}>{tr('noListingsYet', selectedLanguage)}</div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
               {selectedCountry ? `No flash sales in ${selectedCountry} right now.` : 'Flash sales will appear here when available.'}
             </div>

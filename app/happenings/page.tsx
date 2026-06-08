@@ -9,6 +9,7 @@ import {
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import type { Listing } from '@/types';
 
@@ -44,7 +45,7 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
 
 export default function HappeningsPage() {
   const router = useRouter();
-  const { selectedCountry, selectedCurrency, user, toggleSaved, isSaved } = useAppStore();
+  const { selectedCountry, selectedCurrency, selectedLanguage, user, toggleSaved, isSaved } = useAppStore();
 
   function displayPrice(listing: Listing): string {
     if (listing.priceText?.trim()) return listing.priceText.trim();
@@ -76,7 +77,7 @@ export default function HappeningsPage() {
   }, [selectedCountry]);
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Header */}
@@ -86,7 +87,7 @@ export default function HappeningsPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
           <Zap size={22} color="#fff" fill="#fff" />
-          <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>Happenings</span>
+          <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>{tr('happeningsNearYou', selectedLanguage)}</span>
         </div>
         <div style={{ color: 'rgba(255,255,255,0.80)', fontSize: 13, fontWeight: 600 }}>
           Events, launches &amp; pop-ups near you
@@ -109,7 +110,7 @@ export default function HappeningsPage() {
         {!loading && happenings.length === 0 && (
           <div style={{ textAlign: 'center', paddingTop: 60, background: '#fff', borderRadius: 22, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <Calendar size={42} color="#6B7A99" />
-            <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12, color: '#1E2B45' }}>No happenings yet</div>
+            <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12, color: '#1E2B45' }}>{tr('noListingsYet', selectedLanguage)}</div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
               {selectedCountry ? `No happenings in ${selectedCountry} right now.` : 'Approved happenings will appear here.'}
             </div>
