@@ -15,6 +15,7 @@ import {
 import { useAppStore } from '@/store';
 import { db } from '@/lib/firebase';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { tr, getDir } from '@/lib/i18n';
 import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
 import MenuDrawer from '@/components/MenuDrawer';
@@ -294,10 +295,12 @@ function FilterSheet({
   filters,
   onApply,
   onClose,
+  lang,
 }: {
   filters: Filters;
   onApply: (f: Filters) => void;
   onClose: () => void;
+  lang: string;
 }) {
   const [local, setLocal] = useState<Filters>(filters);
 
@@ -324,39 +327,39 @@ function FilterSheet({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#132A66' }}>Filter Listings</h3>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#132A66' }}>{tr('filterListings', lang)}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={22} color="#6B7A99" />
           </button>
         </div>
 
         {/* Time sort */}
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#6B7A99', marginBottom: 6 }}>Date Posted</label>
+        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#6B7A99', marginBottom: 6 }}>{tr('datePosted', lang)}</label>
         <div style={{ position: 'relative', marginBottom: 14 }}>
           <select value={local.timeSort} onChange={(e) => setLocal({ ...local, timeSort: e.target.value as Filters['timeSort'] })} style={selectStyle}>
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="none">None</option>
+            <option value="newest">{tr('newestFirst', lang)}</option>
+            <option value="oldest">{tr('oldestFirst', lang)}</option>
+            <option value="none">{tr('none', lang)}</option>
           </select>
           <ChevronDown size={16} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
         </div>
 
         {/* Price sort */}
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#6B7A99', marginBottom: 6 }}>Price</label>
+        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#6B7A99', marginBottom: 6 }}>{tr('priceFilter', lang)}</label>
         <div style={{ position: 'relative', marginBottom: 14 }}>
           <select value={local.priceSort} onChange={(e) => setLocal({ ...local, priceSort: e.target.value as Filters['priceSort'] })} style={selectStyle}>
-            <option value="none">None</option>
-            <option value="low">Low to High</option>
-            <option value="high">High to Low</option>
+            <option value="none">{tr('none', lang)}</option>
+            <option value="low">{tr('lowToHigh', lang)}</option>
+            <option value="high">{tr('highToLow', lang)}</option>
           </select>
           <ChevronDown size={16} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
         </div>
 
         {/* Rating */}
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#6B7A99', marginBottom: 6 }}>Minimum Rating</label>
+        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#6B7A99', marginBottom: 6 }}>{tr('minimumRating', lang)}</label>
         <div style={{ position: 'relative', marginBottom: 16 }}>
           <select value={local.rating} onChange={(e) => setLocal({ ...local, rating: e.target.value as Filters['rating'] })} style={selectStyle}>
-            <option value="any">Any</option>
+            <option value="any">{tr('any', lang)}</option>
             <option value="2">2+ Stars</option>
             <option value="3">3+ Stars</option>
             <option value="4">4+ Stars</option>
@@ -367,8 +370,8 @@ function FilterSheet({
         {/* Toggles */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
           {[
-            { label: 'Open Now', key: 'openNow' as const },
-            { label: 'Near Me (GPS)', key: 'nearMe' as const },
+            { label: tr('openNowFilter', lang), key: 'openNow' as const },
+            { label: tr('nearMeGps', lang), key: 'nearMe' as const },
           ].map(({ label, key }) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a2e' }}>{label}</span>
@@ -398,7 +401,7 @@ function FilterSheet({
             cursor: 'pointer',
           }}
         >
-          Done
+          {tr('done', lang)}
         </button>
       </div>
     </div>
@@ -410,7 +413,7 @@ function FilterSheet({
 export default function HomePage() {
   const router = useRouter();
   const {
-    selectedCountry, selectedRegion, locationSet, selectedCurrency,
+    selectedCountry, selectedRegion, locationSet, selectedCurrency, selectedLanguage,
   } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -436,7 +439,7 @@ export default function HomePage() {
     ? selectedRegion
       ? `${selectedCountry} · ${selectedRegion}`
       : selectedCountry
-    : 'All Countries';
+    : tr('allCountries', selectedLanguage);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -628,7 +631,7 @@ export default function HomePage() {
   }, [filters.nearMe]);
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 80 }}>
+    <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 80 }} dir={getDir(selectedLanguage)}>
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
       {/* ── Top App Bar ── */}
       <div style={{
@@ -639,7 +642,7 @@ export default function HomePage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 600, letterSpacing: '0.5px' }}>
-              FIND IT. LOCATE IT. CONNECT.
+              {tr('tagline', selectedLanguage).toUpperCase()}
             </p>
             <p style={{ margin: '2px 0 0', color: '#fff', fontSize: 20, fontWeight: 900, letterSpacing: '1px' }}>SYPH</p>
           </div>
@@ -669,7 +672,7 @@ export default function HomePage() {
               display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', flexShrink: 0,
             }}>
               <LayoutGrid size={16} color="#fff" />
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>Category</span>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>{tr('category', selectedLanguage)}</span>
             </Link>
             <button onClick={() => setMenuOpen(true)} style={{
               background: 'none', border: 'none', cursor: 'pointer',
@@ -694,13 +697,13 @@ export default function HomePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 26 }}>{flag}</span>
             <div>
-              <p style={{ margin: 0, fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Showing in</p>
+              <p style={{ margin: 0, fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>{tr('showingIn', selectedLanguage)}</p>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1a1a2e' }}>
-                {selectedCountry || 'All Countries'}
+                {selectedCountry || tr('allCountries', selectedLanguage)}
               </p>
               {selectedRegion && (
                 <p style={{ margin: '2px 0 0', fontSize: 11, fontWeight: 600, color: '#2E5BFF' }}>
-                  {selectedRegion} Region
+                  {selectedRegion} {tr('region', selectedLanguage)}
                 </p>
               )}
             </div>
@@ -712,7 +715,7 @@ export default function HomePage() {
               borderRadius: 10, padding: '6px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer',
             }}
           >
-            Change
+            {tr('change', selectedLanguage)}
           </button>
         </div>
 
@@ -725,7 +728,7 @@ export default function HomePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              placeholder="Search listings…"
+              placeholder={tr('searchListings', selectedLanguage)}
               style={{
                 width: '100%', height: 46, borderRadius: 14,
                 border: '1.5px solid #e2e8f0', background: '#fff',
@@ -741,9 +744,9 @@ export default function HomePage() {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: 4, maxHeight: 320, overflowY: 'auto',
               }}>
                 {searchLoading ? (
-                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>Searching…</div>
+                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('searchingDots', selectedLanguage)}</div>
                 ) : searchResults.length === 0 ? (
-                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>No results found</div>
+                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('noResults', selectedLanguage)}</div>
                 ) : (
                   searchResults.map((item) => {
                     const inCountry = !selectedCountry || item.country === selectedCountry;
@@ -768,7 +771,7 @@ export default function HomePage() {
                           </p>
                           {!inCountry && (
                             <span style={{ fontSize: 9, background: '#FFF3E0', color: '#E65100', fontWeight: 700, padding: '1px 6px', borderRadius: 6, marginTop: 2, display: 'inline-block' }}>
-                              Broader match
+                              {tr('broaderMatch', selectedLanguage)}
                             </span>
                           )}
                         </div>
@@ -813,8 +816,9 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#C62828', '#E53935']}
               icon={<Zap size={16} />}
-              title="Flash Sales Ending Soon!"
+              title={tr('flashSalesEndingSoon', selectedLanguage)}
               href="/flash-sales"
+              seeAllLabel={tr('seeAll', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -836,8 +840,8 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#E65100', '#FF6D00']}
               icon={<TrendingUp size={16} />}
-              title="Trending Near You"
-              subtitle="Hot Now"
+              title={tr('trendingNearYou', selectedLanguage)}
+              subtitle={tr('hotNow', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -859,7 +863,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#6A1B9A', '#8E24AA']}
               icon={<Star size={16} />}
-              title="Recommended For You"
+              title={tr('recommendedForYou', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -881,8 +885,9 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#1B5E20', '#2E7D32']}
               icon={<Zap size={16} />}
-              title="Happenings"
+              title={tr('happenings', selectedLanguage)}
               href="/happenings"
+              seeAllLabel={tr('seeAll', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -904,7 +909,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#0D47A1', '#1976D2']}
               icon={<Crown size={16} />}
-              title="Sponsored"
+              title={tr('sponsored', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -925,7 +930,7 @@ export default function HomePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '8px 0 14px' }}>
             <div style={{ flex: 1, height: 1, background: '#d1d5db' }} />
             <span style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-              More to Explore
+              {tr('moreToExplore', selectedLanguage)}
             </span>
             <div style={{ flex: 1, height: 1, background: '#d1d5db' }} />
           </div>
@@ -936,10 +941,10 @@ export default function HomePage() {
               {selectedCountry ? (
                 <>
                   <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#4A5878' }}>
-                    No listings in {flag} {selectedCountry}{selectedRegion ? ` · ${selectedRegion}` : ''} yet
+                    {tr('noListingsYet', selectedLanguage)} in {flag} {selectedCountry}{selectedRegion ? ` · ${selectedRegion}` : ''}
                   </p>
                   <p style={{ margin: '6px 0 16px', fontSize: 13 }}>
-                    Be the first to list here, or explore other countries.
+                    {tr('beFirstToList', selectedLanguage)}
                   </p>
                   <button
                     onClick={handleBrowseAll}
@@ -949,13 +954,13 @@ export default function HomePage() {
                       fontSize: 14, cursor: 'pointer',
                     }}
                   >
-                    Browse all countries
+                    {tr('browseAllCountries', selectedLanguage)}
                   </button>
                 </>
               ) : (
                 <>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>No listings yet in this area.</p>
-                  <p style={{ margin: '6px 0 0', fontSize: 13 }}>Try changing your country or check back soon.</p>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{tr('noListingsInArea', selectedLanguage)}</p>
+                  <p style={{ margin: '6px 0 0', fontSize: 13 }}>{tr('tryChangingCountry', selectedLanguage)}</p>
                 </>
               )}
             </div>
@@ -976,7 +981,7 @@ export default function HomePage() {
                     color: '#2E5BFF', fontWeight: 700, fontSize: 14, cursor: 'pointer',
                   }}
                 >
-                  Load more
+                  {tr('loadMore', selectedLanguage)}
                 </button>
               )}
             </>
@@ -993,6 +998,7 @@ export default function HomePage() {
             setExploreCount(8);
           }}
           onClose={() => setShowFilter(false)}
+          lang={selectedLanguage}
         />
       )}
 
