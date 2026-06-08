@@ -9,7 +9,16 @@
       "Read",
       "Bash(git *)",
       "Bash(npx tsc *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(flutter analyze)",
+      "Bash(flutter analyze *)",
+      "Bash(dart analyze)",
+      "Bash(dart analyze *)",
+      "PowerShell(git *)",
+      "PowerShell(npx tsc *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Select-String *)"
     ]
   }
 }

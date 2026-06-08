@@ -53,6 +53,11 @@ export default function EditListingPage() {
     if (!id) return;
     getListing(id).then((l) => {
       if (!l) { setLoading(false); return; }
+      // IDOR guard: redirect immediately if not the owner
+      if (l.ownerUid && l.ownerUid !== auth.currentUser?.uid) {
+        router.replace('/dashboard');
+        return;
+      }
       setListing(l);
       setTitle(l.title);
       setDescription(l.description);

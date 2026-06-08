@@ -142,6 +142,7 @@ export default function ListingDetailsPage() {
   const [showReport, setShowReport] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const viewTracked = useRef(false);
+  const lastMessageSent = useRef<number>(0);
 
   // Load listing
   useEffect(() => {
@@ -172,6 +173,13 @@ export default function ListingDetailsPage() {
 
   async function openOrCreateChat(initialMessage?: string) {
     if (startingChat) return;
+    // Client-side rate limit: 3 seconds between sends
+    const now = Date.now();
+    if (now - lastMessageSent.current < 3000) {
+      toast.error('Please wait before sending another message.');
+      return;
+    }
+    lastMessageSent.current = now;
     const fireUser = auth.currentUser;
     if (!fireUser) { toast.error('Sign in to message the seller'); return; }
     if (!listing) return;
@@ -233,7 +241,8 @@ export default function ListingDetailsPage() {
       setMessageText('');
       router.push(`/chat/${chatId}`);
     } catch (e) {
-      toast.error(`Failed to open chat: ${e}`);
+      console.error('Failed to open chat:', e);
+      toast.error('Failed to open chat. Please try again.');
     } finally {
       setStartingChat(false);
     }
