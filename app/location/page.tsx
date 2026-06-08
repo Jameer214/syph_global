@@ -7,6 +7,7 @@ import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, 
 import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import { auth, db } from '@/lib/firebase';
 import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import MenuDrawer from '@/components/MenuDrawer';
@@ -51,7 +52,7 @@ function pushRecent(country: string, current: string[]): string[] {
 
 export default function LocationPage() {
   const router = useRouter();
-  const { setLocationSet, setRegion, selectedCountry: storedCountry } = useAppStore();
+  const { setLocationSet, setRegion, selectedCountry: storedCountry, selectedLanguage } = useAppStore();
 
   const [countrySearch, setCountrySearch] = useState('');
   const [pickedCountry, setPickedCountry] = useState('');
@@ -175,7 +176,7 @@ export default function LocationPage() {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', display: 'flex', flexDirection: 'column' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', display: 'flex', flexDirection: 'column' }}>
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       {/* Releasing Soon modal */}
@@ -282,7 +283,7 @@ export default function LocationPage() {
           }}>
             <Navigation size={20} color="#2E5BFF" style={{ flexShrink: 0 }} />
             <p style={{ flex: 1, margin: 0, fontWeight: 800, fontSize: 14, color: '#1a1a2e' }}>
-              Detect home country
+              {tr('useMyLocation', selectedLanguage)}
             </p>
             {detectingGPS ? (
               <div style={{
@@ -295,7 +296,7 @@ export default function LocationPage() {
                 onClick={() => detectGPS(true)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2E5BFF', fontWeight: 800, fontSize: 14, padding: 0, flexShrink: 0 }}
               >
-                Detect
+                {tr('useMyLocation', selectedLanguage)}
               </button>
             )}
           </div>
@@ -405,7 +406,7 @@ export default function LocationPage() {
                     setShowSuggestions(true);
                   }}
                   onFocus={() => setShowSuggestions(true)}
-                  placeholder="Search country of interest…"
+                  placeholder={tr('selectCountry', selectedLanguage)}
                   style={{
                     width: '100%', height: 44, borderRadius: 12,
                     border: '1px solid rgba(0,0,0,0.10)', background: '#f8faff',
@@ -432,7 +433,7 @@ export default function LocationPage() {
               {/* Region divider label */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px' }}>
                 <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-                <span style={{ color: '#9ca3af', fontWeight: 700, fontSize: 11 }}>Region (optional)</span>
+                <span style={{ color: '#9ca3af', fontWeight: 700, fontSize: 11 }}>{tr('region', selectedLanguage)}</span>
                 <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
               </div>
 
@@ -457,7 +458,7 @@ export default function LocationPage() {
                     boxSizing: 'border-box',
                   }}
                 >
-                  <option value="">All Regions</option>
+                  <option value="">{tr('selectRegion', selectedLanguage)}</option>
                   {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
                 <ChevronDown
@@ -503,7 +504,7 @@ export default function LocationPage() {
 
         {/* Recent Countries */}
         <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>
-          Recent Countries
+          {tr('allCountries', selectedLanguage)}
         </div>
         <div style={{
           background: '#fff', borderRadius: 16, overflow: 'hidden',
@@ -832,7 +833,7 @@ export default function LocationPage() {
               cursor: saving ? 'default' : 'pointer',
             }}
           >
-            {saving ? 'Saving…' : 'Continue'}
+            {saving ? tr('loading', selectedLanguage) : tr('confirmLocation', selectedLanguage)}
           </button>
         </div>
       </div>

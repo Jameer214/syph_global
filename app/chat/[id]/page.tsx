@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import { subscribeChatMessages, markThreadRead } from '@/lib/firestore';
 import type { ChatMessage } from '@/types';
 
@@ -47,7 +48,7 @@ export default function ChatPage() {
   const router = useRouter();
   const threadId = params.id as string;
 
-  const { user } = useAppStore();
+  const { user, selectedLanguage } = useAppStore();
   const fireUser = auth.currentUser;
   const currentUid = user?.uid ?? fireUser?.uid ?? '';
 
@@ -132,10 +133,10 @@ export default function ChatPage() {
   const listingImage = threadInfo?.listingImageUrl ?? '';
 
   return (
-    <div className="app-shell" style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f8fafc' }}>
+    <div dir={getDir(selectedLanguage)} className="app-shell" style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f8fafc' }}>
       {/* Custom header */}
       <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 62, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
+        <button onClick={() => router.back()} aria-label={tr('back', selectedLanguage)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
           <ArrowLeft size={22} />
         </button>
 
@@ -161,7 +162,7 @@ export default function ChatPage() {
       {/* Messages list */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
         {messages.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#9ca3af', padding: 40, fontWeight: 700 }}>No messages yet</div>
+          <div style={{ textAlign: 'center', color: '#9ca3af', padding: 40, fontWeight: 700 }}>{tr('noMessages', selectedLanguage)}</div>
         ) : (
           messages.map((msg) => {
             const fromMe = currentUid !== '' && msg.senderUid === currentUid;
@@ -197,7 +198,7 @@ export default function ChatPage() {
             }
           }}
           disabled={sending}
-          placeholder="Type a message…"
+          placeholder={tr('yourMessage', selectedLanguage)}
           rows={1}
           style={{
             flex: 1, padding: '10px 14px', borderRadius: 20, border: '1px solid #e2e8f0',
@@ -208,6 +209,7 @@ export default function ChatPage() {
         <button
           onClick={sendMessage}
           disabled={sending || !inputText.trim()}
+          aria-label={tr('send', selectedLanguage)}
           style={{
             width: 44, height: 44, borderRadius: '50%',
             background: inputText.trim() ? '#2E5BFF' : '#e2e8f0',

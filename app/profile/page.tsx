@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { auth, db, storage } from '@/lib/firebase';
 import BottomNav from '@/components/BottomNav';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import type { UserProfile, SellerProfile } from '@/types';
 
 function initials(name: string): string {
@@ -23,7 +24,7 @@ function initials(name: string): string {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, setUser } = useAppStore();
+  const { user, setUser, selectedLanguage } = useAppStore();
   const [authUser, setAuthUser] = useState<{ uid: string; displayName: string | null; email: string | null; photoURL: string | null } | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [seller, setSeller] = useState<SellerProfile | null>(null);
@@ -134,7 +135,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0F4FF' }}>
+      <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0F4FF' }}>
         <div style={{ width: 36, height: 36, border: '3px solid #E8EDFF', borderTop: '3px solid #2E5BFF', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
@@ -145,7 +146,7 @@ export default function ProfilePage() {
 
   if (!authUser) {
     return (
-      <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
+      <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
         {/* Guest header */}
@@ -174,7 +175,7 @@ export default function ProfilePage() {
               boxShadow: '0 4px 8px rgba(30,77,217,0.10)',
             }}>
               <User size={28} color="#1E4DD9" />
-              <span style={{ color: '#1E4DD9', fontWeight: 700, fontSize: 14 }}>Sign Up</span>
+              <span style={{ color: '#1E4DD9', fontWeight: 700, fontSize: 14 }}>{tr('signUp', selectedLanguage)}</span>
             </button>
             <button onClick={() => router.push('/login')} style={{
               flex: 1, background: '#fff', border: '1.5px solid rgba(45,190,127,0.20)',
@@ -183,7 +184,7 @@ export default function ProfilePage() {
               boxShadow: '0 4px 8px rgba(45,190,127,0.10)',
             }}>
               <LogOut size={28} color="#2DBE7F" />
-              <span style={{ color: '#2DBE7F', fontWeight: 700, fontSize: 14 }}>Log In</span>
+              <span style={{ color: '#2DBE7F', fontWeight: 700, fontSize: 14 }}>{tr('login', selectedLanguage)}</span>
             </button>
           </div>
 
@@ -252,7 +253,7 @@ export default function ProfilePage() {
   // ─── LOGGED-IN VIEW ───────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Blue gradient header */}
@@ -350,7 +351,7 @@ export default function ProfilePage() {
           { icon: <Camera size={24} color="#1E4DD9" />, bg: '#E8F0FF', title: 'Change profile photo', sub: 'Tap to update your profile picture', action: () => fileInputRef.current?.click() },
           { icon: <Edit3 size={24} color="#2DBE7F" />, bg: '#E8F9F0', title: 'Change display name', sub: displayName, action: () => { setNameInput(displayName); setShowEditName(true); } },
           { icon: <Lock size={24} color="#E07A2F" />, bg: '#FFF0E8', title: 'Change password', sub: 'Update your account password', action: () => { setCurrentPw(''); setNewPw(''); setConfirmPw(''); setPwError(''); setPwDone(false); setShowChangePw(true); } },
-          { icon: <Store size={24} color="#2E5BFF" />, bg: '#EEF2FF', title: 'Seller Dashboard', sub: 'Manage your listings and sales', action: () => router.push('/dashboard') },
+          { icon: <Store size={24} color="#2E5BFF" />, bg: '#EEF2FF', title: tr('dashboard', selectedLanguage), sub: 'Manage your listings and sales', action: () => router.push('/dashboard') },
         ].map((tile, i) => (
           <div key={i} onClick={tile.action} style={{
             background: '#fff', borderRadius: 18, marginBottom: 8, padding: 16, cursor: 'pointer',
@@ -392,7 +393,7 @@ export default function ProfilePage() {
           borderRadius: 18, padding: '16px', color: '#D53838', fontWeight: 800,
           fontSize: 15, cursor: 'pointer', marginTop: 8,
         }}>
-          Log Out
+          {tr('signOut', selectedLanguage)}
         </button>
       </div>
 
@@ -405,7 +406,7 @@ export default function ProfilePage() {
               placeholder="Display name"
               style={{ width: '100%', padding: '12px 16px', border: '1px solid #E0E8F0', borderRadius: 14, fontSize: 15, background: '#F4F7FF', outline: 'none', boxSizing: 'border-box' }} />
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-              <button onClick={() => setShowEditName(false)} style={{ flex: 1, padding: '12px', border: '1px solid #E0E8F0', borderRadius: 14, background: '#fff', color: '#6B7A99', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setShowEditName(false)} style={{ flex: 1, padding: '12px', border: '1px solid #E0E8F0', borderRadius: 14, background: '#fff', color: '#6B7A99', fontWeight: 700, cursor: 'pointer' }}>{tr('cancel', selectedLanguage)}</button>
               <button onClick={saveName} disabled={savingName} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#1E4DD9', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
                 {savingName ? 'Saving…' : 'Save'}
               </button>
@@ -423,7 +424,7 @@ export default function ProfilePage() {
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
                 <div style={{ fontSize: 48 }}>✓</div>
                 <div style={{ color: '#2DBE7F', fontWeight: 700, marginTop: 12 }}>Password updated successfully!</div>
-                <button onClick={() => setShowChangePw(false)} style={{ marginTop: 20, padding: '10px 32px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, fontWeight: 800, cursor: 'pointer' }}>Done</button>
+                <button onClick={() => setShowChangePw(false)} style={{ marginTop: 20, padding: '10px 32px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, fontWeight: 800, cursor: 'pointer' }}>{tr('done', selectedLanguage)}</button>
               </div>
             ) : (
               <>
@@ -438,7 +439,7 @@ export default function ProfilePage() {
                 ))}
                 {pwError && <div style={{ color: '#E53935', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{pwError}</div>}
                 <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                  <button onClick={() => setShowChangePw(false)} style={{ flex: 1, padding: '12px', border: '1px solid #E0E8F0', borderRadius: 14, background: '#fff', color: '#6B7A99', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={() => setShowChangePw(false)} style={{ flex: 1, padding: '12px', border: '1px solid #E0E8F0', borderRadius: 14, background: '#fff', color: '#6B7A99', fontWeight: 700, cursor: 'pointer' }}>{tr('cancel', selectedLanguage)}</button>
                   <button onClick={changePassword} disabled={savingPw} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#E07A2F', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
                     {savingPw ? 'Updating…' : 'Update Password'}
                   </button>
