@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame } from 'lucide-react';
-import { onSnapshot, doc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { onSnapshot, doc, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
@@ -108,6 +108,20 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
     return 'Price not set';
   }
 
+  function displayOriginalPrice(l: Listing): string | null {
+    if (l.originalPriceText?.trim()) return l.originalPriceText.trim();
+    if (l.originalPriceValue != null) {
+      if (selectedCurrency && selectedCurrency !== l.currencyCode) {
+        return `≈ ${formatConverted(l.originalPriceValue, l.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(l.currencyCode)}${l.originalPriceValue.toLocaleString()}`;
+    }
+    return null;
+  }
+
+  const originalPrice = listing.isFlashSale ? displayOriginalPrice(listing) : null;
+  const priceColor = listing.isFlashSale ? '#E53935' : '#2F6BFF';
+
   return (
     <button onClick={onClick} style={{ background: '#fff', borderRadius: 18, border: '1px solid rgba(0,0,0,0.06)', overflow: 'hidden', textAlign: 'left', cursor: 'pointer', width: '100%', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
       <div style={{ width: '100%', aspectRatio: '4/3', position: 'relative', background: '#EEF2FB' }}>
@@ -127,7 +141,10 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
       </div>
       <div style={{ padding: '10px 12px' }}>
         <div style={{ fontWeight: 800, fontSize: 13, color: '#182033', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.title}</div>
-        <div style={{ fontWeight: 900, fontSize: 13, color: '#2F6BFF', marginTop: 4 }}>{displayPrice(listing)}</div>
+        {originalPrice && (
+          <div style={{ fontWeight: 600, fontSize: 10.5, color: '#9AA0B2', textDecoration: 'line-through', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{originalPrice}</div>
+        )}
+        <div style={{ fontWeight: 900, fontSize: 13, color: priceColor, marginTop: originalPrice ? 1 : 4 }}>{displayPrice(listing)}</div>
         <div style={{ fontWeight: 600, fontSize: 11, color: '#9AA0B2', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.locationText}</div>
       </div>
     </button>
@@ -216,16 +233,16 @@ export default function SellerShopPage() {
     return unsub;
   }, [uid]);
 
-  // Load seller listings
+  // Subscribe to seller listings (real-time, matching Flutter stream)
   useEffect(() => {
     if (!uid) return;
     const q = query(
       collection(db, 'listings'),
       where('ownerUid', '==', uid),
       where('status', '==', 'approved'),
-      orderBy('createdAt', 'desc'),
+      orderBy('updatedAt', 'desc'),
     );
-    getDocs(q).then((snap) => {
+    const unsub = onSnapshot(q, (snap) => {
       const items = snap.docs.map((d) => {
         const data = d.data() as Record<string, unknown>;
         return {
@@ -258,7 +275,8 @@ export default function SellerShopPage() {
         } as Listing;
       });
       setListings(items);
-    }).catch(() => {});
+    }, () => {});
+    return unsub;
   }, [uid]);
 
   if (loadingSeller) {

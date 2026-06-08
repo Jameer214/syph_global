@@ -19,7 +19,21 @@ import {
   onSnapshot,
   increment,
   Unsubscribe,
+  Timestamp,
 } from 'firebase/firestore';
+
+/** Convert a Firestore Timestamp, plain Date, ISO string, or millis-number to ISO string. */
+function tsToIso(val: unknown): string {
+  if (!val) return '';
+  if (val instanceof Timestamp) return val.toDate().toISOString();
+  if (val instanceof Date) return val.toISOString();
+  if (typeof val === 'number') return new Date(val).toISOString();
+  if (typeof val === 'object' && 'seconds' in (val as object)) {
+    const ts = val as { seconds: number; nanoseconds?: number };
+    return new Date(ts.seconds * 1000).toISOString();
+  }
+  return String(val);
+}
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
 import type { Listing, SellerProfile, Review, SellerHoursInfo, ChatThread, ChatMessage, Report, PromotionRequest, UserProfile } from '@/types';
@@ -80,6 +94,11 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
     createdAt: data.createdAt ? String(data.createdAt) : undefined,
     flashSaleEndsAt: data.flashSaleEndsAt
       ? String(data.flashSaleEndsAt)
+      : undefined,
+    originalPriceValue:
+      typeof data.originalPriceValue === 'number' ? data.originalPriceValue : undefined,
+    originalPriceText: data.originalPriceText
+      ? String(data.originalPriceText)
       : undefined,
   };
 }
@@ -508,7 +527,7 @@ export function subscribeChatMessages(threadId: string, cb: (msgs: ChatMessage[]
           id: d.id,
           senderUid: String(data.senderUid ?? ''),
           text: String(data.text ?? ''),
-          createdAt: data.createdAt ? String(data.createdAt) : '',
+          createdAt: data.createdAt ? tsToIso(data.createdAt) : '',
         };
       }),
     );
@@ -649,7 +668,7 @@ export function subscribeSupportMessages(
           senderName: String(data.senderName ?? ''),
           text: String(data.text ?? ''),
           isFromAdmin: Boolean(data.isFromAdmin),
-          createdAt: data.createdAt ? String(data.createdAt) : '',
+          createdAt: data.createdAt ? tsToIso(data.createdAt) : '',
         };
       })
     );

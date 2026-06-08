@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { translate as tr, getDir } from '@/lib/i18n';
 import { subscribeChatThreads } from '@/lib/firestore';
 import BottomNav from '@/components/BottomNav';
 import type { ChatThread } from '@/types';
@@ -48,7 +49,7 @@ function timeLabel(updatedAt: string): string {
 
 export default function MessagesPage() {
   const router = useRouter();
-  const { user } = useAppStore();
+  const { user, selectedLanguage } = useAppStore();
   const fireUser = auth.currentUser;
   const uid = user?.uid ?? fireUser?.uid ?? '';
 
@@ -83,16 +84,16 @@ export default function MessagesPage() {
 
   if (!uid) {
     return (
-      <div className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
+      <div dir={getDir(selectedLanguage)} className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
         <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center' }}>
-          <span style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>Messages</span>
+          <span style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('messages', selectedLanguage)}</span>
         </div>
         <div style={{ padding: 16, paddingBottom: 80 }}>
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 24, textAlign: 'center' }}>
             <MessageCircle size={40} color="#9ca3af" />
-            <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>Sign in to view messages</p>
+            <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('signInToViewMessages', selectedLanguage)}</p>
             <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>You need to be signed in to access your messages.</p>
-            <button onClick={() => router.push('/login')} style={{ marginTop: 16, padding: '12px 24px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, cursor: 'pointer' }}>Sign In</button>
+            <button onClick={() => router.push('/login')} style={{ marginTop: 16, padding: '12px 24px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, cursor: 'pointer' }}>{tr('signIn', selectedLanguage)}</button>
           </div>
         </div>
         <BottomNav />
@@ -101,10 +102,10 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+    <div dir={getDir(selectedLanguage)} className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 40 }}>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 18, flex: 1 }}>Messages</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 18, flex: 1 }}>{tr('messages', selectedLanguage)}</span>
       </div>
 
       <div style={{ padding: '12px 16px', paddingBottom: 80 }}>
@@ -114,18 +115,18 @@ export default function MessagesPage() {
             <ShieldCheck size={26} color="#fff" />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontWeight: 900, fontSize: 14.5, color: '#0f172a' }}>SYPH Support</p>
+            <p style={{ margin: 0, fontWeight: 900, fontSize: 14.5, color: '#0f172a' }}>{tr('syphSupport', selectedLanguage)}</p>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: '#2E5BFF', fontWeight: 700 }}>Admin team</p>
             <p style={{ margin: '2px 0 0', fontSize: 13, color: '#6B7A99', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Chat with us</p>
           </div>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>Loading…</div>
+          <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>{tr('loading', selectedLanguage)}</div>
         ) : threads.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', border: '1px solid #e2e8f0' }}>
             <MessageCircle size={40} color="#9ca3af" />
-            <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>No messages yet</p>
+            <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('noMessagesYet', selectedLanguage)}</p>
             <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>Start a chat from a listing page.</p>
           </div>
         ) : (
@@ -195,11 +196,11 @@ export default function MessagesPage() {
         <>
           <div onClick={() => setConfirmDelete(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#fff', borderRadius: 20, padding: 24, zIndex: 201, width: 300, maxWidth: '90vw' }}>
-            <p style={{ fontWeight: 900, fontSize: 17, margin: '0 0 8px', color: '#0f172a' }}>Delete Conversation?</p>
+            <p style={{ fontWeight: 900, fontSize: 17, margin: '0 0 8px', color: '#0f172a' }}>{tr('deleteConversation', selectedLanguage)}</p>
             <p style={{ margin: '0 0 20px', color: '#6B7A99', fontSize: 14 }}>This will remove the conversation from your messages.</p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => hideThread(confirmDelete)} disabled={!!deletingId} style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 900, cursor: 'pointer' }}>Delete</button>
+              <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', fontWeight: 800, cursor: 'pointer' }}>{tr('cancel', selectedLanguage)}</button>
+              <button onClick={() => hideThread(confirmDelete)} disabled={!!deletingId} style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 900, cursor: 'pointer' }}>{tr('done', selectedLanguage)}</button>
             </div>
           </div>
         </>

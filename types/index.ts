@@ -35,6 +35,8 @@ export interface Listing {
   lastInteraction?: string;
   createdAt?: string;
   flashSaleEndsAt?: string;
+  originalPriceValue?: number;
+  originalPriceText?: string;
 }
 
 export interface CategoryNode {

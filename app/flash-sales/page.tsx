@@ -76,7 +76,19 @@ function FlashSaleCard({ item, selectedCurrency }: { item: Listing; selectedCurr
     return 'Price not set';
   }
 
+  function displayOriginalPrice(listing: Listing): string | null {
+    if (listing.originalPriceText?.trim()) return listing.originalPriceText.trim();
+    if (listing.originalPriceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.originalPriceValue, listing.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(listing.currencyCode)}${listing.originalPriceValue.toLocaleString()}`;
+    }
+    return null;
+  }
+
   const price = displayPrice(item);
+  const originalPrice = displayOriginalPrice(item);
 
   return (
     <div onClick={() => router.push(`/listing/${item.id}`)}
@@ -104,7 +116,10 @@ function FlashSaleCard({ item, selectedCurrency }: { item: Listing; selectedCurr
       {/* Body */}
       <div style={{ padding: '8px 8px 0' }}>
         <div style={{ fontWeight: 800, fontSize: 12.5, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
-        <div style={{ color: '#E53935', fontWeight: 900, fontSize: 13, marginTop: 3 }}>{price}</div>
+        {originalPrice && (
+          <div style={{ color: '#9AA0B2', fontSize: 10.5, fontWeight: 600, textDecoration: 'line-through', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{originalPrice}</div>
+        )}
+        <div style={{ color: '#E53935', fontWeight: 900, fontSize: 13, marginTop: originalPrice ? 1 : 3 }}>{price}</div>
         {item.locationText && (
           <div style={{ color: '#6B7A99', fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</div>
         )}

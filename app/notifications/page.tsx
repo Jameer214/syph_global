@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   MessageCircle, CheckCircle, XCircle, Zap, Calendar, Star,
-  Bell, ChevronRight, Shield, Info,
+  Bell, ChevronRight, Shield, Info, Award,
 } from 'lucide-react';
 import {
   collection, query, where, orderBy, limit, onSnapshot,
@@ -13,6 +13,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import BottomNav from '@/components/BottomNav';
 import { useAppStore } from '@/store';
+import { translate as tr, getDir } from '@/lib/i18n';
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -88,6 +89,7 @@ function IconForType({ type, color }: { type: string; color: string }) {
     case 'message': return <MessageCircle {...props} />;
     case 'listing_approved': return <CheckCircle {...props} />;
     case 'listing_rejected': return <XCircle {...props} />;
+    case 'sponsor_approved': return <Award {...props} />;
     case 'flash_sale_approved': return <Zap {...props} />;
     case 'happening_approved': return <Calendar {...props} />;
     case 'recommendation': return <Star {...props} />;
@@ -99,7 +101,7 @@ function IconForType({ type, color }: { type: string; color: string }) {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { user } = useAppStore();
+  const { user, selectedLanguage } = useAppStore();
 
   const [uid, setUid] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -214,7 +216,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Header */}
@@ -223,14 +225,14 @@ export default function NotificationsPage() {
         padding: '52px 20px 20px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>Notifications</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>{tr('notifications', selectedLanguage)}</span>
         {unreadCount > 0 && (
           <button onClick={markAllRead} style={{
             background: 'rgba(255,255,255,0.18)', border: 'none', color: '#fff',
             fontWeight: 800, fontSize: 13, borderRadius: 20, padding: '6px 14px',
             cursor: 'pointer',
           }}>
-            Mark all read
+            {tr('markAllRead', selectedLanguage)}
           </button>
         )}
       </div>
@@ -242,12 +244,12 @@ export default function NotificationsPage() {
         {!uid && (
           <div style={{ background: '#fff', borderRadius: 22, padding: 24, textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <Bell size={42} color="#6B7A99" />
-            <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12 }}>Sign in to see notifications</div>
+            <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12 }}>{tr('signInForNotifications', selectedLanguage)}</div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6 }}>Notifications are only available to registered users.</div>
             <button onClick={() => router.push('/login')} style={{
               marginTop: 16, background: '#2E5BFF', color: '#fff', border: 'none',
               borderRadius: 14, padding: '12px 28px', fontWeight: 800, cursor: 'pointer', fontSize: 15,
-            }}>Sign In</button>
+            }}>{tr('signIn', selectedLanguage)}</button>
           </div>
         )}
 
@@ -335,7 +337,7 @@ export default function NotificationsPage() {
         {uid && notifications.length === 0 && adminNotifs.length === 0 && (
           <div style={{ background: '#fff', borderRadius: 22, padding: 28, textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <Bell size={42} color="#6B7A99" />
-            <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12 }}>No notifications yet</div>
+            <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12 }}>{tr('noNotificationsYet', selectedLanguage)}</div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
               You&apos;ll be notified about messages, approvals, and more.
             </div>
