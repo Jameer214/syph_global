@@ -847,6 +847,7 @@ export default function HomePage() {
               icon={<Zap size={16} />}
               title={tr('flashSalesEndingSoon', selectedLanguage)}
               href="/flash-sales"
+              seeAllLabel={tr('seeAll', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -915,6 +916,7 @@ export default function HomePage() {
               icon={<Zap size={16} />}
               title={tr('happenings', selectedLanguage)}
               href="/happenings"
+              seeAllLabel={tr('seeAll', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',

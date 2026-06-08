@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { translate as tr, getDir } from '@/lib/i18n';
 import { getListing, getListingReviews, getRelatedListings } from '@/lib/firestore';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import type { Listing, Review } from '@/types';
@@ -128,7 +129,7 @@ export default function ListingDetailsPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const { user, isSaved, toggleSaved, selectedCurrency } = useAppStore();
+  const { user, isSaved, toggleSaved, selectedCurrency, selectedLanguage } = useAppStore();
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -304,7 +305,7 @@ export default function ListingDetailsPage() {
   const isOwner = (user?.uid ?? auth.currentUser?.uid) === listing.ownerUid;
 
   return (
-    <div className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
+    <div dir={getDir(selectedLanguage)} className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><ArrowLeft size={22} /></button>
@@ -364,10 +365,10 @@ export default function ListingDetailsPage() {
           </div>
           <p style={{ margin: '10px 0 6px', fontWeight: 900, fontSize: 26, color: '#0F2B6E' }}>{price}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {listing.negotiable && <Badge icon={<Handshake size={15} color="#2E9B55" />} text="Negotiable" fg="#2E9B55" />}
-            {listing.condition && <Badge icon={<span style={{ fontSize: 14 }}>{listing.condition === 'New' ? '✨' : '🔄'}</span>} text={listing.condition} fg={listing.condition === 'New' ? '#2E9B55' : '#FF9800'} />}
-            {listing.isSponsored && <Badge icon={<Award size={15} color="#63B3ED" />} text="Sponsored" fg="#63B3ED" />}
-            {listing.isHappening && <Badge icon={<Zap size={15} color="#2E9B55" />} text="Happening" fg="#2E9B55" />}
+            {listing.negotiable && <Badge icon={<Handshake size={15} color="#2E9B55" />} text={tr('negotiable', selectedLanguage)} fg="#2E9B55" />}
+            {listing.condition && <Badge icon={<span style={{ fontSize: 14 }}>{listing.condition === 'New' ? '✨' : '🔄'}</span>} text={listing.condition === 'New' ? tr('new', selectedLanguage) : tr('used', selectedLanguage)} fg={listing.condition === 'New' ? '#2E9B55' : '#FF9800'} />}
+            {listing.isSponsored && <Badge icon={<Award size={15} color="#63B3ED" />} text={tr('sponsored', selectedLanguage)} fg="#63B3ED" />}
+            {listing.isHappening && <Badge icon={<Zap size={15} color="#2E9B55" />} text={tr('happening', selectedLanguage)} fg="#2E9B55" />}
             {listing.rating != null && listing.rating > 0 && <Badge icon={<Star size={15} color="#FF9800" fill="#FF9800" />} text={`${listing.rating.toFixed(1)} ★`} fg="#FF9800" />}
           </div>
         </div>
@@ -388,7 +389,7 @@ export default function ListingDetailsPage() {
               <Navigation size={26} color="#fff" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, color: '#fff', fontWeight: 900, fontSize: 15 }}>Tap for Directions</p>
+              <p style={{ margin: 0, color: '#fff', fontWeight: 900, fontSize: 15 }}>{tr('tapForDirections', selectedLanguage)}</p>
               <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.locationText || 'Venue location'}</p>
             </div>
             <ChevronRight size={16} color="rgba(255,255,255,0.7)" />
@@ -402,7 +403,7 @@ export default function ListingDetailsPage() {
               <Store size={26} color="#fff" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, color: '#fff', fontWeight: 900, fontSize: 15 }}>Access Seller&apos;s Shop</p>
+              <p style={{ margin: 0, color: '#fff', fontWeight: 900, fontSize: 15 }}>{tr('accessSellersShop', selectedLanguage)}</p>
               <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {listing.sellerName ? `${listing.sellerName} • ` : ''}View shop & get directions
               </p>
@@ -425,7 +426,7 @@ export default function ListingDetailsPage() {
         )}
 
         {/* Description */}
-        <SectionCard icon={<FileText size={20} color="#2E5BFF" />} title="Description" marginBottom={14}>
+        <SectionCard icon={<FileText size={20} color="#2E5BFF" />} title={tr('description', selectedLanguage)} marginBottom={14}>
           <p style={{ margin: 0, fontWeight: 600, lineHeight: 1.6, color: 'rgba(0,0,0,0.85)', fontSize: 14 }}>
             {listing.description?.trim() || 'No description added.'}
           </p>
@@ -439,7 +440,7 @@ export default function ListingDetailsPage() {
         )}
 
         {/* Item Details */}
-        <SectionCard icon={<List size={20} color="#2E5BFF" />} title="Item Details" marginBottom={14}>
+        <SectionCard icon={<List size={20} color="#2E5BFF" />} title={tr('itemDetails', selectedLanguage)} marginBottom={14}>
           {listing.mainCategoryId && <DetailRow label="Category" value={listing.mainCategoryId.replace(/_/g, ' ')} />}
           {listing.subCategoryId && <DetailRow label="Subcategory" value={listing.subCategoryId.replace(/_/g, ' ')} />}
           {listing.condition && <DetailRow label="Condition" value={listing.condition} />}
@@ -462,7 +463,7 @@ export default function ListingDetailsPage() {
               <Store size={30} color="#fff" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: '0 0 4px', color: 'rgba(255,255,255,0.7)', fontWeight: 900, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' }}>SELLER / SHOP</p>
+              <p style={{ margin: '0 0 4px', color: 'rgba(255,255,255,0.7)', fontWeight: 900, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' }}>{tr('sellerShop', selectedLanguage)}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: '#fff', fontWeight: 900, fontSize: 18, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {listing.sellerName || 'Seller'}
@@ -476,16 +477,16 @@ export default function ListingDetailsPage() {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => router.push(`/shop/${listing.ownerUid}`)} style={{ flex: 1, background: '#fff', color: '#0F2B6E', border: 'none', borderRadius: 16, padding: '14px', fontWeight: 900, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <Store size={16} /> View Shop
+              <Store size={16} /> {tr('viewShop', selectedLanguage)}
             </button>
             <button onClick={() => openOrCreateChat()} disabled={startingChat} style={{ flex: 1, background: 'transparent', color: '#fff', border: '1.5px solid rgba(255,255,255,0.45)', borderRadius: 16, padding: '14px', fontWeight: 900, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              {startingChat ? <span style={{ fontSize: 12 }}>Opening…</span> : <><MessageCircle size={16} /> Message</>}
+              {startingChat ? <span style={{ fontSize: 12 }}>Opening…</span> : <><MessageCircle size={16} /> {tr('messageContact', selectedLanguage)}</>}
             </button>
           </div>
         </div>
 
         {/* Chat starter card */}
-        <SectionCard icon={<MessageCircle size={20} color="#2E5BFF" />} title="Chat with Seller" marginBottom={14}>
+        <SectionCard icon={<MessageCircle size={20} color="#2E5BFF" />} title={tr('chatWithSeller', selectedLanguage)} marginBottom={14}>
           <p style={{ margin: '0 0 14px', color: '#6B7A99', fontWeight: 600, lineHeight: 1.4, fontSize: 13 }}>Send a quick message to the seller.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
             {['Is this still available?', "What's the best price?", 'Do you deliver?'].map((msg) => (
@@ -538,7 +539,7 @@ export default function ListingDetailsPage() {
           }}
           style={{ width: '100%', padding: '15px', borderRadius: 18, background: '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
-          <Star size={18} /> Share Your Review
+          <Star size={18} /> {tr('shareYourReview', selectedLanguage)}
         </button>
 
         {/* Report button */}
@@ -549,7 +550,7 @@ export default function ListingDetailsPage() {
           }}
           style={{ width: '100%', padding: '15px', borderRadius: 18, background: '#fff', color: '#ef4444', fontWeight: 900, fontSize: 15, border: '1.5px solid #fca5a5', cursor: 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
-          <Flag size={18} /> Report this listing
+          <Flag size={18} /> {tr('reportListing', selectedLanguage)}
         </button>
 
         {/* Related listings */}
@@ -557,7 +558,7 @@ export default function ListingDetailsPage() {
           <div>
             <div style={{ background: '#0f172a', borderRadius: 16, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Grid3x3 size={18} color="#fff" />
-              <span style={{ flex: 1, color: '#fff', fontWeight: 900, fontSize: 15 }}>Related Items</span>
+              <span style={{ flex: 1, color: '#fff', fontWeight: 900, fontSize: 15 }}>{tr('relatedItems', selectedLanguage)}</span>
               <span style={{ color: 'rgba(255,255,255,0.54)', fontWeight: 600, fontSize: 12 }}>{listing.mainCategoryId.replace(/_/g, ' ')}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -601,7 +602,7 @@ export default function ListingDetailsPage() {
           </button>
           <button onClick={() => openOrCreateChat()} disabled={startingChat}
             style={{ flex: 1, height: 50, borderRadius: 25, border: 'none', background: startingChat ? '#9ca3af' : '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: startingChat ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <MessageCircle size={18} /> {startingChat ? 'Opening…' : 'Message Seller'}
+            <MessageCircle size={18} /> {startingChat ? 'Opening…' : tr('messageSeller', selectedLanguage)}
           </button>
         </div>
       ) : (
