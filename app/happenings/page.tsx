@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import BottomNav from '@/components/BottomNav';
 import type { Listing } from '@/types';
 
@@ -43,7 +44,18 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
 
 export default function HappeningsPage() {
   const router = useRouter();
-  const { selectedCountry, user, toggleSaved, isSaved } = useAppStore();
+  const { selectedCountry, selectedCurrency, user, toggleSaved, isSaved } = useAppStore();
+
+  function displayPrice(listing: Listing): string {
+    if (listing.priceText?.trim()) return listing.priceText.trim();
+    if (listing.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    }
+    return '';
+  }
   const [happenings, setHappenings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -152,6 +164,9 @@ export default function HappeningsPage() {
             {/* Card body */}
             <div style={{ padding: '12px 14px 14px' }}>
               <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 4 }}>{item.title}</div>
+              {displayPrice(item) && (
+                <div style={{ fontWeight: 900, fontSize: 14, color: '#2E5BFF', marginBottom: 4 }}>{displayPrice(item)}</div>
+              )}
               {item.locationText && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6B7A99', fontSize: 12, marginBottom: 6 }}>
                   <MapPin size={12} />

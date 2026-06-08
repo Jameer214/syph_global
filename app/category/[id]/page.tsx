@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { CATEGORIES, getCategoryById } from '@/data/categories';
 import type { Listing } from '@/types';
 
@@ -53,7 +54,18 @@ export default function CategoryResultsPage() {
   const router = useRouter();
   const mainId = params.id as string;
 
-  const { isSaved, toggleSaved } = useAppStore();
+  const { isSaved, toggleSaved, selectedCurrency } = useAppStore();
+
+  function displayPrice(listing: Listing): string {
+    if (listing.priceText?.trim()) return listing.priceText.trim();
+    if (listing.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    }
+    return 'Price not set';
+  }
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -234,7 +246,7 @@ export default function CategoryResultsPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {filtered.map((l) => (
-              <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} />
+              <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} />
             ))}
           </div>
         )}
@@ -330,12 +342,10 @@ export default function CategoryResultsPage() {
   );
 }
 
-function ResultCard({ listing: l, isSaved, onToggleSave }: { listing: Listing; isSaved: boolean; onToggleSave: () => void }) {
+function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string }) {
   const router = useRouter();
   const img = l.imageUrls?.[0] ?? l.imageUrl;
-  const price = l.priceValue != null
-    ? `${l.currencyCode} ${l.priceValue.toLocaleString()}`
-    : l.priceText ?? 'Price not set';
+  const price = priceDisplay;
 
   return (
     <div

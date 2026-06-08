@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Search, SlidersHorizontal, MapPin, Zap, TrendingUp,
   Star, Crown, Globe, Eye, Bookmark, MessageCircle, Menu,
-  LayoutGrid, X, ChevronDown, Navigation,
+  LayoutGrid, X, ChevronDown, Navigation, Clock,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -13,7 +13,9 @@ import {
   getDocs, QueryConstraint,
 } from 'firebase/firestore';
 import { useAppStore } from '@/store';
+import { translate as tr, getDir } from '@/lib/i18n';
 import { db } from '@/lib/firebase';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
 import MenuDrawer from '@/components/MenuDrawer';
@@ -83,16 +85,28 @@ function useListings(opts: {
   return listings;
 }
 
+function displayPrice(listing: Listing, selectedCurrency: string): string {
+  if (listing.priceText?.trim()) return listing.priceText.trim();
+  if (listing.priceValue != null) {
+    if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+      return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+    }
+    return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+  }
+  return 'Price not set';
+}
+
 // ─── sub-components ───────────────────────────────────────────────────────────
 
 function SectionStrip({
-  gradient, icon, title, subtitle, href,
+  gradient, icon, title, subtitle, href, seeAllLabel,
 }: {
   gradient: [string, string];
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
   href?: string;
+  seeAllLabel?: string;
 }) {
   return (
     <div style={{
@@ -115,13 +129,13 @@ function SectionStrip({
           background: 'rgba(255,255,255,0.25)', color: '#fff',
           fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20,
           textDecoration: 'none',
-        }}>See all</Link>
+        }}>{seeAllLabel ?? 'See all'}</Link>
       )}
     </div>
   );
 }
 
-function FlashCard({ listing, onClick }: { listing: Listing; onClick: () => void }) {
+function FlashCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
   return (
     <div
       onClick={onClick}
@@ -151,14 +165,14 @@ function FlashCard({ listing, onClick }: { listing: Listing; onClick: () => void
           {listing.title}
         </p>
         <p style={{ margin: '3px 0 0', fontSize: 12, fontWeight: 800, color: '#2E5BFF' }}>
-          {listing.priceText || `${listing.currencyCode} ${listing.priceValue ?? 0}`}
+          {displayPrice(listing, selectedCurrency)}
         </p>
       </div>
     </div>
   );
 }
 
-function FeaturedCard({ listing, onClick }: { listing: Listing; onClick: () => void }) {
+function FeaturedCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
   return (
     <div
       onClick={onClick}
@@ -197,7 +211,7 @@ function FeaturedCard({ listing, onClick }: { listing: Listing; onClick: () => v
           {listing.title}
         </p>
         <p style={{ margin: '4px 0 0', fontSize: 14, fontWeight: 800, color: '#2E5BFF' }}>
-          {listing.priceText || `${listing.currencyCode} ${listing.priceValue ?? 0}`}
+          {displayPrice(listing, selectedCurrency)}
         </p>
         <p style={{ margin: '4px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
           <MapPin size={10} />{listing.locationText || listing.regionOrCity}
@@ -218,7 +232,7 @@ function FeaturedCard({ listing, onClick }: { listing: Listing; onClick: () => v
   );
 }
 
-function GridCard({ listing, onClick }: { listing: Listing; onClick: () => void }) {
+function GridCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
   return (
     <div
       onClick={onClick}
@@ -249,7 +263,7 @@ function GridCard({ listing, onClick }: { listing: Listing; onClick: () => void 
           {listing.title}
         </p>
         <p style={{ margin: '3px 0 0', fontSize: 14, fontWeight: 800, color: '#2E5BFF' }}>
-          {listing.priceText || `${listing.currencyCode} ${listing.priceValue ?? 0}`}
+          {displayPrice(listing, selectedCurrency)}
         </p>
         <p style={{ margin: '3px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <MapPin size={10} />{listing.locationText || listing.regionOrCity}
@@ -281,12 +295,15 @@ function FilterSheet({
   filters,
   onApply,
   onClose,
+  nearMeLoading,
 }: {
   filters: Filters;
   onApply: (f: Filters) => void;
   onClose: () => void;
+  nearMeLoading: boolean;
 }) {
   const [local, setLocal] = useState<Filters>(filters);
+  const { selectedLanguage } = useAppStore();
 
   const selectStyle: React.CSSProperties = {
     width: '100%', height: 46, borderRadius: 12,
@@ -311,7 +328,7 @@ function FilterSheet({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#132A66' }}>Filter Listings</h3>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#132A66' }}>{tr('filters', selectedLanguage)}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={22} color="#6B7A99" />
           </button>
@@ -353,28 +370,47 @@ function FilterSheet({
 
         {/* Toggles */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-          {[
-            { label: 'Open Now', key: 'openNow' as const },
-            { label: 'Near Me (GPS)', key: 'nearMe' as const },
-          ].map(({ label, key }) => (
-            <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a2e' }}>{label}</span>
-              <button
-                onClick={() => setLocal({ ...local, [key]: !local[key] })}
-                style={{
-                  width: 50, height: 28, borderRadius: 14, border: 'none',
-                  background: local[key] ? '#2E5BFF' : '#e2e8f0',
-                  cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
-                }}
-              >
-                <div style={{
-                  width: 22, height: 22, borderRadius: '50%', background: '#fff',
-                  position: 'absolute', top: 3, left: local[key] ? 25 : 3,
-                  transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
-                }} />
-              </button>
-            </div>
-          ))}
+          {/* Open Now toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a2e' }}>{tr('openNow', selectedLanguage)}</span>
+            <button
+              onClick={() => setLocal({ ...local, openNow: !local.openNow })}
+              style={{
+                width: 50, height: 28, borderRadius: 14, border: 'none',
+                background: local.openNow ? '#2E5BFF' : '#e2e8f0',
+                cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+              }}
+            >
+              <div style={{
+                width: 22, height: 22, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 3, left: local.openNow ? 25 : 3,
+                transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+              }} />
+            </button>
+          </div>
+          {/* Near Me (GPS) toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: nearMeLoading ? '#9ca3af' : '#1a1a2e' }}>
+              {nearMeLoading ? 'Locating...' : tr('nearMeGps', selectedLanguage)}
+            </span>
+            <button
+              disabled={nearMeLoading}
+              onClick={() => !nearMeLoading && setLocal({ ...local, nearMe: !local.nearMe })}
+              style={{
+                width: 50, height: 28, borderRadius: 14, border: 'none',
+                background: local.nearMe ? '#2E5BFF' : '#e2e8f0',
+                cursor: nearMeLoading ? 'not-allowed' : 'pointer',
+                position: 'relative', transition: 'background 0.2s',
+                opacity: nearMeLoading ? 0.5 : 1,
+              }}
+            >
+              <div style={{
+                width: 22, height: 22, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 3, left: local.nearMe ? 25 : 3,
+                transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+              }} />
+            </button>
+          </div>
         </div>
 
         <button
@@ -385,7 +421,7 @@ function FilterSheet({
             cursor: 'pointer',
           }}
         >
-          Done
+          {tr('done', selectedLanguage)}
         </button>
       </div>
     </div>
@@ -396,22 +432,37 @@ function FilterSheet({
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, selectedCountry, selectedRegion, locationSet } = useAppStore();
+  const { user, selectedCountry, selectedRegion, locationSet, selectedCurrency, selectedLanguage } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Listing[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     timeSort: 'newest', priceSort: 'none', rating: 'any', openNow: false, nearMe: false,
   });
+  const [nearMeCountry, setNearMeCountry] = useState<string>('');
+  const [nearMeLoading, setNearMeLoading] = useState(false);
   const [exploreCount, setExploreCount] = useState(8);
   const [menuOpen, setMenuOpen] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const country = locationSet ? selectedCountry : undefined;
   const flag = selectedCountry ? (COUNTRY_FLAGS[selectedCountry] ?? '🌍') : '🌍';
+
+  // Load recent searches from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = JSON.parse(localStorage.getItem('syph-recent-searches') || '[]');
+      if (Array.isArray(stored)) setRecentSearches(stored);
+    } catch {
+      // ignore parse errors
+    }
+  }, []);
 
   // Pick up search query carried from the location screen's dark search bar
   useEffect(() => {
@@ -496,6 +547,11 @@ export default function HomePage() {
   const sortedExplore = useCallback(() => {
     let items = [...explore];
     if (filters.openNow) items = items.filter((l) => l.openNow);
+    if (filters.nearMe && nearMeCountry) {
+      items = items.filter((l) =>
+        l.country.toLowerCase() === nearMeCountry.toLowerCase()
+      );
+    }
     if (filters.rating !== 'any') {
       const min = parseInt(filters.rating);
       items = items.filter((l) => (l.rating ?? 0) >= min);
@@ -504,34 +560,77 @@ export default function HomePage() {
     if (filters.priceSort === 'high') items.sort((a, b) => (b.priceValue ?? 0) - (a.priceValue ?? 0));
     if (filters.timeSort === 'oldest') items.reverse();
     return items;
-  }, [explore, filters]);
+  }, [explore, filters, nearMeCountry]);
 
   const exploreItems = sortedExplore().slice(0, exploreCount);
 
-  const goToListing = (id: string) => router.push(`/listing/${id}`);
+  function saveSearch(term: string) {
+    if (!term.trim()) return;
+    const current: string[] = (() => {
+      try { return JSON.parse(localStorage.getItem('syph-recent-searches') || '[]'); }
+      catch { return []; }
+    })();
+    const updated = [term, ...current.filter((s) => s !== term)].slice(0, 5);
+    localStorage.setItem('syph-recent-searches', JSON.stringify(updated));
+    setRecentSearches(updated);
+  }
 
-  const handleNearMe = () => {
+  const goToListing = (id: string, term?: string) => {
+    if (term) saveSearch(term);
+    router.push(`/listing/${id}`);
+  };
+
+  const handleNearMe = useCallback(async () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation not supported.');
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        // Would normally filter by distance; for now just confirm
-        toast.success(`Location: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
-      },
-      () => toast.error('Location access denied.')
-    );
-  };
+    setNearMeLoading(true);
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+      const { latitude, longitude } = pos.coords;
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+          { headers: { 'User-Agent': 'SyphMarketplace/1.0' } }
+        );
+        const data = await res.json();
+        const country: string = data?.address?.country ?? '';
+        if (country) {
+          setNearMeCountry(country);
+          toast.success(`Near you: ${country}`);
+        } else {
+          // Fallback to selectedCountry
+          setNearMeCountry(selectedCountry || '');
+          if (selectedCountry) toast.success(`Near you: ${selectedCountry}`);
+          else toast.error('Could not detect country.');
+        }
+      } catch {
+        // Geocoding failed — fall back to selectedCountry
+        setNearMeCountry(selectedCountry || '');
+        if (selectedCountry) toast.success(`Near you: ${selectedCountry}`);
+        else toast.error('Could not detect country.');
+      }
+    } catch {
+      toast.error('Location access denied.');
+    } finally {
+      setNearMeLoading(false);
+    }
+  }, [selectedCountry]);
 
   useEffect(() => {
-    if (filters.nearMe) handleNearMe();
+    if (filters.nearMe) {
+      handleNearMe();
+    } else {
+      setNearMeCountry('');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.nearMe]);
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 80 }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 80 }}>
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
       {/* ── Top App Bar ── */}
       <div style={{
@@ -606,7 +705,9 @@ export default function HomePage() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search listings…"
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+              placeholder={tr('searchHint', selectedLanguage)}
               style={{
                 width: '100%', height: 46, borderRadius: 14,
                 border: '1.5px solid #e2e8f0', background: '#fff',
@@ -614,6 +715,56 @@ export default function HomePage() {
                 color: '#1a1a2e', outline: 'none',
               }}
             />
+            {/* Recent searches dropdown */}
+            {searchFocused && !searchQuery.trim() && recentSearches.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 30,
+                background: '#fff', borderRadius: 16, border: '1.5px solid #e2e8f0',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden',
+              }}>
+                <div style={{ padding: '10px 14px 6px', borderBottom: '1px solid #f1f5f9' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Recent Searches</span>
+                </div>
+                {recentSearches.map((term, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                    }}
+                  >
+                    <Clock size={14} style={{ color: '#9ca3af', flexShrink: 0 }} />
+                    <span
+                      onClick={() => { setSearchQuery(term); setSearchFocused(false); }}
+                      style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}
+                    >{term}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const updated = recentSearches.filter((_, i) => i !== idx);
+                        setRecentSearches(updated);
+                        localStorage.setItem('syph-recent-searches', JSON.stringify(updated));
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
+                    >
+                      <X size={12} color="#9ca3af" />
+                    </button>
+                  </div>
+                ))}
+                <div style={{ padding: '8px 14px' }}>
+                  <button
+                    onClick={() => {
+                      setRecentSearches([]);
+                      localStorage.setItem('syph-recent-searches', '[]');
+                    }}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontSize: 12, fontWeight: 700, color: '#ef4444', padding: 0,
+                    }}
+                  >Clear all</button>
+                </div>
+              </div>
+            )}
             {/* Search dropdown */}
             {showSearch && (
               <div style={{
@@ -622,16 +773,16 @@ export default function HomePage() {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: 4, maxHeight: 320, overflowY: 'auto',
               }}>
                 {searchLoading ? (
-                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>Searching…</div>
+                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('searching', selectedLanguage)}</div>
                 ) : searchResults.length === 0 ? (
-                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>No results found</div>
+                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('noResults', selectedLanguage)}</div>
                 ) : (
                   searchResults.map((item) => {
                     const inCountry = !selectedCountry || item.country === selectedCountry;
                     return (
                       <div
                         key={item.id}
-                        onClick={() => { goToListing(item.id); setSearchQuery(''); setShowSearch(false); }}
+                        onClick={() => { goToListing(item.id, searchQuery.trim()); setSearchQuery(''); setShowSearch(false); }}
                         style={{
                           padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9',
                           display: 'flex', alignItems: 'flex-start', gap: 10,
@@ -694,7 +845,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#C62828', '#E53935']}
               icon={<Zap size={16} />}
-              title="Flash Sales Ending Soon!"
+              title={tr('flashSalesEndingSoon', selectedLanguage)}
               href="/flash-sales"
             />
             <div style={{
@@ -705,7 +856,7 @@ export default function HomePage() {
               className="no-scrollbar"
             >
               {flashSales.map((l) => (
-                <FlashCard key={l.id} listing={l} onClick={() => goToListing(l.id)} />
+                <FlashCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
           </div>
@@ -717,8 +868,8 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#E65100', '#FF6D00']}
               icon={<TrendingUp size={16} />}
-              title="Trending Near You"
-              subtitle="Hot Now"
+              title={tr('trendingNearYou', selectedLanguage)}
+              subtitle={tr('hotNow', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -728,7 +879,7 @@ export default function HomePage() {
               className="no-scrollbar"
             >
               {trending.map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
           </div>
@@ -740,7 +891,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#6A1B9A', '#8E24AA']}
               icon={<Star size={16} />}
-              title="Recommended For You"
+              title={tr('recommendedForYou', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -750,7 +901,7 @@ export default function HomePage() {
               className="no-scrollbar"
             >
               {recommended.map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
           </div>
@@ -762,7 +913,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#1B5E20', '#2E7D32']}
               icon={<Zap size={16} />}
-              title="Happenings"
+              title={tr('happenings', selectedLanguage)}
               href="/happenings"
             />
             <div style={{
@@ -773,7 +924,7 @@ export default function HomePage() {
               className="no-scrollbar"
             >
               {happenings.map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
           </div>
@@ -785,7 +936,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#0D47A1', '#1976D2']}
               icon={<Crown size={16} />}
-              title="Sponsored"
+              title={tr('sponsored', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -795,7 +946,7 @@ export default function HomePage() {
               className="no-scrollbar"
             >
               {sponsored.map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
           </div>
@@ -806,7 +957,7 @@ export default function HomePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '8px 0 14px' }}>
             <div style={{ flex: 1, height: 1, background: '#d1d5db' }} />
             <span style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-              More to Explore
+              {tr('moreToExplore', selectedLanguage)}
             </span>
             <div style={{ flex: 1, height: 1, background: '#d1d5db' }} />
           </div>
@@ -821,7 +972,7 @@ export default function HomePage() {
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {exploreItems.map((l) => (
-                  <GridCard key={l.id} listing={l} onClick={() => goToListing(l.id)} />
+                  <GridCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
                 ))}
               </div>
 
@@ -834,7 +985,7 @@ export default function HomePage() {
                     color: '#2E5BFF', fontWeight: 700, fontSize: 14, cursor: 'pointer',
                   }}
                 >
-                  Load more
+                  {tr('loadMore', selectedLanguage)}
                 </button>
               )}
             </>
@@ -851,6 +1002,7 @@ export default function HomePage() {
             setExploreCount(8);
           }}
           onClose={() => setShowFilter(false)}
+          nearMeLoading={nearMeLoading}
         />
       )}
 

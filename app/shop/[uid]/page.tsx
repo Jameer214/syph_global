@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame } from 'lucide-react';
 import { onSnapshot, doc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAppStore } from '@/store';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import type { Listing } from '@/types';
 
 interface ShopData {
@@ -94,7 +96,18 @@ function openMaps(location: string, lat: number | null, lng: number | null) {
 
 // ── Item card ──────────────────────────────────────────────────────────────────
 
-function ItemCard({ listing, onClick }: { listing: Listing; onClick: () => void }) {
+function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
+  function displayPrice(l: Listing): string {
+    if (l.priceText?.trim()) return l.priceText.trim();
+    if (l.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== l.currencyCode) {
+        return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(l.currencyCode)}${l.priceValue.toLocaleString()}`;
+    }
+    return 'Price not set';
+  }
+
   return (
     <button onClick={onClick} style={{ background: '#fff', borderRadius: 18, border: '1px solid rgba(0,0,0,0.06)', overflow: 'hidden', textAlign: 'left', cursor: 'pointer', width: '100%', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
       <div style={{ width: '100%', aspectRatio: '4/3', position: 'relative', background: '#EEF2FB' }}>
@@ -114,9 +127,7 @@ function ItemCard({ listing, onClick }: { listing: Listing; onClick: () => void 
       </div>
       <div style={{ padding: '10px 12px' }}>
         <div style={{ fontWeight: 800, fontSize: 13, color: '#182033', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.title}</div>
-        {listing.priceText && (
-          <div style={{ fontWeight: 900, fontSize: 13, color: '#2F6BFF', marginTop: 4 }}>{listing.priceText}</div>
-        )}
+        <div style={{ fontWeight: 900, fontSize: 13, color: '#2F6BFF', marginTop: 4 }}>{displayPrice(listing)}</div>
         <div style={{ fontWeight: 600, fontSize: 11, color: '#9AA0B2', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.locationText}</div>
       </div>
     </button>
@@ -125,7 +136,20 @@ function ItemCard({ listing, onClick }: { listing: Listing; onClick: () => void 
 
 // ── Happening card ─────────────────────────────────────────────────────────────
 
-function HappeningCard({ listing, onClick }: { listing: Listing; onClick: () => void }) {
+function HappeningCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
+  function displayPrice(l: Listing): string {
+    if (l.priceText?.trim()) return l.priceText.trim();
+    if (l.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== l.currencyCode) {
+        return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(l.currencyCode)}${l.priceValue.toLocaleString()}`;
+    }
+    return '';
+  }
+
+  const price = displayPrice(listing);
+
   return (
     <button onClick={onClick} style={{ background: '#fff', borderRadius: 18, border: '1px solid rgba(0,0,0,0.06)', overflow: 'hidden', display: 'flex', gap: 0, width: '100%', marginBottom: 12, textAlign: 'left', cursor: 'pointer', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
       <div style={{ width: 90, minHeight: 90, position: 'relative', background: '#EEF2FB', flexShrink: 0 }}>
@@ -139,7 +163,7 @@ function HappeningCard({ listing, onClick }: { listing: Listing; onClick: () => 
       </div>
       <div style={{ flex: 1, padding: 14, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
         <div style={{ fontWeight: 800, fontSize: 14, color: '#182033', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{listing.title}</div>
-        {listing.priceText && <div style={{ fontWeight: 900, fontSize: 13, color: '#7C3AED' }}>{listing.priceText}</div>}
+        {price && <div style={{ fontWeight: 900, fontSize: 13, color: '#7C3AED' }}>{price}</div>}
         <div style={{ fontWeight: 600, fontSize: 12, color: '#9AA0B2' }}>{listing.locationText}</div>
       </div>
     </button>
@@ -175,6 +199,7 @@ function EmptyState({ icon, title, subtitle }: { icon: React.ReactNode; title: s
 export default function SellerShopPage() {
   const { uid } = useParams() as { uid: string };
   const router = useRouter();
+  const { selectedCurrency } = useAppStore();
 
   const [shop, setShop] = useState<ShopData | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -400,7 +425,7 @@ export default function SellerShopPage() {
             <EmptyState icon={<Package size={28} />} title="No items yet" subtitle="This seller hasn't listed any items yet." />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {items.map((l) => <ItemCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} />)}
+              {items.map((l) => <ItemCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} selectedCurrency={selectedCurrency} />)}
             </div>
           )
         )}
@@ -409,7 +434,7 @@ export default function SellerShopPage() {
           happenings.length === 0 ? (
             <EmptyState icon={<Calendar size={28} />} title="No events yet" subtitle="This seller has no happenings listed." />
           ) : (
-            <div>{happenings.map((l) => <HappeningCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} />)}</div>
+            <div>{happenings.map((l) => <HappeningCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} selectedCurrency={selectedCurrency} />)}</div>
           )
         )}
 
@@ -418,7 +443,7 @@ export default function SellerShopPage() {
             <EmptyState icon={<Flame size={28} />} title="No flash sales" subtitle="This seller has no active flash sales." />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {flashSales.map((l) => <ItemCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} />)}
+              {flashSales.map((l) => <ItemCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} selectedCurrency={selectedCurrency} />)}
             </div>
           )
         )}

@@ -63,6 +63,7 @@ export default function LocationPage() {
   const [gpsDetectedCountry, setGpsDetectedCountry] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [goodsSearch, setGoodsSearch] = useState('');
+  const [showAppModal, setShowAppModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // On mount: pre-fill from store, load recents, auto-detect GPS silently
@@ -176,6 +177,41 @@ export default function LocationPage() {
   return (
     <div style={{ minHeight: '100dvh', background: '#F0F4FF', display: 'flex', flexDirection: 'column' }}>
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      {/* Releasing Soon modal */}
+      {showAppModal && (
+        <div
+          onClick={() => setShowAppModal(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#fff', borderRadius: 24, padding: '32px 24px', textAlign: 'center',
+            maxWidth: 360, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            animation: 'fadeInUp 0.25s ease forwards',
+          }}>
+            <div style={{ fontSize: 52, marginBottom: 14 }}>🚀</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#0F2B6E', marginBottom: 10 }}>Releasing Soon!</div>
+            <div style={{ fontSize: 14, color: '#6B7A99', fontWeight: 500, lineHeight: 1.65, marginBottom: 22 }}>
+              Welcome to SYPH! The mobile app is on its way — packed with everything you love on the website plus real-time notifications, in-app payments, sponsored listings, flash sales, and more.
+            </div>
+            <div style={{ background: 'linear-gradient(135deg, #F0F4FF 0%, #E8EEFF 100%)', borderRadius: 14, padding: '14px 16px', marginBottom: 22, border: '1px solid #D7E5FF' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#2E5BFF', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 4 }}>Stay tuned</div>
+              <div style={{ fontSize: 13, color: '#4A5878', fontWeight: 500, lineHeight: 1.5 }}>
+                We&apos;ll notify you the moment SYPH hits the App Store and Google Play. The global marketplace is coming to your pocket.
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAppModal(false)}
+              style={{
+                width: '100%', padding: '14px 0', background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
+                border: 'none', borderRadius: 14, color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer',
+              }}
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Top App Bar (matches home screen) ── */}
       <div style={{
@@ -771,8 +807,8 @@ export default function LocationPage() {
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>Available on</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
-            <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
+            <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} onClick={() => setShowAppModal(true)} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
+            <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} onClick={() => setShowAppModal(true)} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
           </div>
         </div>
 

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { collection, query, where, onSnapshot, QueryConstraint } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { getCategoryById } from '@/data/categories';
 import type { Listing } from '@/types';
 
@@ -39,7 +40,18 @@ export default function SubCategoryResultsPage() {
   const router = useRouter();
   const mainId = params.id as string;
   const subId = params.subId as string;
-  const { isSaved, toggleSaved } = useAppStore();
+  const { isSaved, toggleSaved, selectedCurrency } = useAppStore();
+
+  function displayPrice(listing: Listing): string {
+    if (listing.priceText?.trim()) return listing.priceText.trim();
+    if (listing.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    }
+    return 'Price not set';
+  }
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +142,7 @@ export default function SubCategoryResultsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {filtered.map((l) => {
               const img = l.imageUrls?.[0] ?? l.imageUrl;
-              const price = l.priceValue != null ? `${l.currencyCode} ${l.priceValue.toLocaleString()}` : l.priceText ?? 'Price not set';
+              const price = displayPrice(l);
               return (
                 <div key={l.id} onClick={() => router.push(`/listing/${l.id}`)} style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                   <div style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>

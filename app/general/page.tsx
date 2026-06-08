@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import BottomNav from '@/components/BottomNav';
 import type { Listing } from '@/types';
 
@@ -47,7 +48,18 @@ type SortMode = 'newest' | 'price_asc' | 'price_desc' | 'rating';
 
 export default function GeneralPage() {
   const router = useRouter();
-  const { selectedCountry } = useAppStore();
+  const { selectedCountry, selectedCurrency } = useAppStore();
+
+  function displayPrice(listing: Listing): string {
+    if (listing.priceText?.trim()) return listing.priceText.trim();
+    if (listing.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    }
+    return 'Price not set';
+  }
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -222,7 +234,7 @@ export default function GeneralPage() {
                 </div>
                 <div style={{ padding: '8px 10px 10px' }}>
                   <div style={{ fontWeight: 800, fontSize: 12.5, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
-                  {item.priceText && <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 13, marginTop: 2 }}>{item.priceText}</div>}
+                  <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 13, marginTop: 2 }}>{displayPrice(item)}</div>
                   {item.locationText && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#6B7A99', fontSize: 10, marginTop: 4 }}>
                       <MapPin size={10} />

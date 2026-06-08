@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import BottomNav from '@/components/BottomNav';
 import type { Listing } from '@/types';
 
@@ -60,11 +61,22 @@ function useCountdown(): string {
   return time;
 }
 
-function FlashSaleCard({ item }: { item: Listing }) {
+function FlashSaleCard({ item, selectedCurrency }: { item: Listing; selectedCurrency: string }) {
   const router = useRouter();
   const countdown = useCountdown();
 
-  const price = item.priceText || (item.priceValue ? `${item.currencyCode} ${item.priceValue.toLocaleString()}` : 'Price not set');
+  function displayPrice(listing: Listing): string {
+    if (listing.priceText?.trim()) return listing.priceText.trim();
+    if (listing.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    }
+    return 'Price not set';
+  }
+
+  const price = displayPrice(item);
 
   return (
     <div onClick={() => router.push(`/listing/${item.id}`)}
@@ -113,7 +125,7 @@ function FlashSaleCard({ item }: { item: Listing }) {
 }
 
 export default function FlashSalesPage() {
-  const { selectedCountry } = useAppStore();
+  const { selectedCountry, selectedCurrency } = useAppStore();
   const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -176,7 +188,7 @@ export default function FlashSalesPage() {
         {!loading && items.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             {items.map((item) => (
-              <FlashSaleCard key={item.id} item={item} />
+              <FlashSaleCard key={item.id} item={item} selectedCurrency={selectedCurrency} />
             ))}
           </div>
         )}

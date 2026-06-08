@@ -53,10 +53,12 @@ export default function LoginPage() {
 
   // Handle result after signInWithRedirect comes back
   useEffect(() => {
-    setGoogleLoading(true);
     getRedirectResult(auth)
       .then((result) => {
-        if (result?.user) return processUser(result.user);
+        if (result?.user) {
+          setGoogleLoading(true);
+          return processUser(result.user);
+        }
       })
       .catch((err) => {
         const code = (err as { code?: string }).code ?? '';

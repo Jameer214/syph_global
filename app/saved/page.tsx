@@ -5,13 +5,25 @@ import Image from 'next/image';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { getListing, getSavedIds, syncSavedIds } from '@/lib/firestore';
 import BottomNav from '@/components/BottomNav';
 import type { Listing } from '@/types';
 
 export default function SavedPage() {
   const router = useRouter();
-  const { user, savedIds, toggleSaved, isSaved } = useAppStore();
+  const { user, savedIds, toggleSaved, isSaved, selectedCurrency } = useAppStore();
+
+  function displayPrice(listing: Listing): string | null {
+    if (listing.priceText?.trim()) return listing.priceText.trim();
+    if (listing.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+      }
+      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    }
+    return null;
+  }
   const fireUser = auth.currentUser;
   const uid = user?.uid ?? fireUser?.uid ?? '';
 
@@ -104,9 +116,7 @@ export default function SavedPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {savedListings.map((l) => {
-              const price = l.priceValue != null
-                ? `${l.currencyCode} ${l.priceValue.toLocaleString()}`
-                : l.priceText?.trim() || null;
+              const price = displayPrice(l);
               const img = l.imageUrls?.[0] ?? l.imageUrl;
               const subtitle = [price, l.locationText?.trim() || null].filter(Boolean).join(' • ') || '—';
 
