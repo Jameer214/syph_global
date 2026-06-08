@@ -13,12 +13,13 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import { auth } from '@/lib/firebase';
 import { createOrUpdateUserProfile } from '@/lib/firestore';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser, locationSet, selectedCountry } = useAppStore();
+  const { setUser, locationSet, selectedCountry, selectedLanguage } = useAppStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -159,7 +160,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#D6ECFF', display: 'flex', flexDirection: 'column' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#D6ECFF', display: 'flex', flexDirection: 'column' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', width: '100%', padding: '20px 20px 32px' }}>
         {/* Back button */}
         <button
@@ -167,7 +168,7 @@ export default function LoginPage() {
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', display: 'flex', alignItems: 'center', gap: 6, color: '#132A66', fontWeight: 700, fontSize: 15 }}
         >
           <ArrowLeft size={20} />
-          Back
+          {tr('back', selectedLanguage)}
         </button>
 
         <div style={{ height: 16 }} />
@@ -204,7 +205,7 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
-            {googleLoading ? 'Signing in…' : 'Continue with Google'}
+            {googleLoading ? tr('loading', selectedLanguage) : tr('continueWithGoogle', selectedLanguage)}
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
@@ -221,7 +222,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
+                placeholder={tr('emailField', selectedLanguage)}
                 autoComplete="email"
                 style={inputStyle}
               />
@@ -234,7 +235,7 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder={tr('passwordField', selectedLanguage)}
                 autoComplete="current-password"
                 style={{ ...inputStyle, paddingRight: 48 }}
               />
@@ -254,7 +255,7 @@ export default function LoginPage() {
                 onClick={() => setShowForgot(true)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2E5BFF', fontWeight: 700, fontSize: 13 }}
               >
-                Forgot Password?
+                {tr('forgotPassword', selectedLanguage)}
               </button>
             </div>
 
@@ -268,7 +269,7 @@ export default function LoginPage() {
                 cursor: 'pointer', opacity: loading ? 0.7 : 1,
               }}
             >
-              {loading ? 'Signing in…' : 'Login'}
+              {loading ? tr('loading', selectedLanguage) : tr('signIn', selectedLanguage)}
             </button>
           </form>
 
@@ -276,9 +277,9 @@ export default function LoginPage() {
 
           {/* Sign up link */}
           <p style={{ textAlign: 'center', margin: 0, color: '#6B7A99', fontSize: 14, fontWeight: 500 }}>
-            Don&apos;t have an account?{' '}
+            {tr('dontHaveAccount', selectedLanguage)}{' '}
             <Link href="/signup" style={{ color: '#2E5BFF', fontWeight: 800, textDecoration: 'none' }}>
-              Create one
+              {tr('createAccount', selectedLanguage)}
             </Link>
           </p>
         </div>
@@ -309,7 +310,7 @@ export default function LoginPage() {
                   type="email"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
-                  placeholder="Email address"
+                  placeholder={tr('emailField', selectedLanguage)}
                   style={{
                     width: '100%', height: 50, borderRadius: 14,
                     border: '1.5px solid #e2e8f0', background: '#f8faff',
@@ -327,7 +328,7 @@ export default function LoginPage() {
                   cursor: 'pointer', opacity: resetLoading ? 0.7 : 1,
                 }}
               >
-                {resetLoading ? 'Sending…' : 'Send Reset Email'}
+                {resetLoading ? tr('loading', selectedLanguage) : tr('forgotPassword', selectedLanguage)}
               </button>
             </form>
             <button
@@ -338,7 +339,7 @@ export default function LoginPage() {
                 cursor: 'pointer', marginTop: 10,
               }}
             >
-              Cancel
+              {tr('cancel', selectedLanguage)}
             </button>
           </div>
         </div>

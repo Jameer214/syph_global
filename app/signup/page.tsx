@@ -13,6 +13,7 @@ import {
   GoogleAuthProvider,
 } from 'firebase/auth';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import { auth } from '@/lib/firebase';
 import { createOrUpdateUserProfile } from '@/lib/firestore';
 import { COUNTRIES } from '@/data/countries';
@@ -21,7 +22,7 @@ const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern', 'Other
 
 export default function SignupPage() {
   const router = useRouter();
-  const { setUser, locationSet, selectedCountry } = useAppStore();
+  const { setUser, locationSet, selectedCountry, selectedLanguage } = useAppStore();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -169,7 +170,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#D6ECFF', overflowY: 'auto' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#D6ECFF', overflowY: 'auto' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', width: '100%', padding: '20px 20px 40px' }}>
         {/* Back button */}
         <button
@@ -177,7 +178,7 @@ export default function SignupPage() {
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', display: 'flex', alignItems: 'center', gap: 6, color: '#132A66', fontWeight: 700, fontSize: 15 }}
         >
           <ArrowLeft size={20} />
-          Back
+          {tr('back', selectedLanguage)}
         </button>
 
         <div style={{ height: 16 }} />
@@ -212,7 +213,7 @@ export default function SignupPage() {
               <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
-            {googleLoading ? 'Signing in…' : 'Continue with Google'}
+            {googleLoading ? tr('loading', selectedLanguage) : tr('continueWithGoogle', selectedLanguage)}
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
@@ -229,7 +230,7 @@ export default function SignupPage() {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Full name"
+                placeholder={tr('fullName', selectedLanguage)}
                 autoComplete="name"
                 style={inputStyle}
               />
@@ -242,7 +243,7 @@ export default function SignupPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
+                placeholder={tr('emailField', selectedLanguage)}
                 autoComplete="email"
                 style={inputStyle}
               />
@@ -255,7 +256,7 @@ export default function SignupPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password (min 6 characters)"
+                placeholder={tr('passwordField', selectedLanguage)}
                 autoComplete="new-password"
                 style={{ ...inputStyle, paddingRight: 48 }}
               />
@@ -343,16 +344,16 @@ export default function SignupPage() {
                 cursor: 'pointer', opacity: loading ? 0.7 : 1,
               }}
             >
-              {loading ? 'Creating account…' : 'Create Account'}
+              {loading ? tr('loading', selectedLanguage) : tr('createAccount', selectedLanguage)}
             </button>
           </form>
 
           <div style={{ height: 20 }} />
 
           <p style={{ textAlign: 'center', margin: 0, color: '#6B7A99', fontSize: 14, fontWeight: 500 }}>
-            Already have an account?{' '}
+            {tr('alreadyHaveAccount', selectedLanguage)}{' '}
             <Link href="/login" style={{ color: '#2E5BFF', fontWeight: 800, textDecoration: 'none' }}>
-              Login
+              {tr('signIn', selectedLanguage)}
             </Link>
           </p>
         </div>

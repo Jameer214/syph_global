@@ -8,12 +8,13 @@ import {
   signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
 } from 'firebase/auth';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import { auth } from '@/lib/firebase';
 import { createOrUpdateUserProfile } from '@/lib/firestore';
 
 export default function WelcomePage() {
   const router = useRouter();
-  const { setUser, locationSet, selectedCountry } = useAppStore();
+  const { setUser, locationSet, selectedCountry, selectedLanguage } = useAppStore();
   const [loading, setLoading] = useState(false);
 
   const afterAuth = () => {
@@ -93,13 +94,13 @@ export default function WelcomePage() {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#D6ECFF', overflowY: 'auto' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#D6ECFF', overflowY: 'auto' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '18px 20px 20px' }}>
         <div style={{ height: 20 }} />
 
         {/* Title */}
         <p style={{ textAlign: 'center', fontSize: 44, fontWeight: 900, color: '#132A66', lineHeight: 1, margin: 0 }}>
-          Welcome to
+          {tr('welcome', selectedLanguage)}
         </p>
 
         <div style={{ height: 18 }} />
@@ -119,7 +120,7 @@ export default function WelcomePage() {
 
         {/* Tagline */}
         <p style={{ textAlign: 'center', fontWeight: 900, fontSize: 18, color: '#132A66', margin: 0 }}>
-          Find it. Locate it. Connect.
+          {tr('tagline', selectedLanguage)}
         </p>
         <div style={{ height: 10 }} />
         <p style={{ textAlign: 'center', color: '#4A5878', fontWeight: 700, fontSize: 15, margin: 0 }}>
@@ -134,7 +135,7 @@ export default function WelcomePage() {
           background: '#fff', color: '#000', fontWeight: 800, fontSize: 16,
           cursor: 'pointer', marginBottom: 12, opacity: loading ? 0.6 : 1,
         }}>
-          {loading ? 'Signing in…' : 'Continue with Google'}
+          {loading ? tr('loading', selectedLanguage) : tr('continueWithGoogle', selectedLanguage)}
         </button>
 
         {/* Guest button */}
@@ -143,7 +144,7 @@ export default function WelcomePage() {
           background: 'rgba(255,255,255,0.7)', border: '2px solid #2E5BFF',
           color: '#2E5BFF', fontWeight: 800, fontSize: 16, cursor: 'pointer', marginBottom: 12,
         }}>
-          Continue as Guest
+          {tr('continueAsGuest', selectedLanguage)}
         </button>
 
         {/* Login button */}
@@ -152,7 +153,7 @@ export default function WelcomePage() {
           background: '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 16,
           cursor: 'pointer', marginBottom: 12,
         }}>
-          Login
+          {tr('signIn', selectedLanguage)}
         </button>
 
         {/* Create Account */}
@@ -161,7 +162,7 @@ export default function WelcomePage() {
           background: 'rgba(255,255,255,0.7)', border: '2px solid #2E5BFF',
           color: '#2E5BFF', fontWeight: 800, fontSize: 16, cursor: 'pointer',
         }}>
-          Create Account
+          {tr('createAccount', selectedLanguage)}
         </button>
 
         <div style={{ height: 18 }} />
