@@ -5,55 +5,112 @@ import { ArrowLeft } from 'lucide-react';
 const SECTIONS = [
   {
     title: '1. Information We Collect',
-    body: 'SYPH may collect information you provide directly, such as your name, email address, login details, selected country, region, listing details, images, messages, support requests, and profile information. SYPH may also collect technical and usage information such as app activity, device information, approximate location-related data, preferences, and interactions within the platform.',
+    body: [
+      'We collect the following categories of personal data:',
+      'Account & Identity Data: Full name, email address, and password (hashed) when you register with email. If you sign in via Google, we receive your name, email, and profile photo from Google.',
+      'Profile & Location Data: Country, region or city, and profile photo you choose to upload.',
+      'Listing Data: Title, description, price, category, images, and any other details you enter when creating a listing.',
+      'Messages: Chat content sent between users within the platform.',
+      'Device & Technical Data: IP address, browser type, operating system, referring URLs, and pages visited, collected automatically via Firebase and Vercel.',
+      'Usage Data: App activity, search queries, listing views, and feature interactions.',
+    ].join('\n\n'),
   },
   {
-    title: '2. Why We Collect Information',
-    body: 'SYPH collects information to operate the platform, create and manage accounts, connect consumers with producers and service providers, improve search and discovery, save preferences, support communication between users, detect abuse, maintain safety, process promotions, and improve the overall user experience.',
+    title: '2. Why We Collect This Data (Legal Basis)',
+    body: [
+      'We process your personal data for the following purposes and on the following legal bases:',
+      'Providing the Service (Contract): To create and manage your account, display your listings, enable messaging between users, and allow you to discover products and services near you.',
+      'Authentication (Contract): To verify your identity and secure your account via Firebase Authentication.',
+      'Location & Search Relevance (Legitimate Interest): To show you listings relevant to your selected country or region, improving your marketplace experience.',
+      'Safety & Fraud Prevention (Legitimate Interest): To detect abuse, enforce our policies, prevent fraud, and keep the platform safe for all users.',
+      'Legal Compliance (Legal Obligation): To comply with applicable laws, regulations, and lawful requests from authorities.',
+    ].join('\n\n'),
   },
   {
-    title: '3. Location and Market Relevance',
-    body: 'SYPH may use selected country, region, or location-related information to show relevant listings, services, happenings, and marketplace results near you or in the area you choose. Location-related features help SYPH connect consumers to producers and sellers more effectively, but users remain responsible for verifying the parties they choose to deal with.',
+    title: '3. Third-Party Services We Use',
+    body: [
+      'SYPH relies on the following third-party services that may process your data:',
+      'Firebase / Google (Auth, Firestore, Storage): We use Firebase Authentication for sign-in, Firestore as our database, and Firebase Storage for images. Google processes data under its own privacy policy at https://policies.google.com/privacy.',
+      'Vercel (Hosting): Our website is hosted on Vercel\'s Edge Network. Vercel may process request logs including IP addresses. See https://vercel.com/legal/privacy-policy.',
+      'Nominatim / OpenStreetMap (Location): We use Nominatim, the geocoding service by OpenStreetMap, to resolve location names. No personal data is sent to Nominatim beyond the location search term. See https://wiki.osmfoundation.org/wiki/Privacy_Policy.',
+      'None of these providers sell your personal data to third parties.',
+    ].join('\n\n'),
   },
   {
-    title: '4. User-to-User Interactions',
-    body: 'SYPH provides tools that allow users to discover listings and communicate, but SYPH is primarily a connector platform. Information shared between users as part of listings, chats, or transactions may be visible to other users as necessary for marketplace interactions. Users should avoid sharing unnecessary sensitive information and should use caution when dealing with others.',
+    title: '4. Cookies and Local Storage',
+    body: [
+      'Firebase Authentication: When you sign in, Firebase sets a session cookie or uses IndexedDB/local storage to persist your authentication state. This is strictly necessary for the service to function — you cannot opt out while signed in.',
+      'Preferences: Your selected language, country, and UI preferences are stored in browser local storage so they persist between sessions. No advertising or tracking cookies are used.',
+      'We do not use Google Analytics, Meta Pixel, or any third-party advertising trackers.',
+    ].join('\n\n'),
   },
   {
-    title: '5. How We Use Your Information',
-    body: 'SYPH may use collected information to run the app, personalize marketplace content, show relevant search results, support listings, improve platform performance, respond to support requests, enforce policies, investigate abuse, and maintain account and platform security.',
+    title: '5. Sharing of Personal Data',
+    body: [
+      'We do not sell your personal data.',
+      'We share your data only in the following limited circumstances:',
+      'Other users: Listing content, your display name, and profile photo are visible to other users as necessary for marketplace interactions. Private messages are visible only to the parties in the conversation.',
+      'Service providers: Firebase/Google, Vercel, and Nominatim as described in Section 3, solely to operate the platform.',
+      'Legal requirements: If required by law, court order, or lawful governmental authority.',
+      'Business transfers: If SYPH is acquired or merges with another entity, your data may be transferred as part of that transaction.',
+    ].join('\n\n'),
   },
   {
-    title: '6. Sharing of Information',
-    body: "SYPH may share limited information where necessary to operate the platform, comply with law, protect safety, investigate fraud, respond to lawful requests, or support essential third-party services such as hosting, analytics, authentication, notifications, storage, or payment-related operations where applicable. SYPH does not treat user data as public beyond what users themselves choose to publish in listings or profiles.",
+    title: '6. Data Retention',
+    body: [
+      'Account data is retained for as long as your account is active.',
+      'If you delete your account, we will delete your personal data within 30 days, except where we are required to retain it longer by law (e.g., for fraud prevention or legal obligations).',
+      'Listing data and messages associated with deleted accounts may be anonymised rather than deleted where removal would affect other users.',
+      'Server logs and backups are retained for up to 90 days before automatic deletion.',
+    ].join('\n\n'),
   },
   {
-    title: '7. Data Storage and Security',
-    body: 'SYPH takes reasonable technical and organizational steps to protect user information, but no system can guarantee absolute security. Users are also responsible for keeping login details secure and for protecting their own accounts and devices.',
+    title: '7. Data Security',
+    body: [
+      'We take reasonable technical and organisational steps to protect your personal data, including:',
+      'All data in transit is encrypted using TLS/HTTPS.',
+      'Firebase Firestore and Storage enforce access control rules so that users can only access their own data or publicly listed content.',
+      'Passwords are never stored in plain text — Firebase Authentication handles credential security.',
+      'Despite these measures, no system is 100% secure. You are responsible for keeping your login credentials confidential.',
+    ].join('\n\n'),
   },
   {
-    title: '8. Retention of Data',
-    body: 'SYPH may retain user information for as long as needed to operate the platform, comply with legal obligations, resolve disputes, enforce policies, maintain records, or support security and fraud prevention. Some data may remain in backups or logs for a reasonable period even after account changes or deletion requests.',
+    title: '8. Your Rights (GDPR & Global)',
+    body: [
+      'Depending on your location, you may have the following rights:',
+      'Right of Access: You can request a copy of the personal data we hold about you.',
+      'Right to Rectification: You can update inaccurate information via your account settings.',
+      'Right to Erasure ("Right to be Forgotten"): You can request deletion of your account and associated personal data.',
+      'Right to Data Portability: You can request your data in a machine-readable format.',
+      'Right to Restrict Processing: You can ask us to limit how we process your data in certain circumstances.',
+      'Right to Object: You can object to processing based on legitimate interests.',
+      'Right to Withdraw Consent: Where processing is based on consent, you may withdraw it at any time.',
+      'To exercise any of these rights, contact us at hassanjameer3@gmail.com. We will respond within 30 days.',
+    ].join('\n\n'),
   },
   {
-    title: '9. Children and Restricted Use',
-    body: 'SYPH is not intended for unlawful use or for users who are not legally permitted to use the platform in their jurisdiction. If SYPH becomes aware of inappropriate or unauthorized use, it may remove related content or accounts.',
+    title: '9. Children\'s Privacy',
+    body: 'SYPH is not intended for children under the age of 13. We do not knowingly collect personal data from anyone under 13. If we become aware that a child under 13 has provided us with personal data, we will delete that data immediately. If you believe a child under 13 has registered on SYPH, please contact us at hassanjameer3@gmail.com.',
   },
   {
-    title: '10. Your Choices',
-    body: 'You may update some of your account or profile information within the app. You may also choose what information to publish in listings or share with other users. Some information, however, may still be required for core functionality, safety, moderation, legal compliance, or account integrity.',
+    title: '10. International Data Transfers',
+    body: 'SYPH operates globally. Your data may be processed on servers located outside your country, including in the United States (Firebase/Google Cloud, Vercel). These transfers are made in compliance with applicable data protection laws. Firebase is certified under the EU-US Data Privacy Framework.',
   },
   {
-    title: '11. Third-Party Services',
-    body: "SYPH may rely on third-party tools and services for authentication, cloud storage, analytics, crash reporting, maps, notifications, or platform infrastructure. Those providers may process data as needed to support SYPH's services under their own legal terms and policies.",
+    title: '11. Location and Market Relevance',
+    body: 'SYPH uses the country and region you select to show relevant listings and marketplace results. You choose your location manually — we do not access your device\'s GPS location without your explicit action. You can change your selected location at any time within the app.',
   },
   {
-    title: '12. Policy Updates',
-    body: 'SYPH may update this Privacy Policy from time to time. Continued use of the platform after updates means you accept the updated policy to the extent permitted by law.',
+    title: '12. User-to-User Interactions',
+    body: 'SYPH is a connector platform. Messages you send to other users are stored in Firebase Firestore and are accessible to the sender and recipient. Do not share sensitive personal or financial information in chats. SYPH staff do not routinely read private messages, but may access them if required for safety investigations or legal compliance.',
   },
   {
-    title: '13. Contact',
-    body: 'If you have questions about privacy, data use, or platform safety, you may contact SYPH using the support options provided in the app.',
+    title: '13. Policy Updates',
+    body: 'We may update this Privacy Policy from time to time. We will notify you of significant changes by updating the "Last updated" date below and, where appropriate, by sending a notice to your registered email address. Continued use of the platform after updates constitutes acceptance of the revised policy.',
+  },
+  {
+    title: '14. Contact Us',
+    body: 'If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us at:\n\nEmail: hassanjameer3@gmail.com\n\nWe aim to respond to all privacy-related enquiries within 30 days.',
   },
 ];
 
@@ -74,19 +131,19 @@ export default function PrivacyPage() {
         {/* Intro card */}
         <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 14, border: '1px solid rgba(0,0,0,0.06)' }}>
           <div style={{ fontWeight: 900, fontSize: 18, color: '#0F2B6E', marginBottom: 8 }}>SYPH Privacy Policy</div>
-          <div style={{ color: '#4A5878', fontWeight: 600, fontSize: 13.5, lineHeight: 1.45 }}>
-            This Privacy Policy explains how SYPH collects, uses, stores, and protects information when you use the platform.
+          <div style={{ color: '#4A5878', fontWeight: 600, fontSize: 13.5, lineHeight: 1.5 }}>
+            This Privacy Policy explains how SYPH (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) collects, uses, stores, and protects your personal information when you use our platform. We are committed to protecting your privacy and complying with applicable data protection laws including the General Data Protection Regulation (GDPR).
           </div>
         </div>
 
         {SECTIONS.map(({ title, body }) => (
           <div key={title} style={{ background: '#fff', borderRadius: 16, padding: 14, marginBottom: 14, border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.025)' }}>
             <div style={{ fontWeight: 900, fontSize: 15, color: '#0F2B6E', marginBottom: 8 }}>{title}</div>
-            <div style={{ color: '#4A5878', fontWeight: 500, fontSize: 13.5, lineHeight: 1.45 }}>{body}</div>
+            <div style={{ color: '#4A5878', fontWeight: 500, fontSize: 13.5, lineHeight: 1.55, whiteSpace: 'pre-line' }}>{body}</div>
           </div>
         ))}
 
-        <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13 }}>Last updated: 2026</div>
+        <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13, marginTop: 4 }}>Last updated: June 9, 2026</div>
       </div>
     </div>
   );

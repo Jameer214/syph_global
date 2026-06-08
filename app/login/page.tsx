@@ -273,6 +273,13 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
+            By continuing, you agree to our{' '}
+            <a href="/terms" style={{ color: '#2E5BFF', textDecoration: 'none' }}>Terms</a>
+            {' '}and{' '}
+            <a href="/privacy" style={{ color: '#2E5BFF', textDecoration: 'none' }}>Privacy Policy</a>.
+          </p>
+
           <div style={{ height: 20 }} />
 
           {/* Sign up link */}

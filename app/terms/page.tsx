@@ -29,7 +29,7 @@ const SECTIONS = [
   },
   {
     title: '7. Prohibited Use',
-    body: 'You must not use SYPH for illegal, harmful, deceptive, unsafe, exploitative, or abusive purposes. This includes posting stolen items, counterfeit items, prohibited weapons, unlawful drugs, fraudulent services, fake investment opportunities, misleading jobs, impersonation, hate content, harassment, spam, or anything else that violates law or puts users at risk. SYPH may remove such content and restrict related accounts without notice.',
+    body: 'You must not use SYPH for illegal, harmful, deceptive, unsafe, exploitative, or abusive purposes. This includes but is not limited to:\n\n• Illegal items: stolen goods, counterfeit or fake branded products, items requiring a licence you do not hold.\n• Weapons: firearms, ammunition, explosives, or any weapon regulated or prohibited by law.\n• Controlled substances: unlawful drugs, drug paraphernalia, or prescription medicines without authorisation.\n• Fraud: fake listings, non-existent goods, advance-fee scams, phishing, or impersonating other people or businesses.\n• Harassment & abuse: threatening, bullying, or harassing other users.\n• Spam: sending unsolicited bulk messages or posting duplicate listings.\n• Hate content: content that promotes discrimination based on race, ethnicity, religion, gender, sexual orientation, disability, or nationality.\n\nSYPH may remove such content and restrict or permanently ban related accounts without notice.',
   },
   {
     title: '8. Safety and Due Diligence',
@@ -60,8 +60,16 @@ const SECTIONS = [
     body: 'SYPH may update these Terms & Conditions from time to time. Continued use of the platform after updates means you accept the revised terms. It is your responsibility to review the latest version when using the app.',
   },
   {
-    title: '15. Contact and Disputes',
-    body: 'If you have concerns about a listing, user, or platform issue, you may contact SYPH through the support channels provided in the app. While SYPH may review complaints and take moderation action, SYPH is not automatically the decision-maker or liable party in private disputes between users unless required by law.',
+    title: '15. Eligibility',
+    body: 'You must be at least 13 years old to use SYPH. By creating an account, you confirm that you meet this age requirement and that you are legally permitted to enter into these Terms in your jurisdiction. If you are under 18, you should review these Terms with a parent or guardian.',
+  },
+  {
+    title: '16. Governing Law',
+    body: 'These Terms are governed by and construed in accordance with applicable law. In the event of a dispute, we encourage you to first contact us to seek an informal resolution. Where formal proceedings are required, disputes will be submitted to the competent courts or arbitration bodies in accordance with the applicable law of the jurisdiction involved.',
+  },
+  {
+    title: '17. Contact and Disputes',
+    body: 'If you have concerns about a listing, user, or platform issue, you may contact SYPH at:\n\nEmail: hassanjameer3@gmail.com\n\nWhile SYPH may review complaints and take moderation action, SYPH is not automatically the decision-maker or liable party in private disputes between users unless required by law. We aim to respond to all enquiries within 30 days.',
   },
 ];
 
@@ -110,7 +118,7 @@ export default function TermsPage() {
               <div style={{ width: 4, height: 18, background: '#2E5BFF', borderRadius: 4, flexShrink: 0, marginTop: 1 }} />
               <div style={{ fontWeight: 900, fontSize: 15, color: '#0F2B6E' }}>{title}</div>
             </div>
-            <div style={{ color: '#4A5878', fontWeight: 500, fontSize: 13.5, lineHeight: 1.45 }}>{body}</div>
+            <div style={{ color: '#4A5878', fontWeight: 500, fontSize: 13.5, lineHeight: 1.55, whiteSpace: 'pre-line' }}>{body}</div>
           </div>
         ))}
 
@@ -125,7 +133,7 @@ export default function TermsPage() {
           </div>
         </div>
 
-        <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13 }}>Last updated: 2026</div>
+        <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13 }}>Last updated: June 9, 2026</div>
       </div>
     </div>
   );
