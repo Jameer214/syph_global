@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { collection, query, where, onSnapshot, QueryConstraint } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
+import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { getCategoryById } from '@/data/categories';
 import type { Listing } from '@/types';
@@ -40,7 +41,7 @@ export default function SubCategoryResultsPage() {
   const router = useRouter();
   const mainId = params.id as string;
   const subId = params.subId as string;
-  const { isSaved, toggleSaved, selectedCurrency } = useAppStore();
+  const { isSaved, toggleSaved, selectedCurrency, selectedLanguage } = useAppStore();
 
   function displayPrice(listing: Listing): string {
     if (listing.priceText?.trim()) return listing.priceText.trim();
@@ -112,7 +113,7 @@ export default function SubCategoryResultsPage() {
   const filtered = applyFiltersAndSort(listings);
 
   return (
-    <div className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
+    <div className="app-shell" dir={getDir(selectedLanguage)} style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
       <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><ArrowLeft size={22} /></button>
         <span style={{ color: '#fff', fontWeight: 900, fontSize: 17, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
@@ -123,7 +124,7 @@ export default function SubCategoryResultsPage() {
       <div style={{ padding: '12px 16px 16px' }}>
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <button onClick={() => setOpenNow((v) => !v)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 20, background: openNow ? '#2E5BFF' : '#fff', border: `1px solid ${openNow ? '#2E5BFF' : '#e2e8f0'}`, color: openNow ? '#fff' : '#0F2B6E', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-            <Clock size={14} /> Open Now
+            <Clock size={14} /> {tr('openNow', selectedLanguage)}
           </button>
           <button onClick={() => { toast('Location sorting coming soon'); }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 20, background: '#fff', border: '1px solid #e2e8f0', color: '#0F2B6E', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
             <Navigation size={14} /> Near Me
@@ -131,11 +132,11 @@ export default function SubCategoryResultsPage() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>Loading…</div>
+          <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>{tr('loading', selectedLanguage)}</div>
         ) : filtered.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', color: '#6B7A99' }}>
             <div style={{ fontSize: 40 }}>🔍</div>
-            <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>No results</p>
+            <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('noResults', selectedLanguage)}</p>
             <p style={{ margin: 0, fontSize: 13 }}>Try changing filters or check back later.</p>
           </div>
         ) : (
@@ -156,7 +157,7 @@ export default function SubCategoryResultsPage() {
                     <p style={{ margin: '4px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13 }}>{price}</p>
                     <p style={{ margin: '0 0 6px', fontSize: 12, color: '#6B7A99', fontWeight: 700 }}>{l.regionOrCity}, {l.country}</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {l.openNow && <span style={{ background: '#DFF5E8', color: '#1F7A3D', borderRadius: 999, padding: '4px 8px', fontSize: 11, fontWeight: 800 }}>Open Now</span>}
+                      {l.openNow && <span style={{ background: '#DFF5E8', color: '#1F7A3D', borderRadius: 999, padding: '4px 8px', fontSize: 11, fontWeight: 800 }}>{tr('openNow', selectedLanguage)}</span>}
                       {l.rating != null && <span style={{ background: '#FFF8E1', color: '#B8860B', borderRadius: 999, padding: '4px 8px', fontSize: 11, fontWeight: 800 }}>★ {l.rating.toFixed(1)}</span>}
                     </div>
                   </div>
@@ -208,7 +209,7 @@ export default function SubCategoryResultsPage() {
               </select>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9', marginBottom: 16 }}>
-              <p style={{ margin: 0, fontWeight: 900, fontSize: 14 }}>Open Now</p>
+              <p style={{ margin: 0, fontWeight: 900, fontSize: 14 }}>{tr('openNow', selectedLanguage)}</p>
               <button onClick={() => setTempOpenNow((v) => !v)} style={{ width: 48, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer', background: tempOpenNow ? '#2E5BFF' : '#e2e8f0', position: 'relative' }}>
                 <span style={{ position: 'absolute', top: 3, left: tempOpenNow ? 23 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
               </button>

@@ -317,7 +317,7 @@ export default function CategoryResultsPage() {
           {/* Open Now toggle */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
             <div>
-              <p style={{ margin: 0, fontWeight: 900, fontSize: 14 }}>Open Now</p>
+              <p style={{ margin: 0, fontWeight: 900, fontSize: 14 }}>{tr('openNow', selectedLanguage)}</p>
               <p style={{ margin: 0, fontSize: 12, color: '#6B7A99', fontWeight: 600 }}>Show only currently open listings</p>
             </div>
             <Toggle value={tempOpenNow} onChange={setTempOpenNow} />
