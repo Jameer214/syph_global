@@ -454,7 +454,13 @@ const T: Record<string, TranslationMap> = {
   loadMore:             { en:'Load More', fr:'Charger plus', pt:'Carregar mais', ar:'تحميل المزيد', sw:'Pakia Zaidi', zh:'加载更多', hi:'अधिक लोड करें', id:'Muat Lebih Banyak', bn:'আরও লোড করুন', ur:'مزید لوڈ کریں', ja:'さらに読み込む', ko:'더 보기' },
   noMoreListings:       { en:'No more listings', fr:'Plus d\'annonces', pt:'Sem mais anúncios', ar:'لا توجد المزيد من الإعلانات', sw:'Hakuna matangazo zaidi', zh:'没有更多商品了', hi:'और कोई लिस्टिंग नहीं', id:'Tidak ada listing lagi', bn:'আর কোনো তালিকা নেই', ur:'مزید فہرستیں نہیں', ja:'リストはこれ以上ありません', ko:'더 이상 목록이 없습니다' },
   messageSentDesc:      { en:'The seller will reply in your messages inbox.', fr:'Le vendeur répondra dans votre boîte de messages.', pt:'O vendedor responderá na sua caixa de mensagens.', ar:'سيرد البائع في صندوق رسائلك.', sw:'Muuzaji atajibu katika kisanduku chako cha ujumbe.', zh:'卖家将在您的消息收件箱中回复。', hi:'विक्रेता आपके संदेश इनबॉक्स में जवाब देगा।', id:'Penjual akan membalas di kotak masuk pesan Anda.', bn:'বিক্রেতা আপনার বার্তা ইনবক্সে উত্তর দেবে।', ur:'بائع آپ کے پیغام ان باکس میں جواب دے گا۔', ja:'出品者はメッセージ受信トレイで返信します。', ko:'판매자가 메시지 받은 편지함에서 답장할 것입니다.' },
-  viewMessages:         { en:'View Messages', fr:'Voir les messages', pt:'Ver mensagens', ar:'عرض الرسائل', sw:'Tazama Ujumbe', zh:'查看消息', hi:'संदेश देखें', id:'Lihat Pesan', bn:'বার্তা দেখुन', ur:'پیغامات دیکھیں', ja:'メッセージを見る', ko:'메시지 보기' },
+  viewMessages:         { en:'View Messages', fr:'Voir les messages', pt:'Ver mensagens', ar:'عرض الرسائل', sw:'Tazama Ujumbe', zh:'查看消息', hi:'संदेश देखें', id:'Lihat Pesan', bn:'বার্তা দেখুন', ur:'پیغامات دیکھیں', ja:'メッセージを見る', ko:'메시지 보기' },
+
+  // ── Additional keys ────────────────────────────────────────────────────────
+  recentSearches:     { en:'Recent Searches', fr:'Recherches récentes', pt:'Buscas recentes', ar:'البحث الأخير', sw:'Utafutaji wa hivi karibuni', zh:'最近搜索', hi:'हाल की खोज', id:'Pencarian terakhir', bn:'সাম্প্রতিক অনুসন্ধান', ur:'حالیہ تلاشیں', ja:'最近の検索', ko:'최근 검색' },
+  startConversation:  { en:'Start a conversation', fr:'Démarrer une conversation', pt:'Iniciar uma conversa', ar:'ابدأ محادثة', sw:'Anza mazungumzo', zh:'开始对话', hi:'बातचीत शुरू करें', id:'Mulai percakapan', bn:'কথোপকথন শুরু করুন', ur:'گفتگو شروع کریں', ja:'会話を始める', ko:'대화 시작하기' },
+  noNotifications:    { en:'No notifications yet', fr:'Pas encore de notifications', pt:'Sem notificações ainda', ar:'لا إشعارات بعد', sw:'Bado hakuna arifa', zh:'暂无通知', hi:'अभी कोई सूचना नहीं', id:'Belum ada notifikasi', bn:'এখনো কোনো বিজ্ঞপ্তি নেই', ur:'ابھی کوئی اطلاع نہیں', ja:'まだ通知がありません', ko:'아직 알림이 없습니다' },
+  yesterday:          { en:'Yesterday', fr:'Hier', pt:'Ontem', ar:'أمس', sw:'Jana', zh:'昨天', hi:'कल', id:'Kemarin', bn:'গতকাল', ur:'کل', ja:'昨日', ko:'어제' },
 };
 
 export function translate(key: string, lang: string): string {
