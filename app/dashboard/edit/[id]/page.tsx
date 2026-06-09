@@ -4,8 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Camera, X, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { getListing, updateListing, uploadListingImages } from '@/lib/firestore';
 import { CATEGORIES } from '@/data/categories';
 import type { Listing } from '@/types';
@@ -42,19 +41,20 @@ export default function EditListingPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (!u) { setLoading(false); return; }
-      setUid(u.uid);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) { setLoading(false); return; }
+      setUid(session.user.id);
     });
-    return unsub;
   }, []);
 
   useEffect(() => {
     if (!id) return;
+    let currentUid = '';
+    supabase.auth.getSession().then(({ data: { session } }) => { currentUid = session?.user?.id ?? ''; });
     getListing(id).then((l) => {
       if (!l) { setLoading(false); return; }
       // IDOR guard: redirect immediately if not the owner
-      if (l.ownerUid && l.ownerUid !== auth.currentUser?.uid) {
+      if (l.ownerUid && currentUid && l.ownerUid !== currentUid) {
         router.replace('/dashboard');
         return;
       }

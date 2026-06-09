@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
-import { auth } from '@/lib/firebase';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
@@ -25,8 +24,7 @@ export default function SavedPage() {
     }
     return null;
   }
-  const fireUser = auth.currentUser;
-  const uid = user?.uid ?? fireUser?.uid ?? '';
+  const uid = user?.uid ?? '';
 
   const [savedListings, setSavedListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);

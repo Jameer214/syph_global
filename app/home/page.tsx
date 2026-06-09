@@ -9,12 +9,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
-import {
-  collection, query, where, orderBy, limit, onSnapshot,
-  getDocs, QueryConstraint,
-} from 'firebase/firestore';
 import { useAppStore } from '@/store';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { tr, getDir } from '@/lib/i18n';
 import { COUNTRY_FLAGS } from '@/data/countries';
@@ -65,23 +61,28 @@ function useListings(opts: {
   country?: string;
 }): Listing[] {
   const [listings, setListings] = useState<Listing[]>([]);
-  const { isFlashSale, isHappening, isSponsored, orderField = 'createdAt', count = 16, country } = opts;
+  const { isFlashSale, isHappening, isSponsored, count = 16, country } = opts;
 
   useEffect(() => {
-    const constraints: QueryConstraint[] = [where('status', '==', 'approved')];
-    if (isFlashSale !== undefined) constraints.push(where('isFlashSale', '==', isFlashSale));
-    if (isHappening !== undefined) constraints.push(where('isHappening', '==', isHappening));
-    if (isSponsored !== undefined) constraints.push(where('isSponsored', '==', isSponsored));
-    if (country) constraints.push(where('country', '==', country));
-    constraints.push(orderBy(orderField, 'desc'));
-    constraints.push(limit(count));
-
-    const q = query(collection(db, 'listings'), ...constraints);
-    const unsub = onSnapshot(q, (snap) => {
-      setListings(snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id)));
-    }, () => {});
-    return unsub;
-  }, [isFlashSale, isHappening, isSponsored, orderField, count, country]);
+    let cancelled = false;
+    const fetchListings = async () => {
+      let q = supabase
+        .from('listings')
+        .select('*, listing_images(url, sort_order)')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(count);
+      if (isFlashSale !== undefined) q = q.eq('is_flash_sale', isFlashSale);
+      if (isSponsored !== undefined) q = q.eq('is_sponsored', isSponsored);
+      if (country) q = q.eq('country', country);
+      // happenings are in a separate table; skip if isHappening filter requested
+      if (isHappening) { if (!cancelled) setListings([]); return; }
+      const { data } = await q;
+      if (!cancelled) setListings((data ?? []).map(r => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+    };
+    fetchListings();
+    return () => { cancelled = true; };
+  }, [isFlashSale, isHappening, isSponsored, count, country]);
 
   return listings;
 }
@@ -473,19 +474,20 @@ export default function HomePage() {
   const sponsored = useListings({ isSponsored: true, count: 12, country: filterCountry });
   const [explore, setExplore] = useState<Listing[]>([]);
 
-  // Explore (all approved) — Firestore-filtered by country
+  // Explore (all approved) — Supabase-filtered by country
   useEffect(() => {
-    const constraints: QueryConstraint[] = [
-      where('status', '==', 'approved'),
-      orderBy('createdAt', 'desc'),
-      limit(40),
-    ];
-    if (selectedCountry) constraints.unshift(where('country', '==', selectedCountry));
-    const q = query(collection(db, 'listings'), ...constraints);
-    const unsub = onSnapshot(q, (snap) => {
-      setExplore(snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id)));
-    }, () => {});
-    return unsub;
+    let cancelled = false;
+    (async () => {
+      let q = supabase.from('listings')
+        .select('*, listing_images(url, sort_order)')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(40);
+      if (selectedCountry) q = q.eq('country', selectedCountry);
+      const { data } = await q;
+      if (!cancelled) setExplore((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+    })();
+    return () => { cancelled = true; };
   }, [selectedCountry]);
 
   // Search debounce
@@ -500,22 +502,14 @@ export default function HomePage() {
     searchTimer.current = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const term = searchQuery.toLowerCase().trim();
-        const q = query(
-          collection(db, 'listings'),
-          where('status', '==', 'approved'),
-          orderBy('createdAt', 'desc'),
-          limit(80),
-        );
-        const snap = await getDocs(q);
-        const all = snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
-        setSearchResults(
-          all.filter((l) =>
-            l.title.toLowerCase().includes(term) ||
-            l.description.toLowerCase().includes(term) ||
-            l.locationText.toLowerCase().includes(term)
-          ).slice(0, 12)
-        );
+        const term = searchQuery.trim();
+        const { data } = await supabase.from('listings')
+          .select('*, listing_images(url, sort_order)')
+          .eq('status', 'active')
+          .ilike('title', `%${term}%`)
+          .order('created_at', { ascending: false })
+          .limit(12);
+        setSearchResults((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
       } catch {
         setSearchResults([]);
       } finally {

@@ -5,11 +5,9 @@ import {
   Camera, Edit3, Lock, LogOut, Store, Settings,
   Sun, Moon, MapPin, ChevronRight, User,
 } from 'lucide-react';
-import { onAuthStateChanged, signOut, updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import toast from 'react-hot-toast';
-import { auth, db, storage } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
+import { uploadAvatar } from '@/lib/firestore';
 import BottomNav from '@/components/BottomNav';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
@@ -25,7 +23,7 @@ function initials(name: string): string {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, setUser, selectedLanguage } = useAppStore();
-  const [authUser, setAuthUser] = useState<{ uid: string; displayName: string | null; email: string | null; photoURL: string | null } | null>(null);
+  const [authUser, setAuthUser] = useState<{ uid: string; displayName: string | null; email: string | null; photoURL: string | null; } | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [seller, setSeller] = useState<SellerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,35 +47,41 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
       if (!u) { setAuthUser(null); setLoading(false); return; }
-      setAuthUser({ uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL });
-
-      // load user profile
-      const snap = await getDoc(doc(db, 'users', u.uid));
-      if (snap.exists()) setProfile(snap.data() as UserProfile);
+      const displayName = u.user_metadata?.full_name ?? u.email?.split('@')[0] ?? '';
+      const photoURL = u.user_metadata?.avatar_url ?? null;
+      setAuthUser({ uid: u.id, displayName, email: u.email ?? null, photoURL });
 
       // load seller profile
-      const sellerSnap = await getDoc(doc(db, 'sellers', u.uid));
-      if (sellerSnap.exists()) setSeller(sellerSnap.data() as SellerProfile);
+      const { data: sellerData } = await supabase.from('sellers').select('*').eq('user_id', u.id).single();
+      if (sellerData) setSeller(sellerData as unknown as SellerProfile);
 
       setLoading(false);
     });
-    return unsub;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const u = session?.user ?? null;
+      if (!u) { setAuthUser(null); setLoading(false); return; }
+      const displayName = u.user_metadata?.full_name ?? u.email?.split('@')[0] ?? '';
+      const photoURL = u.user_metadata?.avatar_url ?? null;
+      setAuthUser({ uid: u.id, displayName, email: u.email ?? null, photoURL });
+      setLoading(false);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   async function handlePhotoUpload(file: File) {
     if (!authUser) return;
     setUploadingPhoto(true);
     try {
-      const sRef = storageRef(storage, `profile_photos/${authUser.uid}/profile_${Date.now()}.jpg`);
-      await uploadBytes(sRef, file);
-      const url = await getDownloadURL(sRef);
-      await updateProfile(auth.currentUser!, { photoURL: url });
-      await setDoc(doc(db, 'users', authUser.uid), { photoUrl: url }, { merge: true });
+      const url = await uploadAvatar(authUser.uid, file);
+      await supabase.auth.updateUser({ data: { avatar_url: url } });
+      await supabase.from('profiles').upsert({ id: authUser.uid, avatar_url: url });
       setAuthUser((prev) => prev ? { ...prev, photoURL: url } : null);
       toast.success('Profile photo updated!');
-    } catch (e) {
+    } catch {
       toast.error('Failed to upload photo');
     } finally {
       setUploadingPhoto(false);
@@ -88,12 +92,12 @@ export default function ProfilePage() {
     if (!authUser || !nameInput.trim()) return;
     setSavingName(true);
     try {
-      await updateProfile(auth.currentUser!, { displayName: nameInput.trim() });
-      await setDoc(doc(db, 'users', authUser.uid), { displayName: nameInput.trim(), updatedAt: serverTimestamp() }, { merge: true });
+      await supabase.auth.updateUser({ data: { full_name: nameInput.trim() } });
+      await supabase.from('profiles').upsert({ id: authUser.uid, full_name: nameInput.trim() });
       setAuthUser((prev) => prev ? { ...prev, displayName: nameInput.trim() } : null);
       toast.success('Name updated!');
       setShowEditName(false);
-    } catch (e) {
+    } catch {
       toast.error('Failed to update name');
     } finally {
       setSavingName(false);
@@ -107,29 +111,31 @@ export default function ProfilePage() {
     if (newPw !== confirmPw) { setPwError('Passwords do not match.'); return; }
     setSavingPw(true);
     try {
-      const u = auth.currentUser!;
-      const cred = EmailAuthProvider.credential(u.email!, currentPw);
-      await reauthenticateWithCredential(u, cred);
-      await updatePassword(u, newPw);
-      setPwDone(true);
-    } catch (e: unknown) {
-      const code = (e as { code?: string }).code ?? '';
-      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        setPwError('Current password is incorrect.');
-      } else if (code === 'auth/too-many-requests') {
-        setPwError('Too many attempts. Please try again later.');
-      } else if (code === 'auth/weak-password') {
-        setPwError('New password is too weak. Use at least 6 characters.');
+      // Re-authenticate by signing in again
+      const { error: reAuthError } = await supabase.auth.signInWithPassword({
+        email: authUser?.email ?? '',
+        password: currentPw,
+      });
+      if (reAuthError) { setPwError('Current password is incorrect.'); setSavingPw(false); return; }
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPw });
+      if (updateError) {
+        if (updateError.message?.toLowerCase().includes('weak')) {
+          setPwError('New password is too weak. Use at least 6 characters.');
+        } else {
+          setPwError('Failed to change password. Please try again.');
+        }
       } else {
-        setPwError('Failed to change password. Please try again.');
+        setPwDone(true);
       }
+    } catch {
+      setPwError('Failed to change password. Please try again.');
     } finally {
       setSavingPw(false);
     }
   }
 
   async function logout() {
-    await signOut(auth);
+    await supabase.auth.signOut();
     setUser(null);
     router.push('/welcome');
   }

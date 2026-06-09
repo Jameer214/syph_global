@@ -2,8 +2,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Smartphone, CreditCard, Lock, Info } from 'lucide-react';
-import { httpsCallable } from 'firebase/functions';
-import { functions, auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 type Method = 'mtn' | 'airtel' | 'bank';
@@ -34,7 +33,8 @@ function DetailsPageContent() {
 
   async function handleProceed() {
     if (submitting) return;
-    const user = auth.currentUser;
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) { toast.error('Please sign in first.'); return; }
 
     if (isMobile) {
@@ -46,26 +46,28 @@ function DetailsPageContent() {
 
     setSubmitting(true);
     try {
-      const createOrder = httpsCallable(functions, 'createPaymentOrder');
       const paymentDetails = isMobile ? { phoneNumber: phone.trim() } : {};
 
-      const result = await createOrder({
-        uid: user.uid,
-        email: user.email ?? '',
-        amount: Number(amount),
-        currency,
-        listingType: type,
-        days: Number(days),
-        paymentMethod: method,
-        paymentDetails,
-        listingData: { uid: user.uid, listingId, listingTitle, type, days: Number(days) },
-      }) as { data: { paymentId?: string; redirectUrl?: string } };
+      const { data: result, error } = await supabase.functions.invoke('createPaymentOrder', {
+        body: {
+          uid: user.id,
+          email: user.email ?? '',
+          amount: Number(amount),
+          currency,
+          listingType: type,
+          days: Number(days),
+          paymentMethod: method,
+          paymentDetails,
+          listingData: { uid: user.id, listingId, listingTitle, type, days: Number(days) },
+        },
+      });
+      if (error) throw error;
 
-      const paymentId = result.data.paymentId;
+      const paymentId = result?.paymentId;
       if (!paymentId) throw new Error('No payment ID returned.');
 
-      if (method === 'bank' && result.data.redirectUrl) {
-        window.location.href = result.data.redirectUrl;
+      if (method === 'bank' && result?.redirectUrl) {
+        window.location.href = result.redirectUrl;
         return;
       }
 

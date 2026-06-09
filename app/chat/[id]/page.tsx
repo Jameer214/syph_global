@@ -5,10 +5,7 @@ import Image from 'next/image';
 import { ArrowLeft, Send } from 'lucide-react';
 import { sanitizeText } from '@/lib/sanitize';
 import toast from 'react-hot-toast';
-import {
-  doc, getDoc, addDoc, collection, setDoc, serverTimestamp, increment, onSnapshot,
-} from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { subscribeChatMessages, markThreadRead } from '@/lib/firestore';
@@ -50,8 +47,7 @@ export default function ChatPage() {
   const threadId = params.id as string;
 
   const { user, selectedLanguage } = useAppStore();
-  const fireUser = auth.currentUser;
-  const currentUid = user?.uid ?? fireUser?.uid ?? '';
+  const currentUid = user?.uid ?? '';
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [threadInfo, setThreadInfo] = useState<ThreadInfo | null>(null);
@@ -62,19 +58,22 @@ export default function ChatPage() {
 
   // Load thread info
   useEffect(() => {
-    getDoc(doc(db, 'chats', threadId)).then((snap) => {
-      if (snap.exists()) {
-        const d = snap.data() as Record<string, unknown>;
-        setThreadInfo({
-          sellerUid: String(d.sellerUid ?? ''),
-          buyerUid: String(d.buyerUid ?? ''),
-          sellerName: String(d.sellerName ?? 'Seller'),
-          buyerName: String(d.buyerName ?? 'User'),
-          listingTitle: String(d.listingTitle ?? ''),
-          listingImageUrl: String(d.listingImageUrl ?? ''),
-        });
-      }
-    }).catch(() => {});
+    (async () => {
+      try {
+        const { data } = await supabase.from('chats').select('*').eq('id', threadId).single();
+        if (data) {
+          const d = data as Record<string, unknown>;
+          setThreadInfo({
+            sellerUid: String(d.seller_id ?? ''),
+            buyerUid: String(d.buyer_id ?? ''),
+            sellerName: 'Seller',
+            buyerName: 'User',
+            listingTitle: '',
+            listingImageUrl: '',
+          });
+        }
+      } catch {}
+    })();
   }, [threadId]);
 
   // Subscribe to messages
@@ -105,20 +104,20 @@ export default function ChatPage() {
 
     try {
       const isSeller = currentUid === threadInfo?.sellerUid;
-      const otherUnreadField = isSeller ? 'unreadForBuyer' : 'unreadForSeller';
+      const now = new Date().toISOString();
 
-      await addDoc(collection(db, 'chats', threadId, 'messages'), {
-        senderUid: currentUid,
-        text,
-        createdAt: serverTimestamp(),
+      await supabase.from('messages').insert({
+        chat_id: threadId,
+        sender_id: currentUid,
+        content: text,
+        is_read: false,
       });
 
-      await setDoc(doc(db, 'chats', threadId), {
-        lastMessage: text,
-        lastSenderUid: currentUid,
-        updatedAt: serverTimestamp(),
-        [otherUnreadField]: increment(1),
-      }, { merge: true });
+      await supabase.from('chats').update({
+        last_message: text,
+        last_message_at: now,
+        ...(isSeller ? { buyer_unread_count: 1 } : { seller_unread_count: 1 }),
+      }).eq('id', threadId);
     } catch (e) {
       toast.error('Failed to send message. Please try again.');
       setInputText(text); // restore

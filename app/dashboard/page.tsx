@@ -7,11 +7,7 @@ import {
   ArrowLeft, BarChart2, Smartphone,
 } from 'lucide-react';
 import Image from 'next/image';
-import { onAuthStateChanged } from 'firebase/auth';
-import {
-  collection, query, where, onSnapshot, doc, getDoc,
-} from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { getSellerProfile } from '@/lib/firestore';
 import type { Listing, SellerProfile } from '@/types';
 
@@ -67,23 +63,32 @@ export default function DashboardPage() {
   const [showAppModal, setShowAppModal] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
       if (!u) { setUid(null); setLoading(false); return; }
-      setUid(u.uid);
-      const sp = await getSellerProfile(u.uid);
+      setUid(u.id);
+      const sp = await getSellerProfile(u.id);
       setSeller(sp);
       setLoading(false);
     });
-    return unsub;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const u = session?.user ?? null;
+      if (!u) { setUid(null); setLoading(false); }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!uid) return;
-    const q = query(collection(db, 'listings'), where('ownerUid', '==', uid));
-    const unsub = onSnapshot(q, (snap) => {
-      setListings(snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id)));
-    }, () => {});
-    return unsub;
+    let cancelled = false;
+    const loadListings = async () => {
+      const { data: sellerRow } = await supabase.from('sellers').select('id').eq('user_id', uid).single();
+      if (!sellerRow || cancelled) return;
+      const { data } = await supabase.from('listings').select('*').eq('seller_id', (sellerRow as Record<string, unknown>).id);
+      if (!cancelled) setListings((data ?? []).map(d => mapListing(d as Record<string, unknown>, String((d as Record<string, unknown>).id ?? ''))));
+    };
+    loadListings();
+    return () => { cancelled = true; };
   }, [uid]);
 
   const totalViews = listings.reduce((s, l) => s + l.viewsCount, 0);

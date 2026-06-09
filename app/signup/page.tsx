@@ -5,17 +5,9 @@ import Link from 'next/link';
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { checkRateLimit } from '@/lib/rateLimit';
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  GoogleAuthProvider,
-} from 'firebase/auth';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { createOrUpdateUserProfile } from '@/lib/firestore';
 import { COUNTRIES } from '@/data/countries';
 
@@ -45,63 +37,43 @@ export default function SignupPage() {
     }
   };
 
-  const processUser = async (firebaseUser: import('firebase/auth').User) => {
+  const processUser = async (supabaseUser: import('@supabase/supabase-js').User) => {
     const profile = {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email ?? '',
-      displayName: firebaseUser.displayName ?? '',
-      photoUrl: firebaseUser.photoURL ?? undefined,
+      uid: supabaseUser.id,
+      email: supabaseUser.email ?? '',
+      displayName: supabaseUser.user_metadata?.full_name ?? supabaseUser.email?.split('@')[0] ?? '',
+      photoUrl: supabaseUser.user_metadata?.avatar_url ?? undefined,
     };
     await createOrUpdateUserProfile(profile);
     setUser(profile);
     afterAuth();
   };
 
-  // Handle result after signInWithRedirect comes back
+  // Handle OAuth redirect result on mount
   useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setGoogleLoading(true);
-          return processUser(result.user);
-        }
-      })
-      .catch((err) => {
-        const code = (err as { code?: string }).code ?? '';
-        if (code === 'auth/unauthorized-domain') {
-          toast.error('This domain is not authorised. Contact support.');
-        } else if (code && code !== 'auth/no-auth-event') {
-          toast.error('Google sign-in failed. Please try again.');
-        }
-      })
-      .finally(() => setGoogleLoading(false));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setGoogleLoading(true);
+        processUser(session.user).finally(() => setGoogleLoading(false));
+      }
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-    provider.addScope('email');
-    provider.addScope('profile');
     try {
-      const result = await signInWithPopup(auth, provider);
-      await processUser(result.user);
-    } catch (err) {
-      const code = (err as { code?: string }).code ?? '';
-      if (code === 'auth/popup-blocked') {
-        await signInWithRedirect(auth, provider);
-      } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        setGoogleLoading(false);
-      } else if (code === 'auth/unauthorized-domain') {
-        toast.error('This domain is not authorised. Please use email/password sign-in.');
-        setGoogleLoading(false);
-      } else if (code === 'auth/operation-not-allowed') {
-        toast.error('Google sign-in is not enabled. Please use email/password sign-in.');
-        setGoogleLoading(false);
-      } else {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
+      });
+      if (error) {
         toast.error('Google sign-in failed. Please try again.');
         setGoogleLoading(false);
       }
+    } catch {
+      toast.error('Google sign-in failed. Please try again.');
+      setGoogleLoading(false);
     }
   };
 
@@ -133,17 +105,32 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
-      const firebaseUser = result.user;
-
-      // Update display name
-      await updateProfile(firebaseUser, { displayName: fullName.trim() });
-
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { data: { full_name: fullName.trim() } },
+      });
+      if (error) {
+        if (error.message?.toLowerCase().includes('already registered') || error.message?.toLowerCase().includes('already in use')) {
+          toast.error('This email is already registered. Try logging in.');
+        } else if (error.message?.toLowerCase().includes('invalid')) {
+          toast.error('Invalid email address.');
+        } else if (error.message?.toLowerCase().includes('password')) {
+          toast.error('Password is too weak.');
+        } else {
+          toast.error('Sign up failed. Please try again.');
+        }
+        return;
+      }
+      if (!data.user) {
+        toast.error('Sign up failed. Please try again.');
+        return;
+      }
       const profile = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
+        uid: data.user.id,
+        email: data.user.email ?? '',
         displayName: fullName.trim(),
-        photoUrl: firebaseUser.photoURL ?? undefined,
+        photoUrl: undefined,
         country: country || undefined,
         regionOrCity: region || undefined,
       };
@@ -151,17 +138,8 @@ export default function SignupPage() {
       setUser(profile);
       toast.success('Account created successfully!');
       afterAuth();
-    } catch (err: unknown) {
-      const code = (err as { code?: string }).code ?? '';
-      if (code === 'auth/email-already-in-use') {
-        toast.error('This email is already registered. Try logging in.');
-      } else if (code === 'auth/invalid-email') {
-        toast.error('Invalid email address.');
-      } else if (code === 'auth/weak-password') {
-        toast.error('Password is too weak.');
-      } else {
-        toast.error('Sign up failed. Please try again.');
-      }
+    } catch {
+      toast.error('Sign up failed. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -5,17 +5,9 @@ import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { checkRateLimit } from '@/lib/rateLimit';
-import {
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  GoogleAuthProvider,
-  sendPasswordResetEmail,
-} from 'firebase/auth';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { createOrUpdateUserProfile } from '@/lib/firestore';
 
 export default function LoginPage() {
@@ -41,63 +33,43 @@ export default function LoginPage() {
     }
   };
 
-  const processUser = async (firebaseUser: import('firebase/auth').User) => {
+  const processUser = async (supabaseUser: import('@supabase/supabase-js').User) => {
     const profile = {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email ?? '',
-      displayName: firebaseUser.displayName ?? '',
-      photoUrl: firebaseUser.photoURL ?? undefined,
+      uid: supabaseUser.id,
+      email: supabaseUser.email ?? '',
+      displayName: supabaseUser.user_metadata?.full_name ?? supabaseUser.email?.split('@')[0] ?? '',
+      photoUrl: supabaseUser.user_metadata?.avatar_url ?? undefined,
     };
     await createOrUpdateUserProfile(profile);
     setUser(profile);
     afterAuth();
   };
 
-  // Handle result after signInWithRedirect comes back
+  // Handle OAuth redirect result on mount
   useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setGoogleLoading(true);
-          return processUser(result.user);
-        }
-      })
-      .catch((err) => {
-        const code = (err as { code?: string }).code ?? '';
-        if (code === 'auth/unauthorized-domain') {
-          toast.error('This domain is not authorised. Contact support.');
-        } else if (code && code !== 'auth/no-auth-event') {
-          toast.error('Google sign-in failed. Please try again.');
-        }
-      })
-      .finally(() => setGoogleLoading(false));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setGoogleLoading(true);
+        processUser(session.user).finally(() => setGoogleLoading(false));
+      }
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-    provider.addScope('email');
-    provider.addScope('profile');
     try {
-      const result = await signInWithPopup(auth, provider);
-      await processUser(result.user);
-    } catch (err) {
-      const code = (err as { code?: string }).code ?? '';
-      if (code === 'auth/popup-blocked') {
-        await signInWithRedirect(auth, provider);
-      } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        setGoogleLoading(false);
-      } else if (code === 'auth/unauthorized-domain') {
-        toast.error('This domain is not authorised. Please use email/password sign-in.');
-        setGoogleLoading(false);
-      } else if (code === 'auth/operation-not-allowed') {
-        toast.error('Google sign-in is not enabled. Please use email/password sign-in.');
-        setGoogleLoading(false);
-      } else {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
+      });
+      if (error) {
         toast.error('Google sign-in failed. Please try again.');
         setGoogleLoading(false);
       }
+    } catch {
+      toast.error('Google sign-in failed. Please try again.');
+      setGoogleLoading(false);
     }
   };
 
@@ -113,26 +85,28 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const firebaseUser = result.user;
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error || !data.user) {
+        if (error?.message?.toLowerCase().includes('invalid')) {
+          toast.error('Incorrect email or password.');
+        } else if (error?.message?.toLowerCase().includes('too many')) {
+          toast.error('Too many attempts. Please try again later.');
+        } else {
+          toast.error('Login failed. Please try again.');
+        }
+        return;
+      }
       const profile = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        displayName: firebaseUser.displayName ?? '',
-        photoUrl: firebaseUser.photoURL ?? undefined,
+        uid: data.user.id,
+        email: data.user.email ?? '',
+        displayName: data.user.user_metadata?.full_name ?? data.user.email?.split('@')[0] ?? '',
+        photoUrl: data.user.user_metadata?.avatar_url ?? undefined,
       };
       await createOrUpdateUserProfile(profile);
       setUser(profile);
       afterAuth();
-    } catch (err: unknown) {
-      const code = (err as { code?: string }).code ?? '';
-      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        toast.error('Incorrect email or password.');
-      } else if (code === 'auth/too-many-requests') {
-        toast.error('Too many attempts. Please try again later.');
-      } else {
-        toast.error('Login failed. Please try again.');
-      }
+    } catch {
+      toast.error('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -146,10 +120,14 @@ export default function LoginPage() {
     }
     setResetLoading(true);
     try {
-      await sendPasswordResetEmail(auth, resetEmail.trim());
-      toast.success('Password reset email sent! Check your inbox.');
-      setShowForgot(false);
-      setResetEmail('');
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim());
+      if (error) {
+        toast.error('Failed to send reset email. Please check the address.');
+      } else {
+        toast.success('Password reset email sent! Check your inbox.');
+        setShowForgot(false);
+        setResetEmail('');
+      }
     } catch {
       toast.error('Failed to send reset email. Please check the address.');
     } finally {

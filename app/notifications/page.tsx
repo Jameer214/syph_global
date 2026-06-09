@@ -5,12 +5,7 @@ import {
   MessageCircle, CheckCircle, XCircle, Zap, Calendar, Star,
   Bell, ChevronRight, Shield, Info, Award,
 } from 'lucide-react';
-import {
-  collection, query, where, orderBy, limit, onSnapshot,
-  doc, updateDoc, writeBatch, getDoc, setDoc, Timestamp,
-} from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import BottomNav from '@/components/BottomNav';
 import { useAppStore } from '@/store';
 import { translate as tr, getDir } from '@/lib/i18n';
@@ -110,101 +105,35 @@ export default function NotificationsPage() {
 
   // auth
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUid(u?.uid ?? null);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUid(session?.user?.id ?? null);
       setLoading(false);
     });
-    return unsub;
   }, []);
 
-  // regular notifications
+  // notifications — not in Supabase schema yet, show empty state
   useEffect(() => {
     if (!uid) { setNotifications([]); return; }
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', uid),
-      orderBy('createdAt', 'desc'),
-      limit(50),
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      setNotifications(snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          type: String(data.type ?? ''),
-          title: String(data.title ?? ''),
-          body: String(data.body ?? data.message ?? ''),
-          isRead: Boolean(data.isRead),
-          route: data.route ? String(data.route) : undefined,
-          createdAt: data.createdAt?.toDate?.() ?? undefined,
-        };
-      }));
-    }, () => {});
-    return unsub;
+    setNotifications([]);
   }, [uid]);
 
-  // admin notifications
   useEffect(() => {
     if (!uid) { setAdminNotifs([]); return; }
-    const q = query(
-      collection(db, 'admin_notifications'),
-      orderBy('createdAt', 'desc'),
-      limit(20),
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      const now = Date.now();
-      const visible = snap.docs
-        .map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            title: String(data.title ?? ''),
-            message: String(data.message ?? ''),
-            targetType: String(data.targetType ?? 'all'),
-            targetUid: data.targetUid ? String(data.targetUid) : undefined,
-            readBy: (data.readBy ?? {}) as Record<string, { seconds: number }>,
-            createdAt: data.createdAt?.toDate?.() ?? undefined,
-          } as AdminNotification;
-        })
-        .filter((n) => n.targetType === 'all' || n.targetUid === uid)
-        .filter((n) => {
-          const readEntry = n.readBy[uid];
-          if (!readEntry) return true;
-          const readAtMs = (readEntry.seconds ?? 0) * 1000;
-          return now - readAtMs < 4 * 60 * 60 * 1000; // 4hrs
-        });
-      setAdminNotifs(visible);
-    }, () => {});
-    return unsub;
+    setAdminNotifs([]);
   }, [uid]);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   async function markAllRead() {
-    if (!uid) return;
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
-    const batch = writeBatch(db);
-    unread.forEach((n) => {
-      batch.update(doc(db, 'notifications', n.id), { isRead: true });
-    });
-    await batch.commit();
+    // No-op — notifications table not yet in Supabase
   }
 
-  async function markNotifRead(id: string, route?: string) {
-    if (uid) {
-      await updateDoc(doc(db, 'notifications', id), { isRead: true }).catch(() => {});
-    }
+  async function markNotifRead(_id: string, route?: string) {
     if (route) router.push(route);
   }
 
-  async function markAdminRead(docId: string) {
-    if (!uid) return;
-    await setDoc(
-      doc(db, 'admin_notifications', docId),
-      { readBy: { [uid]: Timestamp.now() } },
-      { merge: true },
-    ).catch(() => {});
+  async function markAdminRead(_docId: string) {
+    // No-op
   }
 
   if (loading) {

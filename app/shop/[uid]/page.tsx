@@ -4,8 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame } from 'lucide-react';
 import { sanitizeText } from '@/lib/sanitize';
-import { onSnapshot, doc, collection, query, where, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
@@ -32,20 +31,20 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function parseShopData(d: Record<string, unknown>): ShopData {
   return {
-    businessName: String(d.businessName ?? ''),
-    contact: String(d.contactNumber ?? d.businessPhone ?? ''),
+    businessName: String(d.shop_name ?? d.businessName ?? ''),
+    contact: String(d.contact_number ?? d.contactNumber ?? d.businessPhone ?? ''),
     country: String(d.country ?? d.operatingCountry ?? ''),
     region: String(d.region ?? d.operatingRegion ?? ''),
     description: String(d.description ?? d.bio ?? ''),
-    isServiceProvider: Boolean(d.isServiceProvider),
-    open24Hours: Boolean(d.open24Hours),
-    openingTime: String(d.openingTime ?? ''),
-    closingTime: String(d.closingTime ?? ''),
-    workingDays: Array.isArray(d.workingDays) ? (d.workingDays as number[]) : [],
-    locationAddress: String(d.businessLocationAddress ?? d.businessLocationText ?? ''),
-    lat: typeof d.businessLatitude === 'number' ? d.businessLatitude : null,
-    lng: typeof d.businessLongitude === 'number' ? d.businessLongitude : null,
-    isVerified: Boolean(d.isVerified),
+    isServiceProvider: Boolean(d.is_service_provider ?? d.isServiceProvider),
+    open24Hours: Boolean(d.open_24_hours ?? d.open24Hours),
+    openingTime: String(d.opening_time ?? d.openingTime ?? ''),
+    closingTime: String(d.closing_time ?? d.closingTime ?? ''),
+    workingDays: Array.isArray(d.working_days ?? d.workingDays) ? ((d.working_days ?? d.workingDays) as number[]) : [],
+    locationAddress: String(d.location_address ?? d.businessLocationAddress ?? d.businessLocationText ?? ''),
+    lat: typeof d.latitude === 'number' ? d.latitude : typeof d.businessLatitude === 'number' ? d.businessLatitude : null,
+    lng: typeof d.longitude === 'number' ? d.longitude : typeof d.businessLongitude === 'number' ? d.businessLongitude : null,
+    isVerified: Boolean(d.is_verified ?? d.isVerified),
   };
 }
 
@@ -225,60 +224,72 @@ export default function SellerShopPage() {
   const [loadingSeller, setLoadingSeller] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
 
-  // Real-time seller profile
+  // Load seller profile
   useEffect(() => {
     if (!uid) return;
-    const unsub = onSnapshot(doc(db, 'sellers', uid), (snap) => {
-      if (snap.exists()) setShop(parseShopData(snap.data() as Record<string, unknown>));
-      setLoadingSeller(false);
-    }, () => setLoadingSeller(false));
-    return unsub;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from('sellers')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
+      if (!cancelled) {
+        if (data) setShop(parseShopData(data as Record<string, unknown>));
+        setLoadingSeller(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [uid]);
 
-  // Subscribe to seller listings (real-time, matching Flutter stream)
+  // Load seller listings
   useEffect(() => {
     if (!uid) return;
-    const q = query(
-      collection(db, 'listings'),
-      where('ownerUid', '==', uid),
-      where('status', '==', 'approved'),
-      orderBy('updatedAt', 'desc'),
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => {
-        const data = d.data() as Record<string, unknown>;
-        return {
-          id: d.id,
-          title: String(data.title ?? ''),
-          description: String(data.description ?? ''),
-          imageUrl: String(data.imageUrl ?? ''),
-          imageUrls: Array.isArray(data.imageUrls) ? (data.imageUrls as string[]) : undefined,
-          sellerName: String(data.sellerName ?? ''),
-          ownerUid: String(data.ownerUid ?? ''),
-          country: String(data.country ?? ''),
-          regionOrCity: String(data.regionOrCity ?? ''),
-          locationText: String(data.locationText ?? ''),
-          priceText: data.priceText ? String(data.priceText) : undefined,
-          priceValue: typeof data.priceValue === 'number' ? data.priceValue : undefined,
-          currencyCode: String(data.currencyCode ?? 'USD'),
-          negotiable: Boolean(data.negotiable),
-          mainCategoryId: String(data.mainCategoryId ?? ''),
-          rating: typeof data.rating === 'number' ? data.rating : undefined,
-          condition: data.condition ? String(data.condition) : undefined,
-          openNow: Boolean(data.openNow),
-          isSponsored: Boolean(data.isSponsored),
-          isHappening: Boolean(data.isHappening),
-          isFlashSale: Boolean(data.isFlashSale),
-          isTrial: Boolean(data.isTrial),
-          status: String(data.status ?? 'approved'),
-          viewsCount: typeof data.viewsCount === 'number' ? data.viewsCount : 0,
-          savesCount: typeof data.savesCount === 'number' ? data.savesCount : 0,
-          messagesCount: typeof data.messagesCount === 'number' ? data.messagesCount : 0,
-        } as Listing;
-      });
-      setListings(items);
-    }, () => {});
-    return unsub;
+    let cancelled = false;
+    (async () => {
+      // Get seller internal id first
+      const { data: sellerRow } = await supabase.from('sellers').select('id').eq('user_id', uid).single();
+      if (!sellerRow || cancelled) return;
+      const { data } = await supabase.from('listings')
+        .select('*, listing_images(url, sort_order)')
+        .eq('seller_id', sellerRow.id)
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false });
+      if (!cancelled && data) {
+        const items: Listing[] = data.map((row) => {
+          const r = row as Record<string, unknown>;
+          const imgs = Array.isArray(r.listing_images) ? (r.listing_images as { url: string }[]) : [];
+          return {
+            id: String(r.id ?? ''),
+            title: String(r.title ?? ''),
+            description: String(r.description ?? ''),
+            imageUrl: imgs[0]?.url ?? String(r.image_url ?? ''),
+            sellerName: String(r.seller_name ?? ''),
+            ownerUid: uid,
+            country: String(r.country ?? ''),
+            regionOrCity: String(r.region ?? ''),
+            locationText: String(r.location_text ?? ''),
+            priceText: r.price_text ? String(r.price_text) : undefined,
+            priceValue: typeof r.price === 'number' ? r.price : undefined,
+            currencyCode: String(r.currency ?? 'USD'),
+            negotiable: Boolean(r.is_negotiable),
+            mainCategoryId: String(r.category_id ?? ''),
+            rating: typeof r.rating === 'number' ? r.rating : undefined,
+            condition: r.condition ? String(r.condition) : undefined,
+            openNow: false,
+            isSponsored: Boolean(r.is_sponsored),
+            isHappening: false,
+            isFlashSale: Boolean(r.is_flash_sale),
+            isTrial: false,
+            status: String(r.status ?? 'active'),
+            viewsCount: typeof r.view_count === 'number' ? r.view_count : 0,
+            savesCount: typeof r.save_count === 'number' ? r.save_count : 0,
+            messagesCount: 0,
+          } as Listing;
+        });
+        setListings(items);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [uid]);
 
   if (loadingSeller) {

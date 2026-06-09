@@ -3,45 +3,41 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Globe, Search, X, SlidersHorizontal, MapPin, Star } from 'lucide-react';
 import Image from 'next/image';
-import {
-  collection, query, where, orderBy, limit, onSnapshot,
-  startAfter, getDocs, DocumentSnapshot,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import type { Listing } from '@/types';
 
-function mapListing(data: Record<string, unknown>, id: string): Listing {
+function mapListing(row: Record<string, unknown>): Listing {
+  const imgs = Array.isArray(row.listing_images) ? (row.listing_images as { url: string }[]) : [];
   return {
-    id,
-    title: String(data.title ?? ''),
-    description: String(data.description ?? ''),
-    imageUrl: String(data.imageUrl ?? ''),
-    imageUrls: Array.isArray(data.imageUrls) ? (data.imageUrls as string[]) : undefined,
-    sellerName: String(data.sellerName ?? ''),
-    ownerUid: String(data.ownerUid ?? ''),
-    country: String(data.country ?? ''),
-    regionOrCity: String(data.regionOrCity ?? ''),
-    locationText: String(data.locationText ?? ''),
-    priceText: data.priceText ? String(data.priceText) : undefined,
-    priceValue: typeof data.priceValue === 'number' ? data.priceValue : undefined,
-    currencyCode: String(data.currencyCode ?? 'USD'),
-    negotiable: Boolean(data.negotiable),
-    mainCategoryId: String(data.mainCategoryId ?? ''),
-    openNow: Boolean(data.openNow),
-    isSponsored: Boolean(data.isSponsored),
-    isHappening: Boolean(data.isHappening),
-    isFlashSale: Boolean(data.isFlashSale),
-    isTrial: Boolean(data.isTrial),
-    status: String(data.status ?? 'pending'),
-    viewsCount: typeof data.viewsCount === 'number' ? data.viewsCount : 0,
-    savesCount: typeof data.savesCount === 'number' ? data.savesCount : 0,
-    messagesCount: typeof data.messagesCount === 'number' ? data.messagesCount : 0,
-    rating: typeof data.rating === 'number' ? data.rating : undefined,
-    createdAt: data.createdAt ? String(data.createdAt) : undefined,
+    id: String(row.id ?? ''),
+    title: String(row.title ?? ''),
+    description: String(row.description ?? ''),
+    imageUrl: imgs[0]?.url ?? String(row.image_url ?? ''),
+    sellerName: String(row.seller_name ?? ''),
+    ownerUid: String(row.seller_id ?? ''),
+    country: String(row.country ?? ''),
+    regionOrCity: String(row.region ?? ''),
+    locationText: String(row.location_text ?? ''),
+    priceText: row.price_text ? String(row.price_text) : undefined,
+    priceValue: typeof row.price === 'number' ? row.price : undefined,
+    currencyCode: String(row.currency ?? 'USD'),
+    negotiable: Boolean(row.is_negotiable),
+    mainCategoryId: String(row.category_id ?? ''),
+    openNow: false,
+    isSponsored: Boolean(row.is_sponsored),
+    isHappening: false,
+    isFlashSale: Boolean(row.is_flash_sale),
+    isTrial: false,
+    status: String(row.status ?? 'pending'),
+    viewsCount: typeof row.view_count === 'number' ? row.view_count : 0,
+    savesCount: typeof row.save_count === 'number' ? row.save_count : 0,
+    messagesCount: 0,
+    rating: typeof row.rating === 'number' ? row.rating : undefined,
+    createdAt: row.created_at ? String(row.created_at) : undefined,
   };
 }
 
@@ -67,28 +63,28 @@ export default function GeneralPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const lastDocRef = useRef<DocumentSnapshot | null>(null);
+  const offsetRef = useRef<number>(0);
   const [hasMore, setHasMore] = useState(true);
   const PAGE = 20;
 
   const loadListings = useCallback(async (reset: boolean) => {
     if (reset) setLoading(true); else setLoadingMore(true);
     try {
-      const orderField = sort === 'rating' ? 'rating' : sort === 'price_asc' || sort === 'price_desc' ? 'priceValue' : 'createdAt';
-      const direction = sort === 'price_asc' ? 'asc' : 'desc';
+      const orderField = sort === 'rating' ? 'rating' : sort === 'price_asc' || sort === 'price_desc' ? 'price' : 'created_at';
+      const ascending = sort === 'price_asc';
+      const offset = reset ? 0 : offsetRef.current;
 
-      const constraints: Parameters<typeof query>[1][] = [
-        where('status', '==', 'approved'),
-        ...(selectedCountry ? [where('country', '==', selectedCountry)] : []),
-        orderBy(orderField, direction),
-        limit(PAGE),
-      ];
-      if (!reset && lastDocRef.current) constraints.push(startAfter(lastDocRef.current));
+      let q = supabase.from('listings')
+        .select('*, listing_images(url, sort_order)')
+        .eq('status', 'active')
+        .order(orderField, { ascending })
+        .range(offset, offset + PAGE - 1);
+      if (selectedCountry) q = q.eq('country', selectedCountry);
 
-      const snap = await getDocs(query(collection(db, 'listings'), ...constraints));
-      const newItems = snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
-      lastDocRef.current = snap.docs[snap.docs.length - 1] ?? null;
-      setHasMore(snap.docs.length === PAGE);
+      const { data } = await q;
+      const newItems = (data ?? []).map((row) => mapListing(row as Record<string, unknown>));
+      offsetRef.current = reset ? newItems.length : offsetRef.current + newItems.length;
+      setHasMore(newItems.length === PAGE);
       setListings((prev) => reset ? newItems : [...prev, ...newItems]);
     } catch (e) {
       // ignore
@@ -99,7 +95,7 @@ export default function GeneralPage() {
   }, [selectedCountry, sort]);
 
   useEffect(() => {
-    lastDocRef.current = null;
+    offsetRef.current = 0;
     loadListings(true);
   }, [loadListings]);
 

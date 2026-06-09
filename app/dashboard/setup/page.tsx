@@ -5,8 +5,7 @@ import {
   ArrowLeft, MapPin, Loader, Store, Clock, Globe,
   Phone, ChevronDown, Search, CheckCircle, X, FileText,
 } from 'lucide-react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { getSellerProfile, createSellerProfile, updateSellerProfile } from '@/lib/firestore';
 import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import type { SellerProfile } from '@/types';
@@ -42,10 +41,11 @@ export default function SellerSetupPage() {
   const [countryQuery, setCountryQuery] = useState('');
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
       if (!u) { setLoading(false); return; }
-      setUid(u.uid);
-      const sp = await getSellerProfile(u.uid);
+      setUid(u.id);
+      const sp = await getSellerProfile(u.id);
       if (sp) {
         setIsEditing(true);
         setBusinessName(sp.businessName || '');
@@ -54,18 +54,9 @@ export default function SellerSetupPage() {
         setSelectedCountry(sp.operatingCountry || '');
         setSelectedRegion(sp.operatingRegion || '');
         setAddress(sp.businessLocationText || '');
-        const raw = sp as unknown as Record<string, unknown>;
-        if (typeof raw.businessLatitude === 'number') setBusinessLat(raw.businessLatitude as number);
-        if (typeof raw.businessLongitude === 'number') setBusinessLng(raw.businessLongitude as number);
-        if (typeof raw.isServiceProvider === 'boolean') setIsServiceProvider(raw.isServiceProvider as boolean);
-        if (raw.open24Hours === true) setOpen24Hours(true);
-        if (typeof raw.openingTime === 'string' && raw.openingTime) setOpeningTime(raw.openingTime as string);
-        if (typeof raw.closingTime === 'string' && raw.closingTime) setClosingTime(raw.closingTime as string);
-        if (Array.isArray(raw.workingDays)) setWorkingDays(raw.workingDays as number[]);
       }
       setLoading(false);
     });
-    return unsub;
   }, []);
 
   const filteredCountries = countryQuery.trim()

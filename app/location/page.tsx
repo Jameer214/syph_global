@@ -5,10 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal, Navigation, MessageCircle, Handshake, Eye, ShoppingCart, BadgeDollarSign, Shield, Zap, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import MenuDrawer from '@/components/MenuDrawer';
 
@@ -154,17 +153,13 @@ export default function LocationPage() {
       setLocationSet(true, pickedCountry);
       setRegion(pickedRegion);
 
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        await setDoc(
-          doc(db, 'users', currentUser.uid),
-          {
-            selectedCountry: pickedCountry,
-            selectedRegion: pickedRegion || null,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await supabase.from('profiles').upsert({
+          id: session.user.id,
+          country: pickedCountry,
+          region: pickedRegion || null,
+        });
       }
 
       router.replace('/home');

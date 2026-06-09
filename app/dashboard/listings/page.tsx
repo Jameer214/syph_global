@@ -7,9 +7,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { deleteListing } from '@/lib/firestore';
 import type { Listing } from '@/types';
 
@@ -73,21 +71,26 @@ export default function MyListingsPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUid(u?.uid ?? null);
-      if (!u) setLoading(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUid(session?.user?.id ?? null);
+      if (!session?.user) setLoading(false);
     });
-    return unsub;
   }, []);
 
   useEffect(() => {
     if (!uid) return;
-    const q = query(collection(db, 'listings'), where('ownerUid', '==', uid));
-    const unsub = onSnapshot(q, (snap) => {
-      setListings(snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id)));
-      setLoading(false);
-    }, () => setLoading(false));
-    return unsub;
+    let cancelled = false;
+    const loadListings = async () => {
+      const { data: sellerRow } = await supabase.from('sellers').select('id').eq('user_id', uid).single();
+      if (!sellerRow || cancelled) { setLoading(false); return; }
+      const { data } = await supabase.from('listings').select('*').eq('seller_id', (sellerRow as Record<string, unknown>).id);
+      if (!cancelled) {
+        setListings((data ?? []).map(d => mapListing(d as Record<string, unknown>, String((d as Record<string, unknown>).id ?? ''))));
+        setLoading(false);
+      }
+    };
+    loadListings();
+    return () => { cancelled = true; };
   }, [uid]);
 
   const filtered = listings.filter((l) => {

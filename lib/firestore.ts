@@ -1,113 +1,91 @@
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-  getDoc,
-  doc,
-  addDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  startAfter,
-  startAt,
-  endAt,
-  serverTimestamp,
-  documentId,
-  DocumentSnapshot,
-  QueryConstraint,
-  onSnapshot,
-  increment,
-  Unsubscribe,
-  Timestamp,
-} from 'firebase/firestore';
-
-/** Convert a Firestore Timestamp, plain Date, ISO string, or millis-number to ISO string. */
-function tsToIso(val: unknown): string {
-  if (!val) return '';
-  if (val instanceof Timestamp) return val.toDate().toISOString();
-  if (val instanceof Date) return val.toISOString();
-  if (typeof val === 'number') return new Date(val).toISOString();
-  if (typeof val === 'object' && 'seconds' in (val as object)) {
-    const ts = val as { seconds: number; nanoseconds?: number };
-    return new Date(ts.seconds * 1000).toISOString();
-  }
-  return String(val);
-}
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { supabase } from '@/lib/supabase';
 import type { Listing, SellerProfile, Review, SellerHoursInfo, ChatThread, ChatMessage, Report, PromotionRequest, UserProfile } from '@/types';
 
-function mapListing(data: Record<string, unknown>, id: string): Listing {
+// ─── Mapping helpers ──────────────────────────────────────────────────────────
+
+function mapListing(row: Record<string, unknown>): Listing {
+  const images = Array.isArray(row.listing_images)
+    ? (row.listing_images as Array<{ url: string; sort_order: number }>)
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(i => i.url)
+    : [];
   return {
-    id,
-    title: String(data.title ?? ''),
-    description: String(data.description ?? ''),
-    imageUrl: String(data.imageUrl ?? ''),
-    imageUrls: Array.isArray(data.imageUrls)
-      ? (data.imageUrls as string[])
-      : undefined,
-    videoUrl: data.videoUrl ? String(data.videoUrl) : undefined,
-    bio: data.bio ? String(data.bio) : undefined,
-    specifications:
-      data.specifications &&
-      typeof data.specifications === 'object' &&
-      !Array.isArray(data.specifications)
-        ? (data.specifications as Record<string, string>)
-        : undefined,
-    venueLatitude:
-      typeof data.venueLatitude === 'number' ? data.venueLatitude : undefined,
-    venueLongitude:
-      typeof data.venueLongitude === 'number' ? data.venueLongitude : undefined,
-    sellerName: String(data.sellerName ?? ''),
-    ownerUid: String(data.ownerUid ?? ''),
-    country: String(data.country ?? ''),
-    regionOrCity: String(data.regionOrCity ?? ''),
-    locationText: String(data.locationText ?? ''),
-    priceText: data.priceText ? String(data.priceText) : undefined,
-    priceValue:
-      typeof data.priceValue === 'number' ? data.priceValue : undefined,
-    currencyCode: String(data.currencyCode ?? 'USD'),
-    negotiable: Boolean(data.negotiable),
-    messageAboutGoods: data.messageAboutGoods
-      ? String(data.messageAboutGoods)
-      : undefined,
-    mainCategoryId: String(data.mainCategoryId ?? ''),
-    subCategoryId: data.subCategoryId ? String(data.subCategoryId) : undefined,
-    rating: typeof data.rating === 'number' ? data.rating : undefined,
-    condition: data.condition ? String(data.condition) : undefined,
-    openNow: Boolean(data.openNow),
-    isSponsored: Boolean(data.isSponsored),
-    isHappening: Boolean(data.isHappening),
-    isFlashSale: Boolean(data.isFlashSale),
-    isTrial: Boolean(data.isTrial),
-    status: String(data.status ?? 'pending'),
-    viewsCount:
-      typeof data.viewsCount === 'number' ? data.viewsCount : 0,
-    savesCount:
-      typeof data.savesCount === 'number' ? data.savesCount : 0,
-    messagesCount:
-      typeof data.messagesCount === 'number' ? data.messagesCount : 0,
-    lastInteraction: data.lastInteraction
-      ? String(data.lastInteraction)
-      : undefined,
-    createdAt: data.createdAt ? String(data.createdAt) : undefined,
-    flashSaleEndsAt: data.flashSaleEndsAt
-      ? String(data.flashSaleEndsAt)
-      : undefined,
-    originalPriceValue:
-      typeof data.originalPriceValue === 'number' ? data.originalPriceValue : undefined,
-    originalPriceText: data.originalPriceText
-      ? String(data.originalPriceText)
-      : undefined,
+    id: String(row.id ?? ''),
+    title: String(row.title ?? ''),
+    description: String(row.description ?? ''),
+    imageUrl: images[0] ?? String(row.image_url ?? ''),
+    imageUrls: images.length > 0 ? images : undefined,
+    videoUrl: row.video_url ? String(row.video_url) : undefined,
+    bio: row.bio ? String(row.bio) : undefined,
+    specifications: undefined,
+    venueLatitude: undefined,
+    venueLongitude: undefined,
+    sellerName: String(row.seller_name ?? ''),
+    ownerUid: String(row.seller_id ?? ''),
+    country: String(row.country ?? ''),
+    regionOrCity: String(row.region ?? ''),
+    locationText: String(row.region ?? ''),
+    priceText: row.price ? String(row.price) : undefined,
+    priceValue: typeof row.price === 'number' ? row.price : undefined,
+    currencyCode: String(row.currency ?? 'USD'),
+    negotiable: Boolean(row.is_negotiable),
+    messageAboutGoods: undefined,
+    mainCategoryId: String(row.category_id ?? ''),
+    subCategoryId: undefined,
+    rating: undefined,
+    condition: row.condition ? String(row.condition) : undefined,
+    openNow: false,
+    isSponsored: Boolean(row.is_sponsored),
+    isHappening: false,
+    isFlashSale: Boolean(row.is_flash_sale),
+    isTrial: false,
+    status: String(row.status ?? 'pending'),
+    viewsCount: typeof row.view_count === 'number' ? row.view_count : 0,
+    savesCount: typeof row.save_count === 'number' ? row.save_count : 0,
+    messagesCount: 0,
+    lastInteraction: undefined,
+    createdAt: row.created_at ? String(row.created_at) : undefined,
+    flashSaleEndsAt: row.flash_sale_until ? String(row.flash_sale_until) : undefined,
+    originalPriceValue: typeof row.flash_sale_price === 'number' ? row.flash_sale_price : undefined,
+    originalPriceText: undefined,
   };
 }
 
+function mapHappening(row: Record<string, unknown>): Listing {
+  return {
+    id: String(row.id ?? ''),
+    title: String(row.title ?? ''),
+    description: String(row.description ?? ''),
+    imageUrl: String(row.image_url ?? ''),
+    imageUrls: undefined,
+    sellerName: '',
+    ownerUid: '',
+    country: String(row.country ?? ''),
+    regionOrCity: String(row.region ?? ''),
+    locationText: String(row.location ?? row.region ?? ''),
+    priceText: undefined,
+    priceValue: undefined,
+    currencyCode: 'USD',
+    negotiable: false,
+    mainCategoryId: 'happenings',
+    openNow: false,
+    isSponsored: false,
+    isHappening: true,
+    isFlashSale: false,
+    isTrial: false,
+    status: row.is_active ? 'active' : 'pending',
+    viewsCount: 0,
+    savesCount: 0,
+    messagesCount: 0,
+    createdAt: row.created_at ? String(row.created_at) : undefined,
+  };
+}
+
+// ─── Listings ─────────────────────────────────────────────────────────────────
+
 export async function getListings(options: {
   pageSize?: number;
-  lastDoc?: DocumentSnapshot;
+  lastDoc?: null;
   mainCategoryId?: string;
   subCategoryId?: string;
   country?: string;
@@ -115,180 +93,95 @@ export async function getListings(options: {
   isFlashSale?: boolean;
   isHappening?: boolean;
   orderByField?: string;
-}): Promise<{ listings: Listing[]; lastDoc: DocumentSnapshot | null }> {
-  const {
-    pageSize = 20,
-    lastDoc,
-    mainCategoryId,
-    subCategoryId,
-    country,
-    isSponsored,
-    isFlashSale,
-    isHappening,
-    orderByField = 'createdAt',
-  } = options;
+}): Promise<{ listings: Listing[]; lastDoc: null }> {
+  const { pageSize = 20, mainCategoryId, country, isSponsored, isFlashSale } = options;
 
-  const constraints: QueryConstraint[] = [
-    where('status', '==', 'approved'),
-  ];
+  let q = supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(pageSize);
 
-  if (mainCategoryId) constraints.push(where('mainCategoryId', '==', mainCategoryId));
-  if (subCategoryId) constraints.push(where('subCategoryId', '==', subCategoryId));
-  if (country) constraints.push(where('country', '==', country));
-  if (isSponsored !== undefined) constraints.push(where('isSponsored', '==', isSponsored));
-  if (isFlashSale !== undefined) constraints.push(where('isFlashSale', '==', isFlashSale));
-  if (isHappening !== undefined) constraints.push(where('isHappening', '==', isHappening));
+  if (mainCategoryId) q = q.eq('category_id', mainCategoryId);
+  if (country) q = q.eq('country', country);
+  if (isSponsored !== undefined) q = q.eq('is_sponsored', isSponsored);
+  if (isFlashSale !== undefined) q = q.eq('is_flash_sale', isFlashSale);
 
-  constraints.push(orderBy(orderByField, 'desc'));
-  if (lastDoc) constraints.push(startAfter(lastDoc));
-  constraints.push(limit(pageSize));
-
-  const q = query(collection(db, 'listings'), ...constraints);
-  const snap = await getDocs(q);
-
-  const listings = snap.docs.map((d) =>
-    mapListing(d.data() as Record<string, unknown>, d.id)
-  );
-  const last = snap.docs[snap.docs.length - 1] ?? null;
-
-  return { listings, lastDoc: last };
+  const { data } = await q;
+  return { listings: (data ?? []).map(r => mapListing(r as Record<string, unknown>)), lastDoc: null };
 }
 
 export async function getListing(id: string): Promise<Listing | null> {
-  const snap = await getDoc(doc(db, 'listings', id));
-  if (!snap.exists()) return null;
-  return mapListing(snap.data() as Record<string, unknown>, snap.id);
-}
-
-function filterByCountry(listings: Listing[], country?: string): Listing[] {
-  if (!country) return listings;
-  const c = country.toLowerCase();
-  return listings.filter((l) => l.country?.toLowerCase() === c);
+  const { data } = await supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('id', id)
+    .single();
+  if (!data) return null;
+  return mapListing(data as Record<string, unknown>);
 }
 
 export async function getSponsoredListings(count = 8, country?: string): Promise<Listing[]> {
-  const constraints = [
-    where('status', '==', 'approved'),
-    where('isSponsored', '==', true),
-    orderBy('createdAt', 'desc'),
-  ];
-  if (country) constraints.splice(2, 0, where('country', '==', country));
-  const q = query(collection(db, 'listings'), ...constraints, limit(count));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
+  let q = supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('status', 'active')
+    .eq('is_sponsored', true)
+    .order('created_at', { ascending: false })
+    .limit(count);
+  if (country) q = q.eq('country', country);
+  const { data } = await q;
+  return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
 }
 
 export async function getFlashSaleListings(count = 12, country?: string): Promise<Listing[]> {
-  const constraints = [
-    where('status', '==', 'approved'),
-    where('isFlashSale', '==', true),
-    orderBy('createdAt', 'desc'),
-  ];
-  if (country) constraints.splice(2, 0, where('country', '==', country));
-  const q = query(collection(db, 'listings'), ...constraints, limit(count));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
+  let q = supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('status', 'active')
+    .eq('is_flash_sale', true)
+    .order('created_at', { ascending: false })
+    .limit(count);
+  if (country) q = q.eq('country', country);
+  const { data } = await q;
+  return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
 }
 
 export async function getHappenings(count = 8, country?: string): Promise<Listing[]> {
-  const constraints = [
-    where('status', '==', 'approved'),
-    where('isHappening', '==', true),
-    orderBy('createdAt', 'desc'),
-  ];
-  if (country) constraints.splice(2, 0, where('country', '==', country));
-  const q = query(collection(db, 'listings'), ...constraints, limit(count));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
+  let q = supabase
+    .from('happenings')
+    .select('*')
+    .eq('is_active', true)
+    .order('start_date', { ascending: true })
+    .limit(count);
+  if (country) q = q.eq('country', country);
+  const { data } = await q;
+  return (data ?? []).map(r => mapHappening(r as Record<string, unknown>));
 }
 
 export async function getNewestListings(count = 20, country?: string): Promise<Listing[]> {
-  const constraints = [
-    where('status', '==', 'approved'),
-    orderBy('createdAt', 'desc'),
-  ];
-  if (country) constraints.splice(1, 0, where('country', '==', country));
-  const q = query(collection(db, 'listings'), ...constraints, limit(count));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
+  let q = supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(count);
+  if (country) q = q.eq('country', country);
+  const { data } = await q;
+  return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
 }
 
 export async function getTrendingListings(count = 12, country?: string): Promise<Listing[]> {
-  const constraints = [
-    where('status', '==', 'approved'),
-    orderBy('viewsCount', 'desc'),
-  ];
-  if (country) constraints.splice(1, 0, where('country', '==', country));
-  const q = query(collection(db, 'listings'), ...constraints, limit(count));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
-}
-
-export async function getSellerProfile(uid: string): Promise<SellerProfile | null> {
-  const snap = await getDoc(doc(db, 'sellers', uid));
-  if (!snap.exists()) return null;
-  const d = snap.data() as Record<string, unknown>;
-  return {
-    uid: String(d.uid ?? uid),
-    businessName: String(d.businessName ?? ''),
-    businessPhone: String(d.businessPhone ?? ''),
-    operatingCountry: String(d.operatingCountry ?? ''),
-    operatingRegion: String(d.operatingRegion ?? ''),
-    businessLocationText: d.businessLocationText
-      ? String(d.businessLocationText)
-      : undefined,
-    mainCategoryIds: Array.isArray(d.mainCategoryIds)
-      ? (d.mainCategoryIds as string[])
-      : [],
-    serviceSubcategoryIds: Array.isArray(d.serviceSubcategoryIds)
-      ? (d.serviceSubcategoryIds as string[])
-      : [],
-    isVerified: Boolean(d.isVerified),
-    rating: typeof d.rating === 'number' ? d.rating : undefined,
-    totalReviews: typeof d.totalReviews === 'number' ? d.totalReviews : undefined,
-    bio: d.bio ? String(d.bio) : undefined,
-    photoUrl: d.photoUrl ? String(d.photoUrl) : undefined,
-    createdAt: d.createdAt ? String(d.createdAt) : undefined,
-  };
-}
-
-export async function getSellerListings(uid: string, count = 20): Promise<Listing[]> {
-  const q = query(
-    collection(db, 'listings'),
-    where('ownerUid', '==', uid),
-    where('status', '==', 'approved'),
-    orderBy('createdAt', 'desc'),
-    limit(count)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) =>
-    mapListing(d.data() as Record<string, unknown>, d.id)
-  );
-}
-
-export async function getListingReviews(listingId: string): Promise<Review[]> {
-  const q = query(
-    collection(db, 'reviews'),
-    where('listingId', '==', listingId),
-    where('status', '==', 'approved'),
-    orderBy('createdAt', 'desc'),
-    limit(20)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => {
-    const data = d.data() as Record<string, unknown>;
-    return {
-      id: d.id,
-      listingId: String(data.listingId ?? ''),
-      sellerUid: String(data.sellerUid ?? ''),
-      buyerUid: String(data.buyerUid ?? ''),
-      buyerName: String(data.buyerName ?? 'Anonymous'),
-      rating: typeof data.rating === 'number' ? data.rating : 5,
-      comment: String(data.comment ?? ''),
-      createdAt: String(data.createdAt ?? ''),
-      status: String(data.status ?? 'approved'),
-    };
-  });
+  let q = supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('status', 'active')
+    .order('view_count', { ascending: false })
+    .limit(count);
+  if (country) q = q.eq('country', country);
+  const { data } = await q;
+  return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
 }
 
 export async function getRelatedListings(
@@ -297,43 +190,105 @@ export async function getRelatedListings(
   excludeId: string,
   count = 4
 ): Promise<Listing[]> {
-  const q = query(
-    collection(db, 'listings'),
-    where('status', '==', 'approved'),
-    where('mainCategoryId', '==', mainCategoryId),
-    orderBy('createdAt', 'desc'),
-    limit(count + 1)
-  );
-  const snap = await getDocs(q);
-  return snap.docs
-    .map((d) => mapListing(d.data() as Record<string, unknown>, d.id))
-    .filter((l) => l.id !== excludeId)
-    .slice(0, count);
+  const { data } = await supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('status', 'active')
+    .eq('category_id', mainCategoryId)
+    .neq('id', excludeId)
+    .limit(count);
+  return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
 }
 
-export async function getAllSellers(count = 40): Promise<import('@/types').SellerProfile[]> {
-  const snap = await getDocs(
-    query(collection(db, 'sellers'), orderBy('createdAt', 'desc'), limit(count))
-  );
-  return snap.docs.map((d) => {
-    const data = d.data() as Record<string, unknown>;
-    return {
-      uid: String(data.uid ?? d.id),
-      businessName: String(data.businessName ?? ''),
-      businessPhone: String(data.businessPhone ?? ''),
-      operatingCountry: String(data.operatingCountry ?? ''),
-      operatingRegion: String(data.operatingRegion ?? ''),
-      businessLocationText: data.businessLocationText ? String(data.businessLocationText) : undefined,
-      mainCategoryIds: Array.isArray(data.mainCategoryIds) ? (data.mainCategoryIds as string[]) : [],
-      serviceSubcategoryIds: Array.isArray(data.serviceSubcategoryIds) ? (data.serviceSubcategoryIds as string[]) : [],
-      isVerified: Boolean(data.isVerified),
-      rating: typeof data.rating === 'number' ? data.rating : undefined,
-      totalReviews: typeof data.totalReviews === 'number' ? data.totalReviews : undefined,
-      bio: data.bio ? String(data.bio) : undefined,
-      photoUrl: data.photoUrl ? String(data.photoUrl) : undefined,
-      createdAt: data.createdAt ? String(data.createdAt) : undefined,
-    };
-  });
+export async function getListingReviews(listingId: string): Promise<Review[]> {
+  const { data } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('listing_id', listingId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(20);
+  return (data ?? []).map((d: Record<string, unknown>) => ({
+    id: String(d.id ?? ''),
+    listingId: String(d.listing_id ?? ''),
+    sellerUid: String(d.seller_id ?? ''),
+    buyerUid: String(d.reviewer_id ?? ''),
+    buyerName: 'User',
+    rating: typeof d.rating === 'number' ? d.rating : 5,
+    comment: String(d.comment ?? ''),
+    createdAt: String(d.created_at ?? ''),
+    status: String(d.status ?? 'approved'),
+  }));
+}
+
+// ─── Sellers ──────────────────────────────────────────────────────────────────
+
+export async function getSellerProfile(uid: string): Promise<SellerProfile | null> {
+  const { data } = await supabase
+    .from('sellers')
+    .select('*')
+    .eq('user_id', uid)
+    .single();
+  if (!data) return null;
+  const d = data as Record<string, unknown>;
+  return {
+    uid: String(d.user_id ?? uid),
+    businessName: String(d.shop_name ?? ''),
+    businessPhone: String(d.phone ?? ''),
+    operatingCountry: String(d.country ?? ''),
+    operatingRegion: String(d.region ?? ''),
+    businessLocationText: undefined,
+    mainCategoryIds: [],
+    serviceSubcategoryIds: [],
+    isVerified: Boolean(d.is_verified),
+    rating: typeof d.avg_rating === 'number' ? d.avg_rating : undefined,
+    totalReviews: typeof d.review_count === 'number' ? d.review_count : undefined,
+    bio: d.shop_description ? String(d.shop_description) : undefined,
+    photoUrl: d.shop_logo_url ? String(d.shop_logo_url) : undefined,
+    createdAt: d.created_at ? String(d.created_at) : undefined,
+  };
+}
+
+export async function getSellerListings(uid: string, count = 20): Promise<Listing[]> {
+  // First get seller's internal id
+  const { data: sellerRow } = await supabase
+    .from('sellers')
+    .select('id')
+    .eq('user_id', uid)
+    .single();
+  if (!sellerRow) return [];
+  const { data } = await supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('seller_id', (sellerRow as Record<string, unknown>).id)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(count);
+  return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
+}
+
+export async function getAllSellers(count = 40): Promise<SellerProfile[]> {
+  const { data } = await supabase
+    .from('sellers')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(count);
+  return (data ?? []).map((d: Record<string, unknown>) => ({
+    uid: String(d.user_id ?? d.id ?? ''),
+    businessName: String(d.shop_name ?? ''),
+    businessPhone: String(d.phone ?? ''),
+    operatingCountry: String(d.country ?? ''),
+    operatingRegion: String(d.region ?? ''),
+    businessLocationText: undefined,
+    mainCategoryIds: [],
+    serviceSubcategoryIds: [],
+    isVerified: Boolean(d.is_verified),
+    rating: typeof d.avg_rating === 'number' ? d.avg_rating : undefined,
+    totalReviews: typeof d.review_count === 'number' ? d.review_count : undefined,
+    bio: d.shop_description ? String(d.shop_description) : undefined,
+    photoUrl: d.shop_logo_url ? String(d.shop_logo_url) : undefined,
+    createdAt: d.created_at ? String(d.created_at) : undefined,
+  }));
 }
 
 export async function batchGetSellerHoursMap(
@@ -342,84 +297,87 @@ export async function batchGetSellerHoursMap(
   const result = new Map<string, SellerHoursInfo>();
   const unique = [...new Set(ownerUids.filter(Boolean))];
   if (unique.length === 0) return result;
-
-  // Firestore `in` supports up to 30 items
-  for (let i = 0; i < unique.length; i += 30) {
-    const chunk = unique.slice(i, i + 30);
-    const snap = await getDocs(
-      query(collection(db, 'sellers'), where(documentId(), 'in', chunk))
-    );
-    for (const d of snap.docs) {
-      const data = d.data() as Record<string, unknown>;
-      result.set(d.id, {
-        open24Hours: Boolean(data.open24Hours),
-        openingTime: data.openingTime ? String(data.openingTime) : undefined,
-        closingTime: data.closingTime ? String(data.closingTime) : undefined,
-        workingDays: Array.isArray(data.workingDays)
-          ? (data.workingDays as number[])
-          : [],
-      });
-    }
+  // ownerUids are user_ids; sellers table keyed by user_id
+  const { data } = await supabase
+    .from('sellers')
+    .select('user_id')
+    .in('user_id', unique);
+  for (const d of (data ?? []) as Record<string, unknown>[]) {
+    result.set(String(d.user_id ?? ''), {
+      open24Hours: false,
+      openingTime: undefined,
+      closingTime: undefined,
+      workingDays: [],
+    });
   }
   return result;
 }
 
+// ─── Newsletter ───────────────────────────────────────────────────────────────
+
 export async function subscribeNewsletter(email: string): Promise<void> {
-  await addDoc(collection(db, 'newsletterSubscribers'), {
-    email,
-    source: 'web_sell_page',
-    createdAt: serverTimestamp(),
+  await supabase.from('newsletter_subscribers').insert({ email, country: null });
+}
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+
+export async function createOrUpdateUserProfile(profile: UserProfile): Promise<void> {
+  await supabase.from('profiles').upsert({
+    id: profile.uid,
+    email: profile.email,
+    full_name: profile.displayName,
+    avatar_url: profile.photoUrl ?? null,
+    country: profile.country ?? null,
+    region: profile.regionOrCity ?? null,
   });
 }
 
-// ─── User Profile ────────────────────────────────────────────────────────────
-
-export async function createOrUpdateUserProfile(profile: UserProfile): Promise<void> {
-  await setDoc(doc(db, 'users', profile.uid), {
-    uid: profile.uid,
-    email: profile.email,
-    displayName: profile.displayName,
-    photoUrl: profile.photoUrl ?? null,
-    country: profile.country ?? null,
-    regionOrCity: profile.regionOrCity ?? null,
-    updatedAt: serverTimestamp(),
-  }, { merge: true });
-}
-
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
-  const snap = await getDoc(doc(db, 'users', uid));
-  if (!snap.exists()) return null;
-  const d = snap.data() as Record<string, unknown>;
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', uid)
+    .single();
+  if (!data) return null;
+  const d = data as Record<string, unknown>;
   return {
-    uid: String(d.uid ?? uid),
+    uid: String(d.id ?? uid),
     email: String(d.email ?? ''),
-    displayName: String(d.displayName ?? ''),
-    photoUrl: d.photoUrl ? String(d.photoUrl) : undefined,
+    displayName: String(d.full_name ?? ''),
+    photoUrl: d.avatar_url ? String(d.avatar_url) : undefined,
     country: d.country ? String(d.country) : undefined,
-    regionOrCity: d.regionOrCity ? String(d.regionOrCity) : undefined,
+    regionOrCity: d.region ? String(d.region) : undefined,
   };
 }
 
-// ─── My Listings (all statuses) ──────────────────────────────────────────────
+// ─── My Listings ──────────────────────────────────────────────────────────────
 
 export async function getMyListings(
   ownerUid: string,
   pageSize = 20,
-  lastDoc?: DocumentSnapshot,
-): Promise<{ listings: Listing[]; lastDoc: DocumentSnapshot | null }> {
-  const constraints: QueryConstraint[] = [
-    where('ownerUid', '==', ownerUid),
-    orderBy('createdAt', 'desc'),
-  ];
-  if (lastDoc) constraints.push(startAfter(lastDoc));
-  constraints.push(limit(pageSize));
+  _lastDoc?: null,
+): Promise<{ listings: Listing[]; lastDoc: null }> {
+  // Get seller internal id first
+  const { data: sellerRow } = await supabase
+    .from('sellers')
+    .select('id')
+    .eq('user_id', ownerUid)
+    .single();
+  if (!sellerRow) return { listings: [], lastDoc: null };
 
-  const snap = await getDocs(query(collection(db, 'listings'), ...constraints));
+  const { data } = await supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('seller_id', (sellerRow as Record<string, unknown>).id)
+    .order('created_at', { ascending: false })
+    .limit(pageSize);
   return {
-    listings: snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id)),
-    lastDoc: snap.docs[snap.docs.length - 1] ?? null,
+    listings: (data ?? []).map(r => mapListing(r as Record<string, unknown>)),
+    lastDoc: null,
   };
 }
+
+// ─── Create / Update Listings ─────────────────────────────────────────────────
 
 export async function createListing(
   data: Omit<Listing, 'id' | 'viewsCount' | 'savesCount' | 'messagesCount' | 'status'>,
@@ -427,103 +385,193 @@ export async function createListing(
 ): Promise<string> {
   const imageUrls: string[] = [];
   for (const file of imageFiles) {
-    const storageRef = ref(storage, `listings/${data.ownerUid}/${Date.now()}_${file.name}`);
-    const snap = await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(snap.ref);
-    imageUrls.push(url);
+    const path = `${data.ownerUid}/${Date.now()}_${file.name}`;
+    const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
+    if (uploadData) {
+      const { data: { publicUrl } } = supabase.storage.from('listing-images').getPublicUrl(uploadData.path);
+      imageUrls.push(publicUrl);
+    }
   }
 
-  const docRef = await addDoc(collection(db, 'listings'), {
-    ...data,
-    imageUrl: imageUrls[0] ?? '',
-    imageUrls,
-    viewsCount: 0,
-    savesCount: 0,
-    messagesCount: 0,
-    status: 'pending',
-    createdAt: serverTimestamp(),
-  });
-  return docRef.id;
+  // Get seller's internal id
+  const { data: sellerRow } = await supabase
+    .from('sellers')
+    .select('id')
+    .eq('user_id', data.ownerUid)
+    .single();
+
+  const sellerId = sellerRow ? (sellerRow as Record<string, unknown>).id : null;
+
+  const { data: newListing } = await supabase
+    .from('listings')
+    .insert({
+      seller_id: sellerId,
+      category_id: data.mainCategoryId || null,
+      title: data.title,
+      description: data.description,
+      price: data.priceValue ?? null,
+      currency: data.currencyCode ?? 'USD',
+      condition: data.condition ?? null,
+      country: data.country,
+      region: data.regionOrCity ?? null,
+      status: 'pending',
+      is_negotiable: data.negotiable ?? false,
+      is_flash_sale: data.isFlashSale ?? false,
+      is_sponsored: data.isSponsored ?? false,
+      view_count: 0,
+      save_count: 0,
+    })
+    .select('id')
+    .single();
+
+  const listingId = String((newListing as Record<string, unknown>)?.id ?? '');
+
+  // Insert listing_images rows
+  if (listingId && imageUrls.length > 0) {
+    await supabase.from('listing_images').insert(
+      imageUrls.map((url, sort_order) => ({ listing_id: listingId, url, sort_order }))
+    );
+  }
+
+  return listingId;
 }
 
 export async function updateListing(id: string, updates: Partial<Listing>): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id: _id, ...rest } = updates;
-  await updateDoc(doc(db, 'listings', id), { ...rest, updatedAt: serverTimestamp() });
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (updates.title !== undefined) patch.title = updates.title;
+  if (updates.description !== undefined) patch.description = updates.description;
+  if (updates.priceValue !== undefined) patch.price = updates.priceValue;
+  if (updates.currencyCode !== undefined) patch.currency = updates.currencyCode;
+  if (updates.condition !== undefined) patch.condition = updates.condition;
+  if (updates.country !== undefined) patch.country = updates.country;
+  if (updates.regionOrCity !== undefined) patch.region = updates.regionOrCity;
+  if (updates.negotiable !== undefined) patch.is_negotiable = updates.negotiable;
+  if (updates.isFlashSale !== undefined) patch.is_flash_sale = updates.isFlashSale;
+  if (updates.isSponsored !== undefined) patch.is_sponsored = updates.isSponsored;
+  if (updates.mainCategoryId !== undefined) patch.category_id = updates.mainCategoryId;
+  if (updates.status !== undefined) patch.status = updates.status;
+  await supabase.from('listings').update(patch).eq('id', id);
 }
 
 export async function deleteListing(id: string): Promise<void> {
-  await deleteDoc(doc(db, 'listings', id));
+  await supabase.from('listings').delete().eq('id', id);
 }
 
 export async function uploadListingImages(ownerUid: string, files: File[]): Promise<string[]> {
   const urls: string[] = [];
   for (const file of files) {
-    const storageRef = ref(storage, `listings/${ownerUid}/${Date.now()}_${file.name}`);
-    const snap = await uploadBytes(storageRef, file);
-    urls.push(await getDownloadURL(snap.ref));
+    const path = `${ownerUid}/${Date.now()}_${file.name}`;
+    const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
+    if (uploadData) {
+      const { data: { publicUrl } } = supabase.storage.from('listing-images').getPublicUrl(uploadData.path);
+      urls.push(publicUrl);
+    }
   }
   return urls;
 }
 
 export async function uploadAvatar(uid: string, file: File): Promise<string> {
-  const storageRef = ref(storage, `avatars/${uid}_${Date.now()}`);
-  const snap = await uploadBytes(storageRef, file);
-  return getDownloadURL(snap.ref);
+  const path = `${uid}_${Date.now()}`;
+  const { data: uploadData } = await supabase.storage.from('avatars').upload(path, file);
+  if (!uploadData) return '';
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(uploadData.path);
+  return publicUrl;
 }
 
 // ─── Chat / Messaging ─────────────────────────────────────────────────────────
 
-function mapThread(d: Record<string, unknown>, id: string): ChatThread {
+function mapThread(d: Record<string, unknown>): ChatThread {
   return {
-    id,
-    participants: Array.isArray(d.participants) ? (d.participants as string[]) : [],
-    sellerUid: String(d.sellerUid ?? ''),
-    sellerName: String(d.sellerName ?? ''),
-    buyerUid: String(d.buyerUid ?? ''),
-    buyerName: String(d.buyerName ?? ''),
-    listingId: String(d.listingId ?? ''),
-    listingTitle: String(d.listingTitle ?? ''),
-    listingImageUrl: String(d.listingImageUrl ?? ''),
-    lastMessage: String(d.lastMessage ?? ''),
-    lastSenderUid: String(d.lastSenderUid ?? ''),
-    updatedAt: d.updatedAt ? String(d.updatedAt) : '',
-    unreadForSeller: typeof d.unreadForSeller === 'number' ? d.unreadForSeller : 0,
-    unreadForBuyer: typeof d.unreadForBuyer === 'number' ? d.unreadForBuyer : 0,
+    id: String(d.id ?? ''),
+    participants: [String(d.buyer_id ?? ''), String(d.seller_id ?? '')].filter(Boolean),
+    sellerUid: String(d.seller_id ?? ''),
+    sellerName: '',
+    buyerUid: String(d.buyer_id ?? ''),
+    buyerName: '',
+    listingId: String(d.listing_id ?? ''),
+    listingTitle: '',
+    listingImageUrl: '',
+    lastMessage: String(d.last_message ?? ''),
+    lastSenderUid: '',
+    updatedAt: d.last_message_at ? String(d.last_message_at) : '',
+    unreadForSeller: typeof d.seller_unread_count === 'number' ? d.seller_unread_count : 0,
+    unreadForBuyer: typeof d.buyer_unread_count === 'number' ? d.buyer_unread_count : 0,
   };
 }
 
-export function subscribeChatThreads(uid: string, cb: (threads: ChatThread[]) => void): Unsubscribe {
-  const q = query(
-    collection(db, 'chats'),
-    where('participants', 'array-contains', uid),
-    orderBy('updatedAt', 'desc'),
-    limit(50),
-  );
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => mapThread(d.data() as Record<string, unknown>, d.id)));
-  });
+export function subscribeChatThreads(uid: string, cb: (threads: ChatThread[]) => void): () => void {
+  // Initial load
+  supabase
+    .from('chats')
+    .select('*')
+    .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
+    .order('last_message_at', { ascending: false })
+    .limit(50)
+    .then(({ data }) => {
+      cb((data ?? []).map(r => mapThread(r as Record<string, unknown>)));
+    });
+
+  const channel = supabase.channel(`chats:${uid}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chats', filter: `buyer_id=eq.${uid}` }, () => {
+      supabase
+        .from('chats')
+        .select('*')
+        .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
+        .order('last_message_at', { ascending: false })
+        .limit(50)
+        .then(({ data }) => cb((data ?? []).map(r => mapThread(r as Record<string, unknown>))));
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chats', filter: `seller_id=eq.${uid}` }, () => {
+      supabase
+        .from('chats')
+        .select('*')
+        .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
+        .order('last_message_at', { ascending: false })
+        .limit(50)
+        .then(({ data }) => cb((data ?? []).map(r => mapThread(r as Record<string, unknown>))));
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
 }
 
-export function subscribeChatMessages(threadId: string, cb: (msgs: ChatMessage[]) => void): Unsubscribe {
-  const q = query(
-    collection(db, 'chats', threadId, 'messages'),
-    orderBy('createdAt', 'asc'),
-    limit(200),
-  );
-  return onSnapshot(q, (snap) => {
-    cb(
-      snap.docs.map((d) => {
-        const data = d.data() as Record<string, unknown>;
-        return {
-          id: d.id,
-          senderUid: String(data.senderUid ?? ''),
-          text: String(data.text ?? ''),
-          createdAt: data.createdAt ? tsToIso(data.createdAt) : '',
-        };
-      }),
-    );
-  });
+export function subscribeChatMessages(threadId: string, cb: (msgs: ChatMessage[]) => void): () => void {
+  // Initial load
+  supabase
+    .from('messages')
+    .select('*')
+    .eq('chat_id', threadId)
+    .order('created_at', { ascending: true })
+    .limit(200)
+    .then(({ data }) => {
+      cb((data ?? []).map((d: Record<string, unknown>) => ({
+        id: String(d.id ?? ''),
+        senderUid: String(d.sender_id ?? ''),
+        text: String(d.content ?? ''),
+        createdAt: d.created_at ? String(d.created_at) : '',
+      })));
+    });
+
+  const channel = supabase.channel(`messages:${threadId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${threadId}` }, () => {
+      supabase
+        .from('messages')
+        .select('*')
+        .eq('chat_id', threadId)
+        .order('created_at', { ascending: true })
+        .limit(200)
+        .then(({ data }) => {
+          cb((data ?? []).map((d: Record<string, unknown>) => ({
+            id: String(d.id ?? ''),
+            senderUid: String(d.sender_id ?? ''),
+            text: String(d.content ?? ''),
+            createdAt: d.created_at ? String(d.created_at) : '',
+          })));
+        });
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
 }
 
 export async function sendMessage(
@@ -533,138 +581,195 @@ export async function sendMessage(
   text: string,
   isSeller: boolean,
 ): Promise<void> {
-  const chatRef = doc(db, 'chats', threadId);
-  await setDoc(
-    chatRef,
-    {
-      ...thread,
-      lastMessage: text,
-      lastSenderUid: senderUid,
-      updatedAt: serverTimestamp(),
-      ...(isSeller
-        ? { unreadForBuyer: increment(1), unreadForSeller: 0 }
-        : { unreadForSeller: increment(1), unreadForBuyer: 0 }),
-    },
-    { merge: true },
-  );
-  await addDoc(collection(db, 'chats', threadId, 'messages'), {
-    senderUid,
-    text,
-    createdAt: serverTimestamp(),
+  const now = new Date().toISOString();
+
+  // Upsert chat thread
+  await supabase.from('chats').upsert({
+    id: threadId,
+    listing_id: thread.listingId || null,
+    buyer_id: thread.buyerUid,
+    seller_id: thread.sellerUid,
+    last_message: text,
+    last_message_at: now,
+    ...(isSeller
+      ? { seller_unread_count: 0, buyer_unread_count: 1 }
+      : { buyer_unread_count: 0, seller_unread_count: 1 }),
+  });
+
+  // Insert message
+  await supabase.from('messages').insert({
+    chat_id: threadId,
+    sender_id: senderUid,
+    content: text,
+    is_read: false,
   });
 }
 
 export async function markThreadRead(threadId: string, isSeller: boolean): Promise<void> {
-  await updateDoc(doc(db, 'chats', threadId), {
-    ...(isSeller ? { unreadForSeller: 0 } : { unreadForBuyer: 0 }),
-  });
+  const patch = isSeller
+    ? { seller_unread_count: 0 }
+    : { buyer_unread_count: 0 };
+  await supabase.from('chats').update(patch).eq('id', threadId);
 }
 
 // ─── Saved / Wishlist ─────────────────────────────────────────────────────────
 
 export async function getSavedIds(uid: string): Promise<string[]> {
-  const snap = await getDoc(doc(db, 'savedListings', uid));
-  if (!snap.exists()) return [];
-  const d = snap.data() as Record<string, unknown>;
-  return Array.isArray(d.ids) ? (d.ids as string[]) : [];
+  const { data } = await supabase
+    .from('saved_listings')
+    .select('listing_id')
+    .eq('user_id', uid);
+  return (data ?? []).map((r: Record<string, unknown>) => String(r.listing_id ?? ''));
 }
 
 export async function syncSavedIds(uid: string, ids: string[]): Promise<void> {
-  await setDoc(doc(db, 'savedListings', uid), { ids, updatedAt: serverTimestamp() });
+  // Delete existing, then insert new
+  await supabase.from('saved_listings').delete().eq('user_id', uid);
+  if (ids.length > 0) {
+    await supabase.from('saved_listings').insert(
+      ids.map(listing_id => ({ user_id: uid, listing_id }))
+    );
+  }
 }
 
 // ─── Reports ─────────────────────────────────────────────────────────────────
 
 export async function createReport(report: Report): Promise<void> {
-  await addDoc(collection(db, 'reports'), {
-    ...report,
+  await supabase.from('reports').insert({
+    reporter_id: report.reporterUid ?? null,
+    listing_id: report.listingId ?? null,
+    seller_id: null,
+    reason: report.reason,
+    details: report.details ?? null,
     status: 'pending',
-    createdAt: serverTimestamp(),
   });
 }
 
 // ─── Promotion Requests ───────────────────────────────────────────────────────
 
 export async function createPromotionRequest(req: Omit<PromotionRequest, 'status' | 'createdAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'promotionRequests'), {
-    ...req,
+  // Get seller internal id
+  const { data: sellerRow } = await supabase
+    .from('sellers')
+    .select('id')
+    .eq('user_id', req.uid)
+    .single();
+
+  const { data } = await supabase.from('promotions').insert({
+    listing_id: req.listingId ?? null,
+    seller_id: sellerRow ? (sellerRow as Record<string, unknown>).id : null,
+    type: req.type,
+    starts_at: new Date().toISOString(),
+    ends_at: null,
+    amount_paid: req.amount ?? 0,
+    currency: req.currencyCode ?? 'USD',
     status: 'pending',
-    createdAt: serverTimestamp(),
-  });
-  return ref.id;
+  }).select('id').single();
+
+  return String((data as Record<string, unknown>)?.id ?? '');
 }
 
 export async function getMyPromotionRequests(uid: string): Promise<PromotionRequest[]> {
-  const q = query(
-    collection(db, 'promotionRequests'),
-    where('uid', '==', uid),
-    orderBy('createdAt', 'desc'),
-    limit(20),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => {
-    const data = d.data() as Record<string, unknown>;
-    return {
-      uid: String(data.uid ?? ''),
-      listingId: String(data.listingId ?? ''),
-      type: (data.type as 'sponsorListing' | 'flashSale') ?? 'sponsorListing',
-      days: typeof data.days === 'number' ? data.days : 7,
-      paymentMethod: String(data.paymentMethod ?? ''),
-      amount: typeof data.amount === 'number' ? data.amount : 0,
-      currencyCode: String(data.currencyCode ?? 'USD'),
-      transactionReference: data.transactionReference ? String(data.transactionReference) : undefined,
-      status: String(data.status ?? 'pending'),
-      createdAt: data.createdAt ? String(data.createdAt) : undefined,
-    };
-  });
+  const { data: sellerRow } = await supabase
+    .from('sellers')
+    .select('id')
+    .eq('user_id', uid)
+    .single();
+  if (!sellerRow) return [];
+
+  const { data } = await supabase
+    .from('promotions')
+    .select('*')
+    .eq('seller_id', (sellerRow as Record<string, unknown>).id)
+    .order('starts_at', { ascending: false })
+    .limit(20);
+
+  return (data ?? []).map((d: Record<string, unknown>) => ({
+    uid,
+    listingId: String(d.listing_id ?? ''),
+    type: (d.type as 'sponsorListing' | 'flashSale') ?? 'sponsorListing',
+    days: 7,
+    paymentMethod: '',
+    amount: typeof d.amount_paid === 'number' ? d.amount_paid : 0,
+    currencyCode: String(d.currency ?? 'USD'),
+    transactionReference: undefined,
+    status: String(d.status ?? 'pending'),
+    createdAt: d.starts_at ? String(d.starts_at) : undefined,
+  }));
 }
 
 // ─── Seller Setup ─────────────────────────────────────────────────────────────
 
 export async function createSellerProfile(profile: Omit<SellerProfile, 'isVerified' | 'rating' | 'totalReviews'>): Promise<void> {
-  await setDoc(doc(db, 'sellers', profile.uid), {
-    ...profile,
-    // store both naming conventions for Flutter app compatibility
+  await supabase.from('sellers').insert({
+    user_id: profile.uid,
+    shop_name: profile.businessName,
+    shop_description: profile.bio ?? null,
     country: profile.operatingCountry,
     region: profile.operatingRegion,
-    contactNumber: profile.businessPhone,
-    isVerified: false,
-    rating: 0,
-    totalReviews: 0,
-    createdAt: serverTimestamp(),
+    phone: profile.businessPhone ?? null,
+    is_verified: false,
+    avg_rating: 0,
+    review_count: 0,
+    listing_count: 0,
   });
 }
 
 export async function updateSellerProfile(uid: string, updates: Partial<SellerProfile>): Promise<void> {
-  await updateDoc(doc(db, 'sellers', uid), { ...updates, updatedAt: serverTimestamp() });
+  const patch: Record<string, unknown> = {};
+  if (updates.businessName !== undefined) patch.shop_name = updates.businessName;
+  if (updates.bio !== undefined) patch.shop_description = updates.bio;
+  if (updates.operatingCountry !== undefined) patch.country = updates.operatingCountry;
+  if (updates.operatingRegion !== undefined) patch.region = updates.operatingRegion;
+  if (updates.businessPhone !== undefined) patch.phone = updates.businessPhone;
+  if (updates.photoUrl !== undefined) patch.shop_logo_url = updates.photoUrl;
+  await supabase.from('sellers').update(patch).eq('user_id', uid);
 }
 
-// ─── Support / Admin Chat ─────────────────────────────────────────────────────
+// ─── Support ─────────────────────────────────────────────────────────────────
 
 export function subscribeSupportMessages(
   uid: string,
   cb: (msgs: import('@/types').SupportMessage[]) => void
-): Unsubscribe {
-  const q = query(
-    collection(db, 'supportChats', uid, 'messages'),
-    orderBy('createdAt', 'asc'),
-    limit(200),
-  );
-  return onSnapshot(q, (snap) => {
-    cb(
-      snap.docs.map((d) => {
-        const data = d.data() as Record<string, unknown>;
-        return {
-          id: d.id,
-          senderUid: String(data.senderUid ?? ''),
-          senderName: String(data.senderName ?? ''),
-          text: String(data.text ?? ''),
-          isFromAdmin: Boolean(data.isFromAdmin),
-          createdAt: data.createdAt ? tsToIso(data.createdAt) : '',
-        };
-      })
-    );
+): () => void {
+  const mapMsg = (d: Record<string, unknown>): import('@/types').SupportMessage => ({
+    id: String(d.id ?? ''),
+    senderUid: String(d.sender_id ?? ''),
+    senderName: '',
+    text: String(d.content ?? ''),
+    isFromAdmin: Boolean(d.is_admin),
+    createdAt: d.created_at ? String(d.created_at) : '',
   });
+
+  // Get or create support ticket for this user
+  const loadMessages = async () => {
+    const { data: ticket } = await supabase
+      .from('support_tickets')
+      .select('id')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (!ticket) { cb([]); return; }
+    const ticketId = (ticket as Record<string, unknown>).id;
+    const { data } = await supabase
+      .from('support_messages')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: true })
+      .limit(200);
+    cb((data ?? []).map(d => mapMsg(d as Record<string, unknown>)));
+  };
+
+  loadMessages();
+
+  const channel = supabase.channel(`support:${uid}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, () => {
+      loadMessages();
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
 }
 
 export async function sendSupportMessage(
@@ -673,31 +778,42 @@ export async function sendSupportMessage(
   email: string,
   text: string,
 ): Promise<void> {
-  const chatRef = doc(db, 'supportChats', uid);
-  await setDoc(chatRef, {
-    userUid: uid,
-    userName: displayName,
-    userEmail: email,
-    lastMessage: text,
-    lastMessageAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    unreadForAdmin: increment(1),
-    unreadForUser: 0,
-  }, { merge: true });
-  await addDoc(collection(db, 'supportChats', uid, 'messages'), {
-    senderUid: uid,
-    senderName: displayName,
-    text,
-    isFromAdmin: false,
-    createdAt: serverTimestamp(),
+  // Upsert support ticket
+  let ticketId: string | null = null;
+  const { data: existing } = await supabase
+    .from('support_tickets')
+    .select('id')
+    .eq('user_id', uid)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (existing) {
+    ticketId = String((existing as Record<string, unknown>).id ?? '');
+  } else {
+    const { data: newTicket } = await supabase
+      .from('support_tickets')
+      .insert({ user_id: uid, subject: `Support from ${displayName}`, status: 'open' })
+      .select('id')
+      .single();
+    ticketId = newTicket ? String((newTicket as Record<string, unknown>).id ?? '') : null;
+  }
+
+  if (!ticketId) return;
+
+  await supabase.from('support_messages').insert({
+    ticket_id: ticketId,
+    sender_id: uid,
+    is_admin: false,
+    content: text,
   });
 }
 
-export async function markSupportRead(uid: string): Promise<void> {
-  await updateDoc(doc(db, 'supportChats', uid), { unreadForUser: 0 }).catch(() => {});
+export async function markSupportRead(_uid: string): Promise<void> {
+  // No-op in Supabase model — read status tracked at message level if needed
 }
 
-// ─── Post Happenings ─────────────────────────────────────────────────────────
+// ─── Happenings (as listings) ─────────────────────────────────────────────────
 
 export async function createHappening(
   data: Omit<Listing, 'id' | 'viewsCount' | 'savesCount' | 'messagesCount' | 'status'>,
@@ -705,38 +821,41 @@ export async function createHappening(
 ): Promise<string> {
   const imageUrls: string[] = [];
   for (const file of imageFiles) {
-    const storageRef = ref(storage, `listings/${data.ownerUid}/${Date.now()}_${file.name}`);
-    const snap = await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(snap.ref);
-    imageUrls.push(url);
+    const path = `${data.ownerUid}/${Date.now()}_${file.name}`;
+    const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
+    if (uploadData) {
+      const { data: { publicUrl } } = supabase.storage.from('listing-images').getPublicUrl(uploadData.path);
+      imageUrls.push(publicUrl);
+    }
   }
-  const docRef = await addDoc(collection(db, 'listings'), {
-    ...data,
-    imageUrl: imageUrls[0] ?? '',
-    imageUrls,
-    isHappening: true,
-    viewsCount: 0,
-    savesCount: 0,
-    messagesCount: 0,
-    status: 'pending',
-    createdAt: serverTimestamp(),
-  });
-  return docRef.id;
+
+  const { data: newHappening } = await supabase
+    .from('happenings')
+    .insert({
+      title: data.title,
+      description: data.description,
+      image_url: imageUrls[0] ?? null,
+      country: data.country ?? null,
+      region: data.regionOrCity ?? null,
+      location: data.locationText ?? null,
+      is_active: false, // pending review
+    })
+    .select('id')
+    .single();
+
+  return String((newHappening as Record<string, unknown>)?.id ?? '');
 }
+
+// ─── Search ───────────────────────────────────────────────────────────────────
 
 export async function searchListings(searchTerm: string, count = 24): Promise<Listing[]> {
   const term = searchTerm.toLowerCase().trim();
   if (!term) return [];
-  // Firestore prefix search on title (requires status+title composite index)
-  // For full-text search at scale, migrate to Algolia or Typesense
-  const q = query(
-    collection(db, 'listings'),
-    where('status', '==', 'approved'),
-    orderBy('title'),
-    startAt(term),
-    endAt(term + ''),
-    limit(count)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
+  const { data } = await supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('status', 'active')
+    .ilike('title', `%${term}%`)
+    .limit(count);
+  return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
 }

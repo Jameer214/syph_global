@@ -4,33 +4,44 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, SlidersHorizontal, ArrowUpDown, X, Clock, Navigation } from 'lucide-react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { collection, query, where, onSnapshot, QueryConstraint } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { getCategoryById } from '@/data/categories';
 import type { Listing } from '@/types';
 
-function mapListing(data: Record<string, unknown>, id: string): Listing {
+function mapListing(row: Record<string, unknown>): Listing {
+  const imgs = Array.isArray(row.listing_images) ? (row.listing_images as { url: string }[]) : [];
   return {
-    id, title: String(data.title ?? ''), description: String(data.description ?? ''),
-    imageUrl: String(data.imageUrl ?? ''), imageUrls: Array.isArray(data.imageUrls) ? (data.imageUrls as string[]) : undefined,
-    sellerName: String(data.sellerName ?? ''), ownerUid: String(data.ownerUid ?? ''),
-    country: String(data.country ?? ''), regionOrCity: String(data.regionOrCity ?? ''),
-    locationText: String(data.locationText ?? ''), priceText: data.priceText ? String(data.priceText) : undefined,
-    priceValue: typeof data.priceValue === 'number' ? data.priceValue : undefined,
-    currencyCode: String(data.currencyCode ?? 'USD'), negotiable: Boolean(data.negotiable),
-    mainCategoryId: String(data.mainCategoryId ?? ''), subCategoryId: data.subCategoryId ? String(data.subCategoryId) : undefined,
-    openNow: Boolean(data.openNow), isSponsored: Boolean(data.isSponsored), isHappening: Boolean(data.isHappening),
-    isFlashSale: Boolean(data.isFlashSale), isTrial: Boolean(data.isTrial), status: String(data.status ?? 'pending'),
-    viewsCount: typeof data.viewsCount === 'number' ? data.viewsCount : 0,
-    savesCount: typeof data.savesCount === 'number' ? data.savesCount : 0,
-    messagesCount: typeof data.messagesCount === 'number' ? data.messagesCount : 0,
-    rating: typeof data.rating === 'number' ? data.rating : undefined,
-    condition: data.condition ? String(data.condition) : undefined,
-    createdAt: data.createdAt ? String(data.createdAt) : undefined,
-    flashSaleEndsAt: data.flashSaleEndsAt ? String(data.flashSaleEndsAt) : undefined,
+    id: String(row.id ?? ''),
+    title: String(row.title ?? ''),
+    description: String(row.description ?? ''),
+    imageUrl: imgs[0]?.url ?? String(row.image_url ?? ''),
+    sellerName: String(row.seller_name ?? ''),
+    ownerUid: String(row.seller_id ?? ''),
+    country: String(row.country ?? ''),
+    regionOrCity: String(row.region ?? ''),
+    locationText: String(row.location_text ?? ''),
+    priceText: row.price_text ? String(row.price_text) : undefined,
+    priceValue: typeof row.price === 'number' ? row.price : undefined,
+    currencyCode: String(row.currency ?? 'USD'),
+    negotiable: Boolean(row.is_negotiable),
+    mainCategoryId: String(row.category_id ?? ''),
+    subCategoryId: row.sub_category_id ? String(row.sub_category_id) : undefined,
+    openNow: false,
+    isSponsored: Boolean(row.is_sponsored),
+    isHappening: false,
+    isFlashSale: Boolean(row.is_flash_sale),
+    isTrial: false,
+    status: String(row.status ?? 'pending'),
+    viewsCount: typeof row.view_count === 'number' ? row.view_count : 0,
+    savesCount: typeof row.save_count === 'number' ? row.save_count : 0,
+    messagesCount: 0,
+    rating: typeof row.rating === 'number' ? row.rating : undefined,
+    condition: row.condition ? String(row.condition) : undefined,
+    createdAt: row.created_at ? String(row.created_at) : undefined,
+    flashSaleEndsAt: row.flash_sale_until ? String(row.flash_sale_until) : undefined,
   };
 }
 
@@ -75,17 +86,21 @@ export default function SubCategoryResultsPage() {
   const title = subCat?.title ?? mainCat?.title ?? 'Results';
 
   useEffect(() => {
-    const constraints: QueryConstraint[] = [
-      where('status', '==', 'approved'),
-      where('mainCategoryId', '==', mainId),
-      where('subCategoryId', '==', subId),
-    ];
-    const q = query(collection(db, 'listings'), ...constraints);
-    const unsub = onSnapshot(q, (snap) => {
-      setListings(snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id)));
-      setLoading(false);
-    }, () => setLoading(false));
-    return unsub;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const { data } = await supabase.from('listings')
+        .select('*, listing_images(url, sort_order)')
+        .eq('status', 'active')
+        .eq('category_id', mainId)
+        .eq('sub_category_id', subId)
+        .order('created_at', { ascending: false });
+      if (!cancelled) {
+        setListings((data ?? []).map((row) => mapListing(row as Record<string, unknown>)));
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [mainId, subId]);
 
   function applyFiltersAndSort(all: Listing[]): Listing[] {

@@ -6,10 +6,9 @@ import {
   Bookmark, MessageCircle, Bell, FileText, HeadphonesIcon,
   Info, LogOut, ChevronRight, Check, Search,
 } from 'lucide-react';
-import { signOut } from 'firebase/auth';
 import { sanitizeText } from '@/lib/sanitize';
 import toast from 'react-hot-toast';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { CURRENCIES, getCurrencyForCountry, getCurrencySymbol } from '@/lib/currency';
 import { LANGUAGES, RTL_LANGS } from '@/lib/i18n';
@@ -329,7 +328,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
   const handleLogout = async () => {
     onClose();
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       setUser(null);
       router.replace('/home');
     } catch {

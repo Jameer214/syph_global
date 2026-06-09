@@ -4,9 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Camera, X, ChevronDown, MapPin, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { createHappening, getSellerProfile, uploadListingImages } from '@/lib/firestore';
 import { CATEGORIES } from '@/data/categories';
 import type { Listing, SellerProfile } from '@/types';
@@ -57,28 +55,28 @@ export default function HappeningsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
       if (!u) { setLoading(false); return; }
-      setUid(u.uid);
-      const sp = await getSellerProfile(u.uid).catch(() => null);
+      setUid(u.id);
+      const sp = await getSellerProfile(u.id).catch(() => null);
       setSeller(sp);
       setLoading(false);
     });
-    return unsub;
   }, []);
 
   useEffect(() => {
     if (!uid) return;
-    const q = query(
-      collection(db, 'listings'),
-      where('ownerUid', '==', uid),
-      where('isHappening', '==', true),
-      orderBy('createdAt', 'desc'),
-      limit(20),
-    );
-    return onSnapshot(q, (snap) => {
-      setHappenings(snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id)));
-    }, () => {});
+    let cancelled = false;
+    supabase
+      .from('happenings')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        if (!cancelled) setHappenings((data ?? []).map((d: Record<string, unknown>) => mapListing(d, String(d.id ?? ''))));
+      });
+    return () => { cancelled = true; };
   }, [uid]);
 
   function handleImagePick(files: FileList | null) {

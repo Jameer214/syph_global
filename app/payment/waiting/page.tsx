@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 type Status = 'waiting' | 'success' | 'failed';
 
@@ -50,16 +49,16 @@ function WaitingContent() {
         }
 
         try {
-          const verify = httpsCallable(functions, 'verifyPaymentStatus');
-          const result = await verify({ paymentId }) as { data: { status?: string; message?: string } };
-          const s = result.data.status;
+          const { data: result, error } = await supabase.functions.invoke('verifyPaymentStatus', { body: { paymentId } });
+          if (error) throw error;
+          const s = result?.status;
           if (s === 'confirmed') {
             clearInterval(timerRef.current!);
             setStatus('success');
           } else if (s === 'failed') {
             clearInterval(timerRef.current!);
             setStatus('failed');
-            setErrorMessage(result.data.message ?? 'Payment failed. Please try again.');
+            setErrorMessage(result?.message ?? 'Payment failed. Please try again.');
           }
         } catch {
           // silent — keep polling

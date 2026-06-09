@@ -10,11 +10,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
-import {
-  doc, getDoc, collection, query, where, limit, getDocs,
-  setDoc, serverTimestamp, increment, addDoc,
-} from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { translate as tr, getDir } from '@/lib/i18n';
 import { getListing, getListingReviews, getRelatedListings } from '@/lib/firestore';
@@ -30,16 +26,18 @@ function ReportModal({ listingId, onClose }: { listingId: string; onClose: () =>
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
-    const uid = auth.currentUser?.uid;
+    const { data: { session } } = await supabase.auth.getSession();
+    const uid = session?.user?.id;
     if (!uid) { toast.error('Sign in to report.'); return; }
     if (!reason) { toast.error('Select a reason.'); return; }
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'reports'), {
-        listingId, reporterUid: uid,
-        reporterName: auth.currentUser?.displayName || 'User',
-        reason, details: details.trim(), status: 'pending',
-        createdAt: serverTimestamp(),
+      await supabase.from('reports').insert({
+        listing_id: listingId,
+        reporter_id: uid,
+        reason,
+        details: details.trim(),
+        status: 'pending',
       });
       toast.success('Report submitted. Thank you!');
       onClose();
@@ -81,16 +79,20 @@ function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sel
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
-    const u = auth.currentUser;
+    const { data: { session } } = await supabase.auth.getSession();
+    const u = session?.user;
     if (!u) { toast.error('Sign in to review.'); return; }
     if (!comment.trim()) { toast.error('Add a comment.'); return; }
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'reviews'), {
-        listingId, sellerUid, buyerUid: u.uid,
-        buyerName: u.displayName || 'User',
-        rating, comment: comment.trim(),
-        status: 'pending', createdAt: serverTimestamp(),
+      await supabase.from('reviews').insert({
+        listing_id: listingId,
+        seller_id: sellerUid,
+        buyer_id: u.id,
+        buyer_name: u.user_metadata?.full_name || 'User',
+        rating,
+        comment: comment.trim(),
+        status: 'pending',
       });
       toast.success('Review submitted for approval!');
       onClose();
@@ -165,7 +167,7 @@ export default function ListingDetailsPage() {
       if (lastView && Date.now() - Number(lastView) < 86400000) return;
       localStorage.setItem(cacheKey, String(Date.now()));
     } catch { /* ignore if localStorage unavailable */ }
-    addDoc(collection(db, 'viewQueue'), { listingId: id, t: serverTimestamp() }).catch(() => {});
+    void supabase.from('listings').update({ view_count: (listing?.viewsCount ?? 0) + 1 }).eq('id', id);
   }, [id]);
 
   // Load reviews + related + seller verification
@@ -174,9 +176,12 @@ export default function ListingDetailsPage() {
     getListingReviews(id).then(setReviews).catch(() => {});
     getRelatedListings(listing.mainCategoryId, listing.country, id, 6).then(setRelated).catch(() => {});
     if (listing.ownerUid) {
-      getDoc(doc(db, 'sellers', listing.ownerUid)).then((snap) => {
-        if (snap.exists()) setIsVerified(Boolean((snap.data() as Record<string, unknown>).isVerified));
-      }).catch(() => {});
+      (async () => {
+        try {
+          const { data } = await supabase.from('sellers').select('is_verified').eq('user_id', listing.ownerUid).single();
+          if (data) setIsVerified(Boolean(data.is_verified));
+        } catch {}
+      })();
     }
   }, [listing, id]);
 
@@ -189,62 +194,53 @@ export default function ListingDetailsPage() {
       return;
     }
     lastMessageSent.current = now;
-    const fireUser = auth.currentUser;
+    const { data: { session } } = await supabase.auth.getSession();
+    const fireUser = session?.user;
     if (!fireUser) { toast.error('Sign in to message the seller'); return; }
     if (!listing) return;
     if (!listing.ownerUid) { toast.error('Seller chat not available'); return; }
-    if (fireUser.uid === listing.ownerUid) { toast.error('This is your own listing'); return; }
+    if (fireUser.id === listing.ownerUid) { toast.error('This is your own listing'); return; }
 
     setStartingChat(true);
     try {
-      const participants = [fireUser.uid, listing.ownerUid].sort();
-      const chatsQuery = query(
-        collection(db, 'chats'),
-        where('listingId', '==', listing.id),
-        where('participants', '==', participants),
-        limit(1)
-      );
-      const existing = await getDocs(chatsQuery);
+      // Find existing chat for this listing between these two users
+      const { data: existing } = await supabase.from('chats')
+        .select('id')
+        .eq('listing_id', listing.id)
+        .eq('buyer_id', fireUser.id)
+        .eq('seller_id', listing.ownerUid)
+        .limit(1);
 
       let chatId: string;
-      if (existing.docs.length > 0) {
-        chatId = existing.docs[0].id;
+      if (existing && existing.length > 0) {
+        chatId = existing[0].id;
       } else {
-        const chatRef = doc(collection(db, 'chats'));
-        chatId = chatRef.id;
         const starter = (initialMessage ?? '').trim();
-        await setDoc(chatRef, {
-          listingId: listing.id,
-          participants,
-          buyerUid: fireUser.uid,
-          sellerUid: listing.ownerUid,
-          buyerName: fireUser.displayName?.trim() || fireUser.email?.split('@')[0] || 'User',
-          sellerName: listing.sellerName,
-          listingTitle: listing.title,
-          listingImageUrl: listing.imageUrl,
-          lastMessage: starter,
-          unreadForBuyer: 0,
-          unreadForSeller: starter ? 1 : 0,
-          updatedAt: serverTimestamp(),
-          createdAt: serverTimestamp(),
-        });
+        const { data: newChat } = await supabase.from('chats').insert({
+          listing_id: listing.id,
+          buyer_id: fireUser.id,
+          seller_id: listing.ownerUid,
+          last_message: starter,
+          seller_unread_count: starter ? 1 : 0,
+          buyer_unread_count: 0,
+          last_message_at: new Date().toISOString(),
+        }).select('id').single();
+        chatId = newChat!.id;
       }
 
       const starter = (initialMessage ?? '').trim();
       if (starter) {
-        await addDoc(collection(db, 'chats', chatId, 'messages'), {
-          senderUid: fireUser.uid,
-          text: starter,
-          createdAt: serverTimestamp(),
-          type: 'text',
+        await supabase.from('messages').insert({
+          chat_id: chatId,
+          sender_id: fireUser.id,
+          content: starter,
+          is_read: false,
         });
-        await setDoc(doc(db, 'chats', chatId), {
-          lastMessage: starter,
-          lastSenderUid: fireUser.uid,
-          updatedAt: serverTimestamp(),
-          unreadForSeller: increment(1),
-        }, { merge: true });
-        setDoc(doc(db, 'listings', id), { messagesCount: increment(1), updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
+        await supabase.from('chats').update({
+          last_message: starter,
+          last_message_at: new Date().toISOString(),
+          seller_unread_count: 1,
+        }).eq('id', chatId);
       }
 
       setMessageText('');
@@ -320,7 +316,7 @@ export default function ListingDetailsPage() {
   }
 
   const saved = isSaved(listing.id);
-  const isOwner = (user?.uid ?? auth.currentUser?.uid) === listing.ownerUid;
+  const isOwner = (user?.uid ?? '') === listing.ownerUid;
 
   return (
     <div dir={getDir(selectedLanguage)} className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
@@ -551,7 +547,7 @@ export default function ListingDetailsPage() {
         {/* Submit review button */}
         <button
           onClick={() => {
-            if (!auth.currentUser) { toast.error('Sign in to submit a review'); return; }
+            if (!user?.uid) { toast.error('Sign in to submit a review'); return; }
             setShowReview(true);
           }}
           style={{ width: '100%', padding: '15px', borderRadius: 18, background: '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
@@ -562,7 +558,7 @@ export default function ListingDetailsPage() {
         {/* Report button */}
         <button
           onClick={() => {
-            if (!auth.currentUser) { toast.error('Sign in to report'); return; }
+            if (!user?.uid) { toast.error('Sign in to report'); return; }
             setShowReport(true);
           }}
           style={{ width: '100%', padding: '15px', borderRadius: 18, background: '#fff', color: '#ef4444', fontWeight: 900, fontSize: 15, border: '1.5px solid #fca5a5', cursor: 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}

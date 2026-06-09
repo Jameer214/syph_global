@@ -2,9 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Megaphone, Zap, Package } from 'lucide-react';
-import { getDoc, doc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
 import { getSellerProfile } from '@/lib/firestore';
 import type { SellerProfile } from '@/types';
@@ -30,38 +28,27 @@ export default function UpgradeListingPage() {
   const [adminPricing, setAdminPricing] = useState<AdminPricing | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
-      const sp = await getSellerProfile(user.uid);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
+      if (!u) return;
+      const sp = await getSellerProfile(u.id);
       setSeller(sp);
     });
-    return unsub;
   }, []);
 
   useEffect(() => {
     if (!listingId) return;
-    getDoc(doc(db, 'listings', listingId)).then((snap) => {
-      if (snap.exists()) setListingTitle(String((snap.data() as Record<string, unknown>).title ?? ''));
-    }).catch(() => {});
+    (async () => {
+      try {
+        const { data } = await supabase.from('listings').select('title').eq('id', listingId).single();
+        if (data) setListingTitle(String((data as Record<string, unknown>).title ?? ''));
+      } catch {}
+    })();
   }, [listingId]);
 
   useEffect(() => {
-    getDoc(doc(db, 'admin_settings', 'payment_methods')).then((snap) => {
-      if (!snap.exists()) return;
-      const data = snap.data() as Record<string, unknown>;
-      const pricing = data.pricing as Record<string, Record<string, string | number>> | undefined;
-      if (!pricing) return;
-      const parse = (cat: Record<string, string | number> | undefined): Record<string, number> => {
-        if (!cat) return {};
-        return Object.fromEntries(
-          Object.entries(cat).map(([k, v]) => [k, parseFloat(String(v).replace(/,/g, '')) || 0])
-        );
-      };
-      setAdminPricing({
-        upgradeToSponsored: parse(pricing.upgradeToSponsored as Record<string, string | number>),
-        upgradeToFlashSale: parse(pricing.upgradeToFlashSale as Record<string, string | number>),
-      });
-    }).catch(() => {});
+    // Admin pricing not in Supabase schema — use defaults
+    setAdminPricing({ upgradeToSponsored: {}, upgradeToFlashSale: {} });
   }, []);
 
   const color = upgradeType === 'sponsored' ? '#2F6BFF' : '#E53935';

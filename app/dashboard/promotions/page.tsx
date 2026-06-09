@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Crown, Zap, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { getMyPromotionRequests } from '@/lib/firestore';
 import type { PromotionRequest } from '@/types';
 
@@ -37,16 +36,16 @@ export default function PromotionsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
       if (!u) { setLoading(false); return; }
-      setUid(u.uid);
+      setUid(u.id);
       try {
-        const reqs = await getMyPromotionRequests(u.uid);
+        const reqs = await getMyPromotionRequests(u.id);
         setRequests(reqs);
       } catch { /* ignore */ }
       setLoading(false);
     });
-    return unsub;
   }, []);
 
   if (loading) {

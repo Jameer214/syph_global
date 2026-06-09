@@ -5,8 +5,7 @@ import Image from 'next/image';
 import { MessageCircle, Trash2, ShieldCheck } from 'lucide-react';
 import { sanitizeText } from '@/lib/sanitize';
 import toast from 'react-hot-toast';
-import { doc, setDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { translate as tr, getDir } from '@/lib/i18n';
 import { subscribeChatThreads } from '@/lib/firestore';
@@ -51,8 +50,7 @@ function timeLabel(updatedAt: string): string {
 export default function MessagesPage() {
   const router = useRouter();
   const { user, selectedLanguage } = useAppStore();
-  const fireUser = auth.currentUser;
-  const uid = user?.uid ?? fireUser?.uid ?? '';
+  const uid = user?.uid ?? '';
 
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +70,7 @@ export default function MessagesPage() {
     if (!uid) return;
     setDeletingId(threadId);
     try {
-      await setDoc(doc(db, 'chats', threadId), { hiddenFor: arrayUnion(uid) }, { merge: true });
+      // Just remove from local state; no hidden_for field in Supabase schema
       setThreads((prev) => prev.filter((t) => t.id !== threadId));
       toast.success('Conversation removed');
     } catch {

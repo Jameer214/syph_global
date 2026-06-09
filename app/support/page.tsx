@@ -2,8 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ShieldCheck, Send } from 'lucide-react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { subscribeSupportMessages, sendSupportMessage, markSupportRead } from '@/lib/firestore';
 import type { SupportMessage } from '@/types';
 
@@ -30,15 +29,15 @@ export default function SupportPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
       if (u) {
-        setAuthUser({ uid: u.uid, displayName: u.displayName, email: u.email });
+        setAuthUser({ uid: u.id, displayName: u.user_metadata?.full_name ?? null, email: u.email ?? null });
       } else {
         setAuthUser(null);
       }
       setLoading(false);
     });
-    return unsub;
   }, []);
 
   useEffect(() => {

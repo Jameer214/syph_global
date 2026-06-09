@@ -3,9 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Camera, X, ChevronDown, MapPin } from 'lucide-react';
 import Image from 'next/image';
-import { onAuthStateChanged } from 'firebase/auth';
-import { getDoc, doc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { createListing, getSellerProfile } from '@/lib/firestore';
 import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
 import { CATEGORIES } from '@/data/categories';
@@ -61,10 +59,11 @@ export default function NewListingForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const u = session?.user ?? null;
       if (!u) { setLoading(false); return; }
-      setUid(u.uid);
-      const sp = await getSellerProfile(u.uid);
+      setUid(u.id);
+      const sp = await getSellerProfile(u.id);
       setSeller(sp);
       if (sp) {
         setCountry(sp.operatingCountry || '');
@@ -72,27 +71,11 @@ export default function NewListingForm() {
       }
       setLoading(false);
     });
-    return unsub;
   }, []);
 
   useEffect(() => {
-    getDoc(doc(db, 'admin_settings', 'payment_methods')).then((snap) => {
-      if (!snap.exists()) return;
-      const data = snap.data() as Record<string, unknown>;
-      const pricing = data.pricing as Record<string, Record<string, string | number>> | undefined;
-      if (!pricing) return;
-      const parse = (cat: Record<string, string | number> | undefined): Record<string, number> => {
-        if (!cat) return {};
-        return Object.fromEntries(
-          Object.entries(cat).map(([k, v]) => [k, parseFloat(String(v).replace(/,/g, '')) || 0])
-        );
-      };
-      setAdminPricing({
-        upgradeToSponsored: parse(pricing.upgradeToSponsored as Record<string, string | number>),
-        upgradeToFlashSale: parse(pricing.upgradeToFlashSale as Record<string, string | number>),
-        happenings: parse(pricing.happenings as Record<string, string | number>),
-      });
-    }).catch(() => {});
+    // Admin pricing not in Supabase — use defaults
+    setAdminPricing({ upgradeToSponsored: {}, upgradeToFlashSale: {}, happenings: {} });
   }, []);
 
   const mainCategory = CATEGORIES.find((c) => c.id === selectedMainId);
