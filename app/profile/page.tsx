@@ -113,8 +113,16 @@ export default function ProfilePage() {
       await updatePassword(u, newPw);
       setPwDone(true);
     } catch (e: unknown) {
-      const msg = (e as Error).message ?? 'Failed to change password';
-      setPwError(msg.replace('Firebase: ', ''));
+      const code = (e as { code?: string }).code ?? '';
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        setPwError('Current password is incorrect.');
+      } else if (code === 'auth/too-many-requests') {
+        setPwError('Too many attempts. Please try again later.');
+      } else if (code === 'auth/weak-password') {
+        setPwError('New password is too weak. Use at least 6 characters.');
+      } else {
+        setPwError('Failed to change password. Please try again.');
+      }
     } finally {
       setSavingPw(false);
     }

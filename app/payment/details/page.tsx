@@ -72,7 +72,7 @@ function DetailsPageContent() {
       const params = new URLSearchParams({ paymentId, amount, currency, type });
       router.push(`/payment/waiting?${params}`);
     } catch (e) {
-      toast.error(`Failed to initiate payment: ${e instanceof Error ? e.message : e}`);
+      toast.error('Failed to initiate payment. Please try again.');
       setSubmitting(false);
     }
   }

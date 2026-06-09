@@ -120,7 +120,7 @@ export default function ChatPage() {
         [otherUnreadField]: increment(1),
       }, { merge: true });
     } catch (e) {
-      toast.error(`Failed to send: ${e}`);
+      toast.error('Failed to send message. Please try again.');
       setInputText(text); // restore
     } finally {
       setSending(false);
