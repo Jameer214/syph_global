@@ -153,7 +153,9 @@ export default function ListingDetailsPage() {
     }).catch(() => setLoading(false));
   }, [id]);
 
-  // Track view once per listing per 24h per browser to avoid Firestore write hotspots
+  // Track view once per listing per 24h per browser.
+  // Writes to viewQueue (not the listing doc) so the processViewQueue Cloud
+  // Function can batch-aggregate counts — no write hotspot on popular listings.
   useEffect(() => {
     if (viewTracked.current) return;
     viewTracked.current = true;
@@ -163,7 +165,7 @@ export default function ListingDetailsPage() {
       if (lastView && Date.now() - Number(lastView) < 86400000) return;
       localStorage.setItem(cacheKey, String(Date.now()));
     } catch { /* ignore if localStorage unavailable */ }
-    setDoc(doc(db, 'listings', id), { viewsCount: increment(1), updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
+    addDoc(collection(db, 'viewQueue'), { listingId: id, t: serverTimestamp() }).catch(() => {});
   }, [id]);
 
   // Load reviews + related + seller verification
