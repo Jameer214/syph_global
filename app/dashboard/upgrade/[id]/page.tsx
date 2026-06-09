@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Megaphone, Zap, Package } from 'lucide-react';
-import { getDoc, doc, onSnapshot } from 'firebase/firestore';
+import { getDoc, doc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
@@ -46,7 +46,7 @@ export default function UpgradeListingPage() {
   }, [listingId]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'admin_settings', 'payment_methods'), (snap) => {
+    getDoc(doc(db, 'admin_settings', 'payment_methods')).then((snap) => {
       if (!snap.exists()) return;
       const data = snap.data() as Record<string, unknown>;
       const pricing = data.pricing as Record<string, Record<string, string | number>> | undefined;
@@ -61,8 +61,7 @@ export default function UpgradeListingPage() {
         upgradeToSponsored: parse(pricing.upgradeToSponsored as Record<string, string | number>),
         upgradeToFlashSale: parse(pricing.upgradeToFlashSale as Record<string, string | number>),
       });
-    });
-    return unsub;
+    }).catch(() => {});
   }, []);
 
   const color = upgradeType === 'sponsored' ? '#2F6BFF' : '#E53935';

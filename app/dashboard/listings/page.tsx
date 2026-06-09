@@ -229,7 +229,7 @@ export default function MyListingsPage() {
                     {/* Image */}
                     <div style={{ width: 84, height: 84, borderRadius: 16, overflow: 'hidden', flexShrink: 0, background: '#EEF2FB', position: 'relative' }}>
                       {l.imageUrl ? (
-                        <Image src={l.imageUrl} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="84px" unoptimized />
+                        <Image src={l.imageUrl} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="84px" />
                       ) : (
                         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Package size={28} color="#9AA0B2" />

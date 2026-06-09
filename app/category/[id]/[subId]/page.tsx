@@ -147,7 +147,7 @@ export default function SubCategoryResultsPage() {
               return (
                 <div key={l.id} onClick={() => router.push(`/listing/${l.id}`)} style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                   <div style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>
-                    {img ? <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="72px" unoptimized /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>}
+                    {img ? <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="72px" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>

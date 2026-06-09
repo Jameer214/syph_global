@@ -357,7 +357,7 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay }: { listi
       {/* Image */}
       <div style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>
         {img ? (
-          <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="72px" unoptimized />
+          <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="72px" />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>
         )}

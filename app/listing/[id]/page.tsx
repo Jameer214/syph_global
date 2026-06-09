@@ -153,10 +153,16 @@ export default function ListingDetailsPage() {
     }).catch(() => setLoading(false));
   }, [id]);
 
-  // Track view once
+  // Track view once per listing per 24h per browser to avoid Firestore write hotspots
   useEffect(() => {
     if (viewTracked.current) return;
     viewTracked.current = true;
+    try {
+      const cacheKey = `vt:${id}`;
+      const lastView = localStorage.getItem(cacheKey);
+      if (lastView && Date.now() - Number(lastView) < 86400000) return;
+      localStorage.setItem(cacheKey, String(Date.now()));
+    } catch { /* ignore if localStorage unavailable */ }
     setDoc(doc(db, 'listings', id), { viewsCount: increment(1), updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
   }, [id]);
 
@@ -341,7 +347,6 @@ export default function ListingDetailsPage() {
                 fill
                 style={{ objectFit: 'cover' }}
                 sizes="480px"
-                unoptimized
               />
               {images.length > 1 && (
                 <>
@@ -578,7 +583,7 @@ export default function ListingDetailsPage() {
                 return (
                   <div key={r.id} onClick={() => router.push(`/listing/${r.id}`)} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 3px 6px rgba(0,0,0,0.03)', cursor: 'pointer' }}>
                     <div style={{ aspectRatio: '1.2', position: 'relative', backgroundColor: '#f2f5f9' }}>
-                      {rImg ? <Image src={rImg} alt={r.title} fill style={{ objectFit: 'cover' }} sizes="220px" unoptimized /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>📦</div>}
+                      {rImg ? <Image src={rImg} alt={r.title} fill style={{ objectFit: 'cover' }} sizes="220px" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>📦</div>}
                     </div>
                     <div style={{ padding: '10px 10px 8px' }}>
                       <p style={{ margin: '0 0 4px', fontWeight: 900, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', color: '#0f172a' }}>{r.title}</p>

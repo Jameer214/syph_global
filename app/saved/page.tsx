@@ -126,7 +126,7 @@ export default function SavedPage() {
                   {/* Image */}
                   <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>
                     {img ? (
-                      <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="56px" unoptimized />
+                      <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="56px" />
                     ) : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>
                     )}

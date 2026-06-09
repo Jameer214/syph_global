@@ -157,7 +157,7 @@ export default function MessagesPage() {
                   {/* Thumbnail */}
                   <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, backgroundColor: '#EEF3FF', position: 'relative' }}>
                     {thread.listingImageUrl ? (
-                      <Image src={thread.listingImageUrl} alt={thread.listingTitle} fill style={{ objectFit: 'cover' }} sizes="56px" unoptimized />
+                      <Image src={thread.listingImageUrl} alt={thread.listingTitle} fill style={{ objectFit: 'cover' }} sizes="56px" />
                     ) : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {isSeller ? <span style={{ fontSize: 26 }}>👤</span> : <span style={{ fontSize: 26 }}>🏪</span>}

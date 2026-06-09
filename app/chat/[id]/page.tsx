@@ -144,7 +144,7 @@ export default function ChatPage() {
         {/* Listing thumbnail */}
         <div style={{ width: 36, height: 36, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.2)', position: 'relative' }}>
           {listingImage ? (
-            <Image src={listingImage} alt={listingTitle} fill style={{ objectFit: 'cover' }} sizes="36px" unoptimized />
+            <Image src={listingImage} alt={listingTitle} fill style={{ objectFit: 'cover' }} sizes="36px" />
           ) : (
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
               {isSeller ? '👤' : '🏪'}

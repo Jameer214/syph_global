@@ -128,7 +128,7 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
     <button onClick={onClick} style={{ background: '#fff', borderRadius: 18, border: '1px solid rgba(0,0,0,0.06)', overflow: 'hidden', textAlign: 'left', cursor: 'pointer', width: '100%', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
       <div style={{ width: '100%', aspectRatio: '4/3', position: 'relative', background: '#EEF2FB' }}>
         {listing.imageUrl ? (
-          <Image src={listing.imageUrl} alt={listing.title} fill style={{ objectFit: 'cover' }} unoptimized />
+          <Image src={listing.imageUrl} alt={listing.title} fill style={{ objectFit: 'cover' }} />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Package size={28} color="#BCC8D8" />
@@ -173,7 +173,7 @@ function HappeningCard({ listing, onClick, selectedCurrency }: { listing: Listin
     <button onClick={onClick} style={{ background: '#fff', borderRadius: 18, border: '1px solid rgba(0,0,0,0.06)', overflow: 'hidden', display: 'flex', gap: 0, width: '100%', marginBottom: 12, textAlign: 'left', cursor: 'pointer', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
       <div style={{ width: 90, minHeight: 90, position: 'relative', background: '#EEF2FB', flexShrink: 0 }}>
         {listing.imageUrl ? (
-          <Image src={listing.imageUrl} alt={listing.title} fill style={{ objectFit: 'cover' }} unoptimized />
+          <Image src={listing.imageUrl} alt={listing.title} fill style={{ objectFit: 'cover' }} />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Calendar size={24} color="#BCC8D8" />
