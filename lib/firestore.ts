@@ -12,6 +12,8 @@ import {
   updateDoc,
   deleteDoc,
   startAfter,
+  startAt,
+  endAt,
   serverTimestamp,
   documentId,
   DocumentSnapshot,
@@ -165,71 +167,61 @@ function filterByCountry(listings: Listing[], country?: string): Listing[] {
 }
 
 export async function getSponsoredListings(count = 8, country?: string): Promise<Listing[]> {
-  const fetch = country ? count * 4 : count;
-  const q = query(
-    collection(db, 'listings'),
+  const constraints = [
     where('status', '==', 'approved'),
     where('isSponsored', '==', true),
     orderBy('createdAt', 'desc'),
-    limit(fetch)
-  );
+  ];
+  if (country) constraints.splice(2, 0, where('country', '==', country));
+  const q = query(collection(db, 'listings'), ...constraints, limit(count));
   const snap = await getDocs(q);
-  const all = snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
-  return filterByCountry(all, country).slice(0, count);
+  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
 }
 
 export async function getFlashSaleListings(count = 12, country?: string): Promise<Listing[]> {
-  const fetch = country ? count * 4 : count;
-  const q = query(
-    collection(db, 'listings'),
+  const constraints = [
     where('status', '==', 'approved'),
     where('isFlashSale', '==', true),
     orderBy('createdAt', 'desc'),
-    limit(fetch)
-  );
+  ];
+  if (country) constraints.splice(2, 0, where('country', '==', country));
+  const q = query(collection(db, 'listings'), ...constraints, limit(count));
   const snap = await getDocs(q);
-  const all = snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
-  return filterByCountry(all, country).slice(0, count);
+  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
 }
 
 export async function getHappenings(count = 8, country?: string): Promise<Listing[]> {
-  const fetch = country ? count * 4 : count;
-  const q = query(
-    collection(db, 'listings'),
+  const constraints = [
     where('status', '==', 'approved'),
     where('isHappening', '==', true),
     orderBy('createdAt', 'desc'),
-    limit(fetch)
-  );
+  ];
+  if (country) constraints.splice(2, 0, where('country', '==', country));
+  const q = query(collection(db, 'listings'), ...constraints, limit(count));
   const snap = await getDocs(q);
-  const all = snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
-  return filterByCountry(all, country).slice(0, count);
+  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
 }
 
 export async function getNewestListings(count = 20, country?: string): Promise<Listing[]> {
-  const fetch = country ? count * 4 : count;
-  const q = query(
-    collection(db, 'listings'),
+  const constraints = [
     where('status', '==', 'approved'),
     orderBy('createdAt', 'desc'),
-    limit(fetch)
-  );
+  ];
+  if (country) constraints.splice(1, 0, where('country', '==', country));
+  const q = query(collection(db, 'listings'), ...constraints, limit(count));
   const snap = await getDocs(q);
-  const all = snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
-  return filterByCountry(all, country).slice(0, count);
+  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
 }
 
 export async function getTrendingListings(count = 12, country?: string): Promise<Listing[]> {
-  const fetch = country ? count * 4 : count;
-  const q = query(
-    collection(db, 'listings'),
+  const constraints = [
     where('status', '==', 'approved'),
     orderBy('viewsCount', 'desc'),
-    limit(fetch)
-  );
+  ];
+  if (country) constraints.splice(1, 0, where('country', '==', country));
+  const q = query(collection(db, 'listings'), ...constraints, limit(count));
   const snap = await getDocs(q);
-  const all = snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
-  return filterByCountry(all, country).slice(0, count);
+  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
 }
 
 export async function getSellerProfile(uid: string): Promise<SellerProfile | null> {
@@ -734,23 +726,17 @@ export async function createHappening(
 
 export async function searchListings(searchTerm: string, count = 24): Promise<Listing[]> {
   const term = searchTerm.toLowerCase().trim();
+  if (!term) return [];
+  // Firestore prefix search on title (requires status+title composite index)
+  // For full-text search at scale, migrate to Algolia or Typesense
   const q = query(
     collection(db, 'listings'),
     where('status', '==', 'approved'),
-    orderBy('createdAt', 'desc'),
-    limit(100)
+    orderBy('title'),
+    startAt(term),
+    endAt(term + ''),
+    limit(count)
   );
   const snap = await getDocs(q);
-  const all = snap.docs.map((d) =>
-    mapListing(d.data() as Record<string, unknown>, d.id)
-  );
-  return all
-    .filter(
-      (l) =>
-        l.title.toLowerCase().includes(term) ||
-        l.description.toLowerCase().includes(term) ||
-        l.sellerName.toLowerCase().includes(term) ||
-        l.locationText.toLowerCase().includes(term)
-    )
-    .slice(0, count);
+  return snap.docs.map((d) => mapListing(d.data() as Record<string, unknown>, d.id));
 }

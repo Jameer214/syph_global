@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { checkRateLimit } from '@/lib/rateLimit';
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -104,6 +105,10 @@ export default function LoginPage() {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
       toast.error('Please enter your email and password.');
+      return;
+    }
+    if (!checkRateLimit(`login:${email.trim()}`, 5, 60000)) {
+      toast.error('Too many login attempts. Please wait a minute and try again.');
       return;
     }
     setLoading(true);

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Send } from 'lucide-react';
+import { sanitizeText } from '@/lib/sanitize';
 import toast from 'react-hot-toast';
 import {
   doc, getDoc, addDoc, collection, setDoc, serverTimestamp, increment, onSnapshot,
@@ -152,7 +153,7 @@ export default function ChatPage() {
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: 0, color: '#fff', fontWeight: 800, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{otherName}</p>
+          <p style={{ margin: 0, color: '#fff', fontWeight: 800, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sanitizeText(otherName)}</p>
           {listingTitle && (
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 11.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listingTitle}</p>
           )}
@@ -175,7 +176,7 @@ export default function ChatPage() {
                   background: fromMe ? '#2E5BFF' : '#F1F5F9',
                   border: fromMe ? 'none' : '1px solid #e2e8f0',
                 }}>
-                  <p style={{ margin: 0, color: fromMe ? '#fff' : '#0f172a', fontWeight: 600, lineHeight: 1.4, wordBreak: 'break-word' }}>{msg.text}</p>
+                  <p style={{ margin: 0, color: fromMe ? '#fff' : '#0f172a', fontWeight: 600, lineHeight: 1.4, wordBreak: 'break-word' }}>{sanitizeText(msg.text)}</p>
                   <p style={{ margin: '6px 0 0', fontSize: 11, color: fromMe ? 'rgba(255,255,255,0.7)' : '#9ca3af', textAlign: 'right' }}>{formatTime(msg.createdAt)}</p>
                 </div>
               </div>

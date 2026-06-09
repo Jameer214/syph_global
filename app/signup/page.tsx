@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { checkRateLimit } from '@/lib/rateLimit';
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -125,6 +126,10 @@ export default function SignupPage() {
     if (!email.trim()) return toast.error('Please enter your email.');
     if (password.length < 6) return toast.error('Password must be at least 6 characters.');
     if (!country) return toast.error('Please select your country.');
+    if (!checkRateLimit(`signup:${email.trim()}`, 3, 300000)) {
+      toast.error('Too many signup attempts. Please wait a few minutes and try again.');
+      return;
+    }
 
     setLoading(true);
     try {

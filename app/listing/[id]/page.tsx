@@ -9,6 +9,7 @@ import {
   FileText, Info, List, Navigation, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { sanitizeText } from '@/lib/sanitize';
 import {
   doc, getDoc, collection, query, where, limit, getDocs,
   setDoc, serverTimestamp, increment, addDoc,
@@ -367,7 +368,7 @@ export default function ListingDetailsPage() {
         {/* Top card */}
         <div style={{ background: '#fff', borderRadius: 20, padding: 18, boxShadow: '0 5px 12px rgba(0,0,0,0.03)', border: '1px solid #e8edf5', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <p style={{ flex: 1, margin: 0, fontWeight: 900, fontSize: 21, color: '#0f172a', lineHeight: 1.2 }}>{listing.title}</p>
+            <p style={{ flex: 1, margin: 0, fontWeight: 900, fontSize: 21, color: '#0f172a', lineHeight: 1.2 }}>{sanitizeText(listing.title)}</p>
             <button onClick={() => toggleSaved(listing.id)} style={{ background: '#f8fafc', borderRadius: 14, border: 'none', cursor: 'pointer', padding: 8, display: 'flex', flexShrink: 0 }}>
               {saved ? <BookmarkCheck size={22} color="#2E5BFF" /> : <Bookmark size={22} color="#0F2B6E" />}
             </button>
@@ -437,14 +438,14 @@ export default function ListingDetailsPage() {
         {/* Description */}
         <SectionCard icon={<FileText size={20} color="#2E5BFF" />} title={tr('description', selectedLanguage)} marginBottom={14}>
           <p style={{ margin: 0, fontWeight: 600, lineHeight: 1.6, color: 'rgba(0,0,0,0.85)', fontSize: 14 }}>
-            {listing.description?.trim() || 'No description added.'}
+            {sanitizeText(listing.description) || 'No description added.'}
           </p>
         </SectionCard>
 
         {/* Bio */}
         {listing.bio?.trim() && (
           <SectionCard icon={<Info size={20} color="#2E5BFF" />} title="About This Item" marginBottom={14}>
-            <p style={{ margin: 0, fontWeight: 600, lineHeight: 1.6, color: 'rgba(0,0,0,0.85)', fontSize: 14 }}>{listing.bio.trim()}</p>
+            <p style={{ margin: 0, fontWeight: 600, lineHeight: 1.6, color: 'rgba(0,0,0,0.85)', fontSize: 14 }}>{sanitizeText(listing.bio)}</p>
           </SectionCard>
         )}
 
@@ -527,14 +528,14 @@ export default function ListingDetailsPage() {
             {reviews.map((r) => (
               <div key={r.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 12, marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 800, fontSize: 13, color: '#0f172a' }}>{r.buyerName}</span>
+                  <span style={{ fontWeight: 800, fontSize: 13, color: '#0f172a' }}>{sanitizeText(r.buyerName)}</span>
                   <div style={{ display: 'flex', gap: 2 }}>
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star key={s} size={12} color="#FF9800" fill={s <= r.rating ? '#FF9800' : 'transparent'} />
                     ))}
                   </div>
                 </div>
-                {r.comment && <p style={{ margin: 0, fontSize: 13, color: '#4A5878', lineHeight: 1.5 }}>{r.comment}</p>}
+                {r.comment && <p style={{ margin: 0, fontSize: 13, color: '#4A5878', lineHeight: 1.5 }}>{sanitizeText(r.comment)}</p>}
               </div>
             ))}
           </SectionCard>

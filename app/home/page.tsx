@@ -8,6 +8,7 @@ import {
   LayoutGrid, X, ChevronDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { sanitizeText } from '@/lib/sanitize';
 import {
   collection, query, where, orderBy, limit, onSnapshot,
   getDocs, QueryConstraint,
@@ -762,10 +763,10 @@ export default function HomePage() {
                         <Search size={15} style={{ color: '#9ca3af', flexShrink: 0, marginTop: 2 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {item.title}
+                            {sanitizeText(item.title)}
                           </p>
                           <p style={{ margin: '2px 0 0', fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <MapPin size={9} />{item.locationText}
+                            <MapPin size={9} />{sanitizeText(item.locationText)}
                             <span style={{ marginLeft: 6 }}>{item.mainCategoryId}</span>
                             {item.priceText && <span style={{ marginLeft: 6, color: '#2E5BFF', fontWeight: 700 }}>{item.priceText}</span>}
                           </p>

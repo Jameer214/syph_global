@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MessageCircle, Trash2, ShieldCheck } from 'lucide-react';
+import { sanitizeText } from '@/lib/sanitize';
 import toast from 'react-hot-toast';
 import { doc, setDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -167,11 +168,11 @@ export default function MessagesPage() {
                   {/* Text */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                      <span style={{ fontWeight: isUnread ? 900 : 700, fontSize: 14.5, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>{otherName}</span>
+                      <span style={{ fontWeight: isUnread ? 900 : 700, fontSize: 14.5, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>{sanitizeText(otherName)}</span>
                       <span style={{ fontSize: 11.5, color: isUnread ? '#2E5BFF' : '#9ca3af', fontWeight: isUnread ? 700 : 500, flexShrink: 0 }}>{timeLabel(thread.updatedAt)}</span>
                     </div>
                     {thread.listingTitle && (
-                      <p style={{ margin: '0 0 2px', fontSize: 12, color: '#2E5BFF', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{thread.listingTitle}</p>
+                      <p style={{ margin: '0 0 2px', fontSize: 12, color: '#2E5BFF', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sanitizeText(thread.listingTitle)}</p>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 13, color: isUnread ? '#0f172a' : '#9ca3af', fontWeight: isUnread ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>

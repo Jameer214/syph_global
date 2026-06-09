@@ -12,8 +12,13 @@ export default function CookieConsent() {
 
   if (!visible) return null;
 
-  function accept() {
-    localStorage.setItem('syph-cookie-consent', '1');
+  function acceptAll() {
+    localStorage.setItem('syph-cookie-consent', 'all');
+    setVisible(false);
+  }
+
+  function acceptNecessary() {
+    localStorage.setItem('syph-cookie-consent', 'necessary');
     setVisible(false);
   }
 
@@ -33,7 +38,7 @@ export default function CookieConsent() {
       </p>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
         <button
-          onClick={accept}
+          onClick={acceptAll}
           style={{
             background: '#2E5BFF', color: '#fff', border: 'none',
             borderRadius: 8, padding: '8px 20px', fontWeight: 700,
@@ -43,7 +48,7 @@ export default function CookieConsent() {
           Accept All
         </button>
         <button
-          onClick={accept}
+          onClick={acceptNecessary}
           style={{
             background: 'transparent', color: '#93C5FD', border: '1px solid #93C5FD',
             borderRadius: 8, padding: '8px 16px', fontWeight: 600,

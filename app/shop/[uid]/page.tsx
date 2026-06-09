@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame } from 'lucide-react';
+import { sanitizeText } from '@/lib/sanitize';
 import { onSnapshot, doc, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAppStore } from '@/store';
@@ -357,7 +358,7 @@ export default function SellerShopPage() {
 
                 {/* Name + verified */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ color: '#fff', fontWeight: 900, fontSize: 20, lineHeight: 1.2 }}>{sellerName}</span>
+                  <span style={{ color: '#fff', fontWeight: 900, fontSize: 20, lineHeight: 1.2 }}>{sanitizeText(sellerName)}</span>
                   {shop?.isVerified && <span style={{ fontSize: 18 }}>✓</span>}
                 </div>
 
@@ -365,7 +366,7 @@ export default function SellerShopPage() {
                 {loc && (
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, marginTop: 5 }}>
                     <MapPin size={13} color="rgba(255,255,255,0.6)" style={{ marginTop: 1, flexShrink: 0 }} />
-                    <span style={{ color: 'rgba(255,255,255,0.70)', fontWeight: 600, fontSize: 12.5, lineHeight: 1.4 }}>{loc}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.70)', fontWeight: 600, fontSize: 12.5, lineHeight: 1.4 }}>{sanitizeText(loc)}</span>
                   </div>
                 )}
               </div>
@@ -473,8 +474,8 @@ export default function SellerShopPage() {
             <div style={{ background: '#fff', borderRadius: 22, border: '1px solid rgba(0,0,0,0.05)', padding: 16 }}>
               <div style={{ fontWeight: 900, fontSize: 16, color: '#1D3D8F', marginBottom: 10 }}>{tr('viewShop', selectedLanguage)}</div>
               <p style={{ fontWeight: 600, fontSize: 14, color: 'rgba(0,0,0,0.8)', lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
-                {shop?.description?.trim() ||
-                  `${sellerName} is active on SYPH with ${items.length} item(s), ${happenings.length} happening(s), and ${flashSales.length} flash sale(s) currently visible to users.`}
+                {sanitizeText(shop?.description) ||
+                  `${sanitizeText(sellerName)} is active on SYPH with ${items.length} item(s), ${happenings.length} happening(s), and ${flashSales.length} flash sale(s) currently visible to users.`}
               </p>
               {[
                 { icon: <Phone size={17} />, label: tr('contactSeller', selectedLanguage), value: shop?.contact || 'Not published' },

@@ -7,6 +7,7 @@ import {
   Info, LogOut, ChevronRight, Check, Search,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
+import { sanitizeText } from '@/lib/sanitize';
 import toast from 'react-hot-toast';
 import { auth } from '@/lib/firebase';
 import { useAppStore } from '@/store';
@@ -401,7 +402,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
           <div>
             <p style={{ fontSize: 12, color: '#9aa0b2', fontWeight: 600, margin: 0 }}>Hello,</p>
             <p style={{ fontSize: 18, fontWeight: 900, color: '#1c2c52', margin: 0 }}>
-              {isGuest ? 'Guest' : displayName.split(' ')[0]}
+              {isGuest ? 'Guest' : sanitizeText(displayName).split(' ')[0]}
             </p>
           </div>
           {!isGuest && (
