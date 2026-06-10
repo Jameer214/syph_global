@@ -405,15 +405,20 @@ export async function createListing(
   const { data: newListing } = await supabase
     .from('listings')
     .insert({
-      seller_id: sellerId,
+      seller_id: data.ownerUid,
       category_id: data.mainCategoryId || null,
+      sub_category_id: data.subCategoryId ?? null,
       title: data.title,
       description: data.description,
+      seller_name: data.sellerName ?? null,
       price: data.priceValue ?? null,
+      price_text: data.priceText ?? null,
       currency: data.currencyCode ?? 'USD',
       condition: data.condition ?? null,
       country: data.country,
       region: data.regionOrCity ?? null,
+      location_text: data.locationText ?? null,
+      message_about_goods: data.messageAboutGoods ?? null,
       status: 'pending',
       is_negotiable: data.negotiable ?? false,
       is_flash_sale: data.isFlashSale ?? false,
@@ -441,14 +446,18 @@ export async function updateListing(id: string, updates: Partial<Listing>): Prom
   if (updates.title !== undefined) patch.title = updates.title;
   if (updates.description !== undefined) patch.description = updates.description;
   if (updates.priceValue !== undefined) patch.price = updates.priceValue;
+  if (updates.priceText !== undefined) patch.price_text = updates.priceText;
   if (updates.currencyCode !== undefined) patch.currency = updates.currencyCode;
   if (updates.condition !== undefined) patch.condition = updates.condition;
   if (updates.country !== undefined) patch.country = updates.country;
   if (updates.regionOrCity !== undefined) patch.region = updates.regionOrCity;
+  if (updates.locationText !== undefined) patch.location_text = updates.locationText;
   if (updates.negotiable !== undefined) patch.is_negotiable = updates.negotiable;
   if (updates.isFlashSale !== undefined) patch.is_flash_sale = updates.isFlashSale;
   if (updates.isSponsored !== undefined) patch.is_sponsored = updates.isSponsored;
   if (updates.mainCategoryId !== undefined) patch.category_id = updates.mainCategoryId;
+  if (updates.subCategoryId !== undefined) patch.sub_category_id = updates.subCategoryId;
+  if (updates.messageAboutGoods !== undefined) patch.message_about_goods = updates.messageAboutGoods;
   if (updates.status !== undefined) patch.status = updates.status;
   await supabase.from('listings').update(patch).eq('id', id);
 }
@@ -713,13 +722,25 @@ export async function createSellerProfile(profile: Omit<SellerProfile, 'isVerifi
 }
 
 export async function updateSellerProfile(uid: string, updates: Partial<SellerProfile>): Promise<void> {
+  const u = updates as Record<string, unknown>;
   const patch: Record<string, unknown> = {};
-  if (updates.businessName !== undefined) patch.business_name = updates.businessName;
-  if (updates.bio !== undefined) patch.description = updates.bio;
-  if (updates.operatingCountry !== undefined) patch.country = updates.operatingCountry;
-  if (updates.operatingRegion !== undefined) patch.region = updates.operatingRegion;
-  if (updates.businessPhone !== undefined) patch.contact_number = updates.businessPhone;
-  await supabase.from('sellers').update(patch).eq('user_id', uid);
+  if (u.businessName !== undefined) patch.business_name = u.businessName;
+  if (u.bio !== undefined) patch.description = u.bio;
+  if (u.operatingCountry !== undefined) patch.country = u.operatingCountry;
+  if (u.operatingRegion !== undefined) patch.region = u.operatingRegion;
+  if (u.businessPhone !== undefined) patch.contact_number = u.businessPhone;
+  // Extra fields passed from setup/edit pages (camelCase → snake_case)
+  if (u.contactNumber !== undefined) patch.contact_number = u.contactNumber;
+  if (u.description !== undefined) patch.description = u.description;
+  if (u.isServiceProvider !== undefined) patch.is_service_provider = u.isServiceProvider;
+  if (u.open24Hours !== undefined) patch.open_24_hours = u.open24Hours;
+  if (u.openingTime !== undefined) patch.opening_time = u.openingTime;
+  if (u.closingTime !== undefined) patch.closing_time = u.closingTime;
+  if (u.workingDays !== undefined) patch.working_days = u.workingDays;
+  if (u.businessLocationAddress !== undefined) patch.business_location_address = u.businessLocationAddress;
+  if (u.businessLatitude !== undefined) patch.business_latitude = u.businessLatitude;
+  if (u.businessLongitude !== undefined) patch.business_longitude = u.businessLongitude;
+  if (Object.keys(patch).length > 0) await supabase.from('sellers').update(patch).eq('user_id', uid);
 }
 
 // ─── Support ─────────────────────────────────────────────────────────────────
