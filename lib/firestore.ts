@@ -233,18 +233,18 @@ export async function getSellerProfile(uid: string): Promise<SellerProfile | nul
   const d = data as Record<string, unknown>;
   return {
     uid: String(d.user_id ?? uid),
-    businessName: String(d.shop_name ?? ''),
-    businessPhone: String(d.phone ?? ''),
+    businessName: String(d.business_name ?? ''),
+    businessPhone: String(d.contact_number ?? ''),
     operatingCountry: String(d.country ?? ''),
     operatingRegion: String(d.region ?? ''),
-    businessLocationText: undefined,
+    businessLocationText: d.business_location_address ? String(d.business_location_address) : undefined,
     mainCategoryIds: [],
     serviceSubcategoryIds: [],
     isVerified: Boolean(d.is_verified),
     rating: typeof d.avg_rating === 'number' ? d.avg_rating : undefined,
     totalReviews: typeof d.review_count === 'number' ? d.review_count : undefined,
-    bio: d.shop_description ? String(d.shop_description) : undefined,
-    photoUrl: d.shop_logo_url ? String(d.shop_logo_url) : undefined,
+    bio: d.description ? String(d.description) : undefined,
+    photoUrl: undefined,
     createdAt: d.created_at ? String(d.created_at) : undefined,
   };
 }
@@ -325,8 +325,8 @@ export async function createOrUpdateUserProfile(profile: UserProfile): Promise<v
   await supabase.from('profiles').upsert({
     id: profile.uid,
     email: profile.email,
-    full_name: profile.displayName,
-    avatar_url: profile.photoUrl ?? null,
+    display_name: profile.displayName,
+    photo_url: profile.photoUrl ?? null,
     country: profile.country ?? null,
     region: profile.regionOrCity ?? null,
   });
@@ -343,8 +343,8 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   return {
     uid: String(d.id ?? uid),
     email: String(d.email ?? ''),
-    displayName: String(d.full_name ?? ''),
-    photoUrl: d.avatar_url ? String(d.avatar_url) : undefined,
+    displayName: String(d.display_name ?? ''),
+    photoUrl: d.photo_url ? String(d.photo_url) : undefined,
     country: d.country ? String(d.country) : undefined,
     regionOrCity: d.region ? String(d.region) : undefined,
   };
@@ -494,8 +494,8 @@ function mapThread(d: Record<string, unknown>): ChatThread {
     lastMessage: String(d.last_message ?? ''),
     lastSenderUid: '',
     updatedAt: d.last_message_at ? String(d.last_message_at) : '',
-    unreadForSeller: typeof d.seller_unread_count === 'number' ? d.seller_unread_count : 0,
-    unreadForBuyer: typeof d.buyer_unread_count === 'number' ? d.buyer_unread_count : 0,
+    unreadForSeller: typeof d.unread_for_seller === 'number' ? d.unread_for_seller : 0,
+    unreadForBuyer: typeof d.unread_for_buyer === 'number' ? d.unread_for_buyer : 0,
   };
 }
 
@@ -592,8 +592,8 @@ export async function sendMessage(
     last_message: text,
     last_message_at: now,
     ...(isSeller
-      ? { seller_unread_count: 0, buyer_unread_count: 1 }
-      : { buyer_unread_count: 0, seller_unread_count: 1 }),
+      ? { unread_for_seller: 0, unread_for_buyer: 1 }
+      : { unread_for_buyer: 0, unread_for_seller: 1 }),
   });
 
   // Insert message
@@ -607,8 +607,8 @@ export async function sendMessage(
 
 export async function markThreadRead(threadId: string, isSeller: boolean): Promise<void> {
   const patch = isSeller
-    ? { seller_unread_count: 0 }
-    : { buyer_unread_count: 0 };
+    ? { unread_for_seller: 0 }
+    : { unread_for_buyer: 0 };
   await supabase.from('chats').update(patch).eq('id', threadId);
 }
 
@@ -703,26 +703,22 @@ export async function getMyPromotionRequests(uid: string): Promise<PromotionRequ
 export async function createSellerProfile(profile: Omit<SellerProfile, 'isVerified' | 'rating' | 'totalReviews'>): Promise<void> {
   await supabase.from('sellers').insert({
     user_id: profile.uid,
-    shop_name: profile.businessName,
-    shop_description: profile.bio ?? null,
+    business_name: profile.businessName,
+    description: profile.bio ?? null,
     country: profile.operatingCountry,
     region: profile.operatingRegion,
-    phone: profile.businessPhone ?? null,
+    contact_number: profile.businessPhone ?? null,
     is_verified: false,
-    avg_rating: 0,
-    review_count: 0,
-    listing_count: 0,
   });
 }
 
 export async function updateSellerProfile(uid: string, updates: Partial<SellerProfile>): Promise<void> {
   const patch: Record<string, unknown> = {};
-  if (updates.businessName !== undefined) patch.shop_name = updates.businessName;
-  if (updates.bio !== undefined) patch.shop_description = updates.bio;
+  if (updates.businessName !== undefined) patch.business_name = updates.businessName;
+  if (updates.bio !== undefined) patch.description = updates.bio;
   if (updates.operatingCountry !== undefined) patch.country = updates.operatingCountry;
   if (updates.operatingRegion !== undefined) patch.region = updates.operatingRegion;
-  if (updates.businessPhone !== undefined) patch.phone = updates.businessPhone;
-  if (updates.photoUrl !== undefined) patch.shop_logo_url = updates.photoUrl;
+  if (updates.businessPhone !== undefined) patch.contact_number = updates.businessPhone;
   await supabase.from('sellers').update(patch).eq('user_id', uid);
 }
 
@@ -737,7 +733,7 @@ export function subscribeSupportMessages(
     senderUid: String(d.sender_id ?? ''),
     senderName: '',
     text: String(d.content ?? ''),
-    isFromAdmin: Boolean(d.is_admin),
+    isFromAdmin: Boolean(d.is_from_admin),
     createdAt: d.created_at ? String(d.created_at) : '',
   });
 
@@ -804,7 +800,7 @@ export async function sendSupportMessage(
   await supabase.from('support_messages').insert({
     ticket_id: ticketId,
     sender_id: uid,
-    is_admin: false,
+    is_from_admin: false,
     content: text,
   });
 }

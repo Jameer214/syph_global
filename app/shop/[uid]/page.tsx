@@ -31,7 +31,7 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function parseShopData(d: Record<string, unknown>): ShopData {
   return {
-    businessName: String(d.shop_name ?? d.businessName ?? ''),
+    businessName: String(d.business_name ?? d.businessName ?? ''),
     contact: String(d.contact_number ?? d.contactNumber ?? d.businessPhone ?? ''),
     country: String(d.country ?? d.operatingCountry ?? ''),
     region: String(d.region ?? d.operatingRegion ?? ''),
@@ -41,9 +41,9 @@ function parseShopData(d: Record<string, unknown>): ShopData {
     openingTime: String(d.opening_time ?? d.openingTime ?? ''),
     closingTime: String(d.closing_time ?? d.closingTime ?? ''),
     workingDays: Array.isArray(d.working_days ?? d.workingDays) ? ((d.working_days ?? d.workingDays) as number[]) : [],
-    locationAddress: String(d.location_address ?? d.businessLocationAddress ?? d.businessLocationText ?? ''),
-    lat: typeof d.latitude === 'number' ? d.latitude : typeof d.businessLatitude === 'number' ? d.businessLatitude : null,
-    lng: typeof d.longitude === 'number' ? d.longitude : typeof d.businessLongitude === 'number' ? d.businessLongitude : null,
+    locationAddress: String(d.business_location_address ?? d.businessLocationAddress ?? d.businessLocationText ?? ''),
+    lat: typeof d.business_latitude === 'number' ? d.business_latitude : typeof d.businessLatitude === 'number' ? d.businessLatitude : null,
+    lng: typeof d.business_longitude === 'number' ? d.business_longitude : typeof d.businessLongitude === 'number' ? d.businessLongitude : null,
     isVerified: Boolean(d.is_verified ?? d.isVerified),
   };
 }

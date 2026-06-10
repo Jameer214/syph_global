@@ -78,7 +78,7 @@ export default function ProfilePage() {
     try {
       const url = await uploadAvatar(authUser.uid, file);
       await supabase.auth.updateUser({ data: { avatar_url: url } });
-      await supabase.from('profiles').upsert({ id: authUser.uid, avatar_url: url });
+      await supabase.from('profiles').upsert({ id: authUser.uid, photo_url: url });
       setAuthUser((prev) => prev ? { ...prev, photoURL: url } : null);
       toast.success('Profile photo updated!');
     } catch {
@@ -93,7 +93,7 @@ export default function ProfilePage() {
     setSavingName(true);
     try {
       await supabase.auth.updateUser({ data: { full_name: nameInput.trim() } });
-      await supabase.from('profiles').upsert({ id: authUser.uid, full_name: nameInput.trim() });
+      await supabase.from('profiles').upsert({ id: authUser.uid, display_name: nameInput.trim() });
       setAuthUser((prev) => prev ? { ...prev, displayName: nameInput.trim() } : null);
       toast.success('Name updated!');
       setShowEditName(false);

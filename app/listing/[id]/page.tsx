@@ -221,8 +221,8 @@ export default function ListingDetailsPage() {
           buyer_id: fireUser.id,
           seller_id: listing.ownerUid,
           last_message: starter,
-          seller_unread_count: starter ? 1 : 0,
-          buyer_unread_count: 0,
+          unread_for_seller: starter ? 1 : 0,
+          unread_for_buyer: 0,
           last_message_at: new Date().toISOString(),
         }).select('id').single();
         chatId = newChat!.id;
@@ -239,7 +239,7 @@ export default function ListingDetailsPage() {
         await supabase.from('chats').update({
           last_message: starter,
           last_message_at: new Date().toISOString(),
-          seller_unread_count: 1,
+          unread_for_seller: 1,
         }).eq('id', chatId);
       }
 

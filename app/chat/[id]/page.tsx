@@ -116,7 +116,7 @@ export default function ChatPage() {
       await supabase.from('chats').update({
         last_message: text,
         last_message_at: now,
-        ...(isSeller ? { buyer_unread_count: 1 } : { seller_unread_count: 1 }),
+        ...(isSeller ? { unread_for_buyer: 1 } : { unread_for_seller: 1 }),
       }).eq('id', threadId);
     } catch (e) {
       toast.error('Failed to send message. Please try again.');
