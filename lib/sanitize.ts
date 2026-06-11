@@ -1,18 +1,11 @@
 export function sanitizeText(input: string | undefined | null, maxLength = 500): string {
   if (!input) return '';
-  const clean = input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+  return input
     .replace(/<[^>]+>/g, '')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#x27;/g, "'")
     .replace(/javascript:/gi, '')
     .replace(/on\w+\s*=/gi, '')
     .trim()
     .slice(0, maxLength);
-  return clean;
 }
 
 export function sanitizeUrl(url: string | undefined | null): string {
