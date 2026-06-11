@@ -126,6 +126,15 @@ export default function SignupPage() {
         toast.error('Sign up failed. Please try again.');
         return;
       }
+      // Email confirmation enabled — session is null until the link is clicked.
+      if (!data.session) {
+        toast.success(
+          'Account created! Check your email and click the confirmation link before logging in.',
+          { duration: 6000 }
+        );
+        router.replace('/login');
+        return;
+      }
       const profile = {
         uid: data.user.id,
         email: data.user.email ?? '',
