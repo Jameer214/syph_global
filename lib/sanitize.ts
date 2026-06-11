@@ -1,9 +1,19 @@
 export function sanitizeText(input: string | undefined | null, maxLength = 500): string {
   if (!input) return '';
   return input
+    .normalize('NFC')
+    // strip control characters (keep \t \n \r)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // strip zero-width and invisible Unicode characters
+    .replace(/[​‌‍‏﻿­]/g, '')
+    // strip HTML tags
     .replace(/<[^>]+>/g, '')
+    // block javascript: URIs and inline event handlers
     .replace(/javascript:/gi, '')
     .replace(/on\w+\s*=/gi, '')
+    // collapse excessive whitespace
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
     .slice(0, maxLength);
 }

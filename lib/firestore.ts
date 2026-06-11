@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sanitizeText } from '@/lib/sanitize';
 import type { Listing, SellerProfile, Review, SellerHoursInfo, ChatThread, ChatMessage, Report, PromotionRequest, UserProfile } from '@/types';
 
 // ─── File validation ──────────────────────────────────────────────────────────
@@ -331,7 +332,9 @@ export async function batchGetSellerHoursMap(
 // ─── Newsletter ───────────────────────────────────────────────────────────────
 
 export async function subscribeNewsletter(email: string): Promise<void> {
-  await supabase.from('newsletter_subscribers').insert({ email, country: null });
+  const trimmed = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return;
+  await supabase.from('newsletter_subscribers').insert({ email: trimmed, country: null });
 }
 
 // ─── User Profile ─────────────────────────────────────────────────────────────
@@ -607,6 +610,9 @@ export async function sendMessage(
   text: string,
   isSeller: boolean,
 ): Promise<void> {
+  const safeText = sanitizeText(text, 1000);
+  if (!safeText) return;
+
   const now = new Date().toISOString();
 
   // Upsert chat thread
@@ -615,7 +621,7 @@ export async function sendMessage(
     listing_id: thread.listingId || null,
     buyer_id: thread.buyerUid,
     seller_id: thread.sellerUid,
-    last_message: text,
+    last_message: safeText,
     last_message_at: now,
     ...(isSeller
       ? { unread_for_seller: 0, unread_for_buyer: 1 }
@@ -626,7 +632,7 @@ export async function sendMessage(
   await supabase.from('messages').insert({
     chat_id: threadId,
     sender_id: senderUid,
-    content: text,
+    content: safeText,
     is_read: false,
   });
 }
