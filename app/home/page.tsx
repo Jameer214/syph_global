@@ -446,6 +446,8 @@ export default function HomePage() {
   const [nearMeLoading, setNearMeLoading] = useState(false);
   const [exploreCount, setExploreCount] = useState(8);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [announcement, setAnnouncement] = useState<{ title: string; body: string; type: string } | null>(null);
+  const [announcementDismissed, setAnnouncementDismissed] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const flag = selectedCountry ? (COUNTRY_FLAGS[selectedCountry] ?? '🌍') : '🌍';
@@ -477,6 +479,18 @@ export default function HomePage() {
       setShowSearch(true);
       sessionStorage.removeItem('syph-pending-search');
     }
+  }, []);
+
+  // Fetch active announcement once on mount
+  useEffect(() => {
+    supabase.from('announcements')
+      .select('title, body, type')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) setAnnouncement(data[0] as { title: string; body: string; type: string });
+      });
   }, []);
 
   // Data subscriptions — ALL sections filtered by selected country
@@ -714,6 +728,35 @@ export default function HomePage() {
             {tr('change', selectedLanguage)}
           </button>
         </div>
+
+        {/* Announcement banner */}
+        {announcement && !announcementDismissed && (() => {
+          const bg = announcement.type === 'warning' ? '#FFF8E1' : announcement.type === 'promo' ? '#E8F5E9' : '#E3F0FF';
+          const border = announcement.type === 'warning' ? '#FFD54F' : announcement.type === 'promo' ? '#A5D6A7' : '#93C5FD';
+          const color = announcement.type === 'warning' ? '#7B5800' : announcement.type === 'promo' ? '#1B5E20' : '#1E40AF';
+          const icon = announcement.type === 'warning' ? '⚠️' : announcement.type === 'promo' ? '🎉' : 'ℹ️';
+          return (
+            <div style={{
+              background: bg, border: `1px solid ${border}`, borderRadius: 14,
+              padding: '10px 14px', marginBottom: 12,
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+            }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {announcement.title && (
+                  <div style={{ fontWeight: 800, fontSize: 13, color, marginBottom: 2 }}>{announcement.title}</div>
+                )}
+                <div style={{ fontSize: 12, color, fontWeight: 600, lineHeight: 1.4 }}>{announcement.body}</div>
+              </div>
+              <button
+                onClick={() => setAnnouncementDismissed(true)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color, padding: 2, flexShrink: 0 }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          );
+        })()}
 
         {/* Search bar */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 12, position: 'relative' }}>
