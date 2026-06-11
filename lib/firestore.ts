@@ -1,6 +1,21 @@
 import { supabase } from '@/lib/supabase';
 import type { Listing, SellerProfile, Review, SellerHoursInfo, ChatThread, ChatMessage, Report, PromotionRequest, UserProfile } from '@/types';
 
+// ─── File validation ──────────────────────────────────────────────────────────
+
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2 MB
+
+function validateImageFile(file: File, maxBytes = MAX_IMAGE_SIZE): void {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    throw new Error(`Invalid file type: ${file.type}. Only JPEG, PNG, WebP and GIF are allowed.`);
+  }
+  if (file.size > maxBytes) {
+    throw new Error(`File too large. Maximum size is ${maxBytes / 1024 / 1024} MB.`);
+  }
+}
+
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -385,6 +400,7 @@ export async function createListing(
 ): Promise<string> {
   const imageUrls: string[] = [];
   for (const file of imageFiles) {
+    validateImageFile(file);
     const path = `${data.ownerUid}/${Date.now()}_${file.name}`;
     const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
     if (uploadData) {
@@ -468,6 +484,7 @@ export async function deleteListing(id: string): Promise<void> {
 export async function uploadListingImages(ownerUid: string, files: File[]): Promise<string[]> {
   const urls: string[] = [];
   for (const file of files) {
+    validateImageFile(file);
     const path = `${ownerUid}/${Date.now()}_${file.name}`;
     const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
     if (uploadData) {
@@ -479,6 +496,7 @@ export async function uploadListingImages(ownerUid: string, files: File[]): Prom
 }
 
 export async function uploadAvatar(uid: string, file: File): Promise<string> {
+  validateImageFile(file, MAX_AVATAR_SIZE);
   const path = `${uid}_${Date.now()}`;
   const { data: uploadData } = await supabase.storage.from('avatars').upload(path, file);
   if (!uploadData) return '';
@@ -837,6 +855,7 @@ export async function createHappening(
 ): Promise<string> {
   const imageUrls: string[] = [];
   for (const file of imageFiles) {
+    validateImageFile(file);
     const path = `${data.ownerUid}/${Date.now()}_${file.name}`;
     const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
     if (uploadData) {
