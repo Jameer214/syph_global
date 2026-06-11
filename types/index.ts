@@ -37,6 +37,7 @@ export interface Listing {
   flashSaleEndsAt?: string;
   originalPriceValue?: number;
   originalPriceText?: string;
+  units?: number;
 }
 
 export interface CategoryNode {

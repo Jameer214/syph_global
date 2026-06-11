@@ -27,6 +27,7 @@ export default function SignupPage() {
   const [region, setRegion] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const countryRef = useRef<HTMLDivElement>(null);
 
   const afterAuth = () => {
@@ -74,6 +75,23 @@ export default function SignupPage() {
     } catch {
       toast.error('Google sign-in failed. Please try again.');
       setGoogleLoading(false);
+    }
+  };
+
+  const handleApple = async () => {
+    setAppleLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
+      });
+      if (error) {
+        toast.error('Apple sign-in failed. Please try again.');
+        setAppleLoading(false);
+      }
+    } catch {
+      toast.error('Apple sign-in failed. Please try again.');
+      setAppleLoading(false);
     }
   };
 
@@ -196,7 +214,7 @@ export default function SignupPage() {
               width: '100%', height: 52, borderRadius: 26, border: '1.5px solid #e2e8f0',
               background: '#fff', color: '#1a1a2e', fontWeight: 800, fontSize: 15,
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 10, marginBottom: 20, opacity: (googleLoading || loading) ? 0.7 : 1,
+              gap: 10, marginBottom: 12, opacity: (googleLoading || loading) ? 0.7 : 1,
             }}
           >
             <svg width="20" height="20" viewBox="0 0 48 48">
@@ -206,6 +224,22 @@ export default function SignupPage() {
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
             {googleLoading ? tr('loading', selectedLanguage) : tr('continueWithGoogle', selectedLanguage)}
+          </button>
+
+          {/* Apple sign-in */}
+          <button
+            type="button"
+            onClick={handleApple}
+            disabled={appleLoading || loading}
+            style={{
+              width: '100%', height: 52, borderRadius: 26, border: 'none',
+              background: '#1C1C1E', color: '#fff', fontWeight: 800, fontSize: 15,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 10, marginBottom: 20, opacity: (appleLoading || loading) ? 0.7 : 1,
+            }}
+          >
+            <svg width="16" height="20" viewBox="0 0 814 1000" fill="white"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 482.8 0 293.2 0 192.1c0-130.3 84.5-199 167.2-199 78.8 0 127.6 52.8 167.5 52.8 37.6 0 92.5-56.2 171.1-56.2 33.6 0 152.9 3.2 236.3 116.7zm-257.1-104.7C503.9 165.3 474 85.5 474 20.1c0-5.2.4-10.3 1-15.5 52.8 1.9 116.7 35.9 152.2 79.5 30.2 36.6 58.7 95.7 58.7 174 0 5.8-.7 11.7-1 17.5z"/></svg>
+            {appleLoading ? tr('loading', selectedLanguage) : 'Continue with Apple'}
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>

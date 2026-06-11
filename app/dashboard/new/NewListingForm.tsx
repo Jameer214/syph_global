@@ -55,6 +55,7 @@ export default function NewListingForm() {
   const [region, setRegion] = useState('');
   const [locationText, setLocationText] = useState('');
   const [duration, setDuration] = useState(7);
+  const [units, setUnits] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -142,6 +143,7 @@ export default function NewListingForm() {
         currencyCode: currency,
         negotiable,
         messageAboutGoods: safeMessage || undefined,
+        units: units.trim() ? (parseInt(units.trim(), 10) || undefined) : undefined,
         mainCategoryId: selectedMainId,
         subCategoryId: selectedSubId || undefined,
         condition,
@@ -248,6 +250,8 @@ export default function NewListingForm() {
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your item..." rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
           <label style={{ ...labelStyle, marginTop: 14 }}>Message for buyers</label>
           <textarea value={messageForBuyers} onChange={(e) => setMessageForBuyers(e.target.value)} placeholder="Any special instructions..." rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
+          <label style={{ ...labelStyle, marginTop: 14 }}>Units Available <span style={{ fontWeight: 600, color: '#9ca3af' }}>(optional)</span></label>
+          <input value={units} onChange={(e) => setUnits(e.target.value)} placeholder="e.g. 10" type="number" min="1" style={inputStyle} />
         </div>
 
         {/* Price */}

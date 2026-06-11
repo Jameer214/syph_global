@@ -64,6 +64,7 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
     flashSaleEndsAt: data.flash_sale_until ? String(data.flash_sale_until) : undefined,
     venueLatitude: typeof sellersRow?.business_latitude === 'number' ? sellersRow.business_latitude : undefined,
     venueLongitude: typeof sellersRow?.business_longitude === 'number' ? sellersRow.business_longitude : undefined,
+    units: typeof data.unit_count === 'number' ? data.unit_count : undefined,
   };
 }
 

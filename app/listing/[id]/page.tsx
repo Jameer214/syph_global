@@ -457,6 +457,7 @@ export default function ListingDetailsPage() {
           {listing.mainCategoryId && <DetailRow label="Category" value={listing.mainCategoryId.replace(/_/g, ' ')} />}
           {listing.subCategoryId && <DetailRow label="Subcategory" value={listing.subCategoryId.replace(/_/g, ' ')} />}
           {listing.condition && <DetailRow label="Condition" value={listing.condition} />}
+          {listing.units != null && <DetailRow label="Units Available" value={String(listing.units)} />}
           <DetailRow label="Price Type" value={listing.negotiable ? 'Negotiable' : 'Fixed'} />
           <DetailRow label="Location" value={listing.locationText || '—'} />
           {listing.regionOrCity && <DetailRow label="Region/City" value={listing.regionOrCity} />}

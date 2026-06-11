@@ -64,6 +64,7 @@ function mapListing(row: Record<string, unknown>): Listing {
     flashSaleEndsAt: row.flash_sale_until ? String(row.flash_sale_until) : undefined,
     originalPriceValue: typeof row.flash_sale_price === 'number' ? row.flash_sale_price : undefined,
     originalPriceText: undefined,
+    units: typeof row.unit_count === 'number' ? row.unit_count : undefined,
   };
 }
 
@@ -449,6 +450,7 @@ export async function createListing(
       is_sponsored: data.isSponsored ?? false,
       view_count: 0,
       save_count: 0,
+      unit_count: data.units ?? null,
     })
     .select('id')
     .single();
@@ -482,6 +484,7 @@ export async function updateListing(id: string, updates: Partial<Listing>): Prom
   if (updates.mainCategoryId !== undefined) patch.category_id = updates.mainCategoryId;
   if (updates.subCategoryId !== undefined) patch.sub_category_id = updates.subCategoryId;
   if (updates.messageAboutGoods !== undefined) patch.message_about_goods = updates.messageAboutGoods;
+  if (updates.units !== undefined) patch.unit_count = updates.units ?? null;
   await supabase.from('listings').update(patch).eq('id', id);
 }
 

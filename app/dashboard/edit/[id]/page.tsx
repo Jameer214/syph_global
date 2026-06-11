@@ -34,6 +34,7 @@ export default function EditListingPage() {
   const [country, setCountry] = useState('');
   const [region, setRegion] = useState('');
   const [locationText, setLocationText] = useState('');
+  const [units, setUnits] = useState('');
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
@@ -74,6 +75,7 @@ export default function EditListingPage() {
       setLocationText(l.locationText ?? '');
       const imgs = l.imageUrls?.length ? l.imageUrls : l.imageUrl ? [l.imageUrl] : [];
       setExistingImages(imgs);
+      setUnits(l.units != null ? String(l.units) : '');
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
@@ -135,6 +137,7 @@ export default function EditListingPage() {
         locationText: safeLocation,
         imageUrl: allImages[0] ?? '',
         imageUrls: allImages,
+        units: units.trim() ? (parseInt(units.trim(), 10) || undefined) : undefined,
       });
       toast.success('Listing updated!');
       router.push('/dashboard');
@@ -247,6 +250,8 @@ export default function EditListingPage() {
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your item…" rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
           <label style={{ ...labelStyle, marginTop: 14 }}>Message for buyers</label>
           <textarea value={messageForBuyers} onChange={(e) => setMessageForBuyers(e.target.value)} placeholder="Any special instructions…" rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
+          <label style={{ ...labelStyle, marginTop: 14 }}>Units Available <span style={{ fontWeight: 600, color: '#9ca3af' }}>(optional)</span></label>
+          <input value={units} onChange={(e) => setUnits(e.target.value)} placeholder="e.g. 10" type="number" min="1" style={inputStyle} />
         </div>
 
         {/* Price */}
