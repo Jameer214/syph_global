@@ -221,6 +221,7 @@ export default function SellerShopPage() {
 
   const [shop, setShop] = useState<ShopData | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loadingSeller, setLoadingSeller] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
 
@@ -229,12 +230,13 @@ export default function SellerShopPage() {
     if (!uid) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from('sellers')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
+      const [{ data }, { data: profileData }] = await Promise.all([
+        supabase.from('sellers').select('*').eq('user_id', uid).single(),
+        supabase.from('profiles').select('photo_url').eq('id', uid).single(),
+      ]);
       if (!cancelled) {
         if (data) setShop(parseShopData(data as Record<string, unknown>));
+        if (profileData) setPhotoUrl((profileData as Record<string, unknown>).photo_url as string | null);
         setLoadingSeller(false);
       }
     })();
@@ -343,8 +345,10 @@ export default function SellerShopPage() {
             {/* Top row: avatar + name */}
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
               {/* Avatar */}
-              <div style={{ width: 72, height: 72, background: 'rgba(255,255,255,0.18)', borderRadius: 22, border: '1.5px solid rgba(255,255,255,0.30)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {shop?.isServiceProvider ? (
+              <div style={{ width: 72, height: 72, background: 'rgba(255,255,255,0.18)', borderRadius: 22, border: '1.5px solid rgba(255,255,255,0.30)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                {photoUrl && !shop?.isServiceProvider ? (
+                  <Image src={photoUrl} alt={sellerName} width={72} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                ) : shop?.isServiceProvider ? (
                   <span style={{ fontSize: 28 }}>🛠️</span>
                 ) : (
                   <span style={{ color: '#fff', fontWeight: 900, fontSize: 28 }}>{initial}</span>
