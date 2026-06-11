@@ -130,7 +130,7 @@ export default function SignupPage() {
       if (!data.session) {
         toast.success(
           'Account created! Check your email and click the confirmation link before logging in.',
-          { duration: 6000 }
+          { duration: 10000 }
         );
         router.replace('/login');
         return;
