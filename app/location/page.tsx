@@ -632,7 +632,7 @@ export default function LocationPage() {
             {[
               { flag: '🌍', region: 'Africa', count: '54 countries' },
               { flag: '🌍', region: 'Europe', count: '44 countries' },
-              { flag: '🌎', region: 'Americas', count: '35 countries' },
+              { flag: '🌎', region: 'America', count: '35 countries' },
               { flag: '🌏', region: 'Asia Pacific', count: '48 countries' },
               { flag: '🕌', region: 'Middle East', count: '18 countries' },
               { flag: '🌊', region: 'Oceania', count: '14 countries' },
@@ -809,7 +809,7 @@ export default function LocationPage() {
           {([
             { Icon: Shield, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: 'Verified Listings', desc: 'Every listing is reviewed for quality and authenticity before going live on the platform.' },
             { Icon: Zap, color: '#F39C12', bg: 'rgba(243,156,18,0.1)', title: 'Instant Connections', desc: 'Connect with sellers and buyers in real-time through our built-in messaging platform.' },
-            { Icon: CheckCircle, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Free Forever', desc: 'No listing fees. No commissions. No hidden charges. SYPH is completely free to use.' },
+            { Icon: CheckCircle, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Free 2-Month Listing Period', desc: 'List your products and services at no cost for your first 2 months. No commissions. No hidden charges.' },
           ] as const).map(({ Icon, color, bg, title, desc }, i) => (
             <Reveal key={title} delay={i * 0.1}>
             <div className="lift" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 10, background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
