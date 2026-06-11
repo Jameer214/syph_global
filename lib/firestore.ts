@@ -737,8 +737,11 @@ export async function getMyPromotionRequests(uid: string): Promise<PromotionRequ
 
 // ─── Seller Setup ─────────────────────────────────────────────────────────────
 
-export async function createSellerProfile(profile: Omit<SellerProfile, 'isVerified' | 'rating' | 'totalReviews'>): Promise<void> {
-  await supabase.from('sellers').insert({
+export async function createSellerProfile(
+  profile: Omit<SellerProfile, 'isVerified' | 'rating' | 'totalReviews'>,
+  extra?: Record<string, unknown>
+): Promise<void> {
+  const row: Record<string, unknown> = {
     user_id: profile.uid,
     business_name: profile.businessName,
     description: profile.bio ?? null,
@@ -746,7 +749,20 @@ export async function createSellerProfile(profile: Omit<SellerProfile, 'isVerifi
     region: profile.operatingRegion,
     contact_number: profile.businessPhone ?? null,
     is_verified: false,
-  });
+  };
+  if (extra) {
+    if (extra.contactNumber !== undefined) row.contact_number = extra.contactNumber;
+    if (extra.description !== undefined) row.description = extra.description;
+    if (extra.isServiceProvider !== undefined) row.is_service_provider = extra.isServiceProvider;
+    if (extra.open24Hours !== undefined) row.open_24_hours = extra.open24Hours;
+    if (extra.openingTime !== undefined) row.opening_time = extra.openingTime;
+    if (extra.closingTime !== undefined) row.closing_time = extra.closingTime;
+    if (extra.workingDays !== undefined) row.working_days = extra.workingDays;
+    if (extra.businessLocationAddress !== undefined) row.business_location_address = extra.businessLocationAddress;
+    if (extra.businessLatitude !== undefined) row.business_latitude = extra.businessLatitude;
+    if (extra.businessLongitude !== undefined) row.business_longitude = extra.businessLongitude;
+  }
+  await supabase.from('sellers').insert(row);
 }
 
 export async function updateSellerProfile(uid: string, updates: Partial<SellerProfile>): Promise<void> {

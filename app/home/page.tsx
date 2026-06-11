@@ -516,13 +516,13 @@ export default function HomePage() {
     searchTimer.current = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const term = searchQuery.trim();
+        const term = sanitizeText(searchQuery.trim(), 100);
         const { data } = await supabase.from('listings')
           .select('*, listing_images(url, sort_order)')
           .eq('status', 'active')
-          .ilike('title', `%${term}%`)
+          .or(`title.ilike.%${term}%,description.ilike.%${term}%,seller_name.ilike.%${term}%,location_text.ilike.%${term}%,region.ilike.%${term}%`)
           .order('created_at', { ascending: false })
-          .limit(12);
+          .limit(20);
         setSearchResults((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
       } catch {
         setSearchResults([]);

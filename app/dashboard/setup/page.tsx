@@ -155,8 +155,7 @@ export default function SellerSetupPage() {
       if (isEditing) {
         await updateSellerProfile(uid, { ...profileData, ...extraFields } as Parameters<typeof updateSellerProfile>[1]);
       } else {
-        await createSellerProfile(profileData);
-        await updateSellerProfile(uid, extraFields as Parameters<typeof updateSellerProfile>[1]);
+        await createSellerProfile(profileData, extraFields);
       }
 
       toast.success('Seller profile saved!');
