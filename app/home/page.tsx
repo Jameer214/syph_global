@@ -77,10 +77,9 @@ function useListings(opts: {
         .order('created_at', { ascending: false })
         .limit(count);
       if (isFlashSale !== undefined) q = q.eq('is_flash_sale', isFlashSale);
+      if (isHappening !== undefined) q = q.eq('is_happening', isHappening);
       if (isSponsored !== undefined) q = q.eq('is_sponsored', isSponsored);
       if (country) q = q.eq('country', country);
-      // happenings are in a separate table; skip if isHappening filter requested
-      if (isHappening) { if (!cancelled) setListings([]); return; }
       const { data } = await q;
       if (!cancelled) setListings((data ?? []).map(r => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
     };
