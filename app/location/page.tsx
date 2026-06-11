@@ -178,6 +178,7 @@ export default function LocationPage() {
       {showAppModal && (
         <div
           onClick={() => setShowAppModal(false)}
+          className="sheet-backdrop"
           style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}
         >
           <div onClick={e => e.stopPropagation()} style={{
@@ -198,6 +199,7 @@ export default function LocationPage() {
             </div>
             <button
               onClick={() => setShowAppModal(false)}
+              className="btn-tap"
               style={{
                 width: '100%', padding: '14px 0', background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
                 border: 'none', borderRadius: 14, color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer',
@@ -247,7 +249,7 @@ export default function LocationPage() {
         {/* GPS detection banner — matches Flutter's home country detection card */}
         {gpsDetectedCountry ? (
           /* Blue ribbon: detected country */
-          <div style={{
+          <div className="anim-pop sweep" style={{
             display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
             background: 'linear-gradient(135deg, #1E4DD9 0%, #2E5BFF 100%)',
             borderRadius: 16, padding: '13px 16px',
@@ -255,6 +257,7 @@ export default function LocationPage() {
             <div style={{
               width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.18)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              animation: 'float 3s ease-in-out infinite',
             }}>
               <Navigation size={18} color="#fff" />
             </div>
@@ -266,11 +269,11 @@ export default function LocationPage() {
                 {COUNTRY_FLAGS[gpsDetectedCountry] ?? '🌍'} {gpsDetectedCountry}
               </p>
             </div>
-            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 22 }}>✓</span>
+            <span className="anim-pop" style={{ color: 'rgba(255,255,255,0.85)', fontSize: 22, animationDelay: '0.25s' }}>✓</span>
           </div>
         ) : (
           /* White card: detect home country prompt */
-          <div style={{
+          <div className="anim-fade-up" style={{
             display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
             background: '#fff', borderRadius: 16, padding: '13px 16px',
             border: '1px solid rgba(0,0,0,0.08)',
@@ -297,18 +300,8 @@ export default function LocationPage() {
           </div>
         )}
 
-        <style>{`
-          @keyframes spin { to { transform: rotate(360deg); } }
-          @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-          @keyframes floatReverse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
-          @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #4ADE80; } 50% { opacity: 0.6; box-shadow: 0 0 12px #4ADE80; } }
-          @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-          @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-          @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(46,91,255,0.25); } 50% { box-shadow: 0 0 36px rgba(46,91,255,0.55); } }
-        `}</style>
-
         {/* Dark goods search bar — matches Flutter's dark search bar */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+        <div className="anim-fade-up" style={{ display: 'flex', gap: 10, marginBottom: 14, animationDelay: '0.06s' }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <Search
               size={17}
@@ -327,6 +320,7 @@ export default function LocationPage() {
                 }
               }}
               placeholder="Search goods & services…"
+              className="input-anim-dark"
               style={{
                 width: '100%', height: 46, borderRadius: 14,
                 border: '1px solid rgba(255,255,255,0.10)',
@@ -338,6 +332,7 @@ export default function LocationPage() {
           </div>
           <button
             type="button"
+            className="btn-tap"
             style={{
               width: 46, height: 46, borderRadius: 14, flexShrink: 0,
               background: '#fff', border: '1px solid rgba(0,0,0,0.08)',
@@ -350,11 +345,11 @@ export default function LocationPage() {
         </div>
 
         {/* Page title section */}
-        <div style={{
+        <div className="anim-fade-up" style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          marginBottom: 12,
+          marginBottom: 12, animationDelay: '0.12s',
         }}>
-          <div style={{
+          <div className="radar" style={{
             width: 38, height: 38, borderRadius: 12,
             background: '#2E5BFF',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -373,11 +368,13 @@ export default function LocationPage() {
         {/* Country + Region card */}
         <div
           ref={cardRef}
+          className="anim-fade-up"
           style={{
             background: '#fff', borderRadius: 18,
             boxShadow: '0 3px 12px rgba(0,0,0,0.08)',
             border: '1px solid rgba(0,0,0,0.06)',
             overflow: 'hidden', marginBottom: 12,
+            animationDelay: '0.18s',
           }}
         >
           <div style={{ display: 'flex' }}>
@@ -402,6 +399,7 @@ export default function LocationPage() {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder={tr('selectCountry', selectedLanguage)}
+                  className="input-anim"
                   style={{
                     width: '100%', height: 44, borderRadius: 12,
                     border: '1px solid rgba(0,0,0,0.10)', background: '#f8faff',
@@ -444,6 +442,7 @@ export default function LocationPage() {
                 <select
                   value={pickedRegion}
                   onChange={(e) => setPickedRegion(e.target.value)}
+                  className="input-anim"
                   style={{
                     width: '100%', height: 44, borderRadius: 12,
                     border: '1px solid rgba(0,0,0,0.10)', background: '#f8faff',
@@ -477,19 +476,21 @@ export default function LocationPage() {
                     key={c}
                     type="button"
                     onClick={() => selectCountry(c)}
+                    className="row-tap anim-fade-up"
                     style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: 12,
                       padding: '11px 16px',
                       background: isSelected ? 'rgba(46,91,255,0.06)' : 'none',
                       border: 'none', cursor: 'pointer', textAlign: 'left',
                       borderBottom: idx < filteredCountries.length - 1 ? '1px solid #f1f5f9' : 'none',
+                      animationDelay: `${idx * 0.035}s`, animationDuration: '0.3s',
                     }}
                   >
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>{COUNTRY_FLAGS[c] ?? '🌍'}</span>
+                    <span className="row-flag" style={{ fontSize: 22, flexShrink: 0 }}>{COUNTRY_FLAGS[c] ?? '🌍'}</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', flex: 1 }}>{c}</span>
                     {isSelected
-                      ? <span style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 16 }}>✓</span>
-                      : <ChevronRight size={16} style={{ color: '#d1d5db', flexShrink: 0 }} />}
+                      ? <span className="anim-pop" style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 16 }}>✓</span>
+                      : <ChevronRight size={16} className="row-chev" style={{ color: '#d1d5db', flexShrink: 0 }} />}
                   </button>
                 );
               })}
@@ -498,12 +499,13 @@ export default function LocationPage() {
         </div>
 
         {/* Recent Countries */}
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>
+        <div className="anim-fade-up" style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2, animationDelay: '0.24s' }}>
           {tr('allCountries', selectedLanguage)}
         </div>
-        <div style={{
+        <div className="anim-fade-up" style={{
           background: '#fff', borderRadius: 16, overflow: 'hidden',
           border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+          animationDelay: '0.3s',
         }}>
           {recents.length === 0 ? (
             <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -521,6 +523,7 @@ export default function LocationPage() {
                   key={c}
                   type="button"
                   onClick={() => selectCountry(c)}
+                  className="row-tap"
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 12,
                     padding: '13px 16px',
@@ -529,7 +532,7 @@ export default function LocationPage() {
                     borderBottom: idx < recents.length - 1 ? '1px solid #f1f5f9' : 'none',
                   }}
                 >
-                  <span style={{ fontSize: 24, flexShrink: 0 }}>{COUNTRY_FLAGS[c] ?? '🌍'}</span>
+                  <span className="row-flag" style={{ fontSize: 24, flexShrink: 0 }}>{COUNTRY_FLAGS[c] ?? '🌍'}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e' }}>{c}</div>
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', marginTop: 1 }}>
@@ -537,8 +540,8 @@ export default function LocationPage() {
                     </div>
                   </div>
                   {isSelected
-                    ? <span style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 16, flexShrink: 0 }}>✓</span>
-                    : <ChevronRight size={16} style={{ color: '#d1d5db', flexShrink: 0 }} />}
+                    ? <span className="anim-pop" style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 16, flexShrink: 0 }}>✓</span>
+                    : <ChevronRight size={16} className="row-chev" style={{ color: '#d1d5db', flexShrink: 0 }} />}
                 </button>
               );
             })
@@ -591,7 +594,7 @@ export default function LocationPage() {
           <div style={{ overflow: 'hidden', position: 'relative' }}>
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 28, background: 'linear-gradient(to right, #F0F4FF, transparent)', zIndex: 2, pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 28, background: 'linear-gradient(to left, #F0F4FF, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-            <div style={{ display: 'flex', gap: 7, animation: 'scrollLeft 24s linear infinite', width: 'max-content' }}>
+            <div className="ticker-row" style={{ display: 'flex', gap: 7, animation: 'scrollLeft 24s linear infinite', width: 'max-content' }}>
               {[...CATEGORIES, ...CATEGORIES].map((cat, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', borderRadius: 20, padding: '6px 12px', border: '1px solid rgba(0,0,0,0.07)', flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
                   <span style={{ fontSize: 14 }}>{cat.emoji}</span>
@@ -625,8 +628,8 @@ export default function LocationPage() {
               { flag: '🕌', region: 'Middle East', count: '18 countries' },
               { flag: '🌊', region: 'Oceania', count: '14 countries' },
             ].map(r => (
-              <div key={r.region} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#F8FAFF', borderRadius: 12, padding: '10px 11px', border: '1px solid rgba(46,91,255,0.08)' }}>
-                <span style={{ fontSize: 20 }}>{r.flag}</span>
+              <div key={r.region} className="lift" style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#F8FAFF', borderRadius: 12, padding: '10px 11px', border: '1px solid rgba(46,91,255,0.08)' }}>
+                <span className="lift-emoji" style={{ fontSize: 20 }}>{r.flag}</span>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: '#1a1a2e' }}>{r.region}</div>
                   <div style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af' }}>{r.count}</div>
@@ -649,7 +652,7 @@ export default function LocationPage() {
             { step: '03', Icon: Handshake, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Negotiate to a successful deal', desc: "Close the deal on your own terms — negotiate price, arrange pickup or delivery, and buy with confidence." },
           ] as const).map(({ step, Icon, color, bg, title, desc }, idx) => (
             <div key={step}>
-              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 4, border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div className="lift" style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 4, border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Icon size={20} color={color} />
                 </div>
@@ -677,8 +680,8 @@ export default function LocationPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
             {CATEGORIES.map(cat => (
-              <div key={cat.name} style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: 28, marginBottom: 6 }}>{cat.emoji}</div>
+              <div key={cat.name} className="lift" style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <div className="lift-emoji" style={{ fontSize: 28, marginBottom: 6 }}>{cat.emoji}</div>
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3 }}>{cat.name}</div>
               </div>
             ))}
@@ -771,7 +774,7 @@ export default function LocationPage() {
             { Icon: Zap, color: '#F39C12', bg: 'rgba(243,156,18,0.1)', title: 'Instant Connections', desc: 'Connect with sellers and buyers in real-time through our built-in messaging platform.' },
             { Icon: CheckCircle, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Free Forever', desc: 'No listing fees. No commissions. No hidden charges. SYPH is completely free to use.' },
           ] as const).map(({ Icon, color, bg, title, desc }) => (
-            <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 10, background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div key={title} className="lift" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 10, background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Icon size={20} color={color} />
               </div>
@@ -803,8 +806,8 @@ export default function LocationPage() {
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>Available on</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} onClick={() => setShowAppModal(true)} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
-            <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} onClick={() => setShowAppModal(true)} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
+            <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} onClick={() => setShowAppModal(true)} className="btn-tap" style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
+            <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} onClick={() => setShowAppModal(true)} className="btn-tap" style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
           </div>
         </div>
 
@@ -821,6 +824,7 @@ export default function LocationPage() {
           <button
             onClick={handleContinue}
             disabled={saving}
+            className={saving ? undefined : pickedCountry ? 'btn-tap cta-armed' : 'btn-tap'}
             style={{
               width: '100%', height: 52, borderRadius: 26, border: 'none',
               background: saving ? '#9ca3af' : '#2E5BFF',

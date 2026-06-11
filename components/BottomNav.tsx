@@ -48,7 +48,11 @@ export default function BottomNav() {
               justifyContent: 'center', gap: 2, textDecoration: 'none',
               color: active ? '#2E5BFF' : '#9ca3af',
             }}>
-              <div style={{ position: 'relative' }}>
+              <div style={{
+                position: 'relative',
+                transform: active ? 'translateY(-2px) scale(1.12)' : 'none',
+                transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              }}>
                 <Icon size={22} />
                 {isMessages && unread > 0 && (
                   <span style={{

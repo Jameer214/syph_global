@@ -156,6 +156,7 @@ function FlashCard({ listing, onClick, selectedCurrency }: { listing: Listing; o
   return (
     <div
       onClick={onClick}
+      className="card-tap"
       style={{
         width: 120, borderRadius: 12, overflow: 'hidden',
         background: '#fff', flexShrink: 0,
@@ -165,7 +166,7 @@ function FlashCard({ listing, onClick, selectedCurrency }: { listing: Listing; o
       <div style={{ position: 'relative', height: 90 }}>
         {listing.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={listing.imageUrl} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={listing.imageUrl} alt={listing.title} className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <div style={{ width: '100%', height: '100%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LayoutGrid size={24} color="#9ca3af" />
@@ -193,6 +194,7 @@ function FeaturedCard({ listing, onClick, selectedCurrency }: { listing: Listing
   return (
     <div
       onClick={onClick}
+      className="card-tap"
       style={{
         width: 220, borderRadius: 14, overflow: 'hidden',
         background: '#fff', flexShrink: 0,
@@ -202,7 +204,7 @@ function FeaturedCard({ listing, onClick, selectedCurrency }: { listing: Listing
       <div style={{ position: 'relative', paddingTop: '56.25%' /* 16:9 */ }}>
         {listing.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={listing.imageUrl} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={listing.imageUrl} alt={listing.title} className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LayoutGrid size={28} color="#9ca3af" />
@@ -253,6 +255,7 @@ function GridCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
   return (
     <div
       onClick={onClick}
+      className="card-tap anim-fade-up"
       style={{
         borderRadius: 14, overflow: 'hidden',
         background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', cursor: 'pointer',
@@ -261,7 +264,7 @@ function GridCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
       <div style={{ position: 'relative', paddingTop: '83.33%' /* aspect 1.2 */ }}>
         {listing.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={listing.imageUrl} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={listing.imageUrl} alt={listing.title} className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LayoutGrid size={24} color="#9ca3af" />
@@ -331,6 +334,7 @@ function FilterSheet({
   return (
     <div
       onClick={onClose}
+      className="sheet-backdrop"
       style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
         zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
@@ -338,6 +342,7 @@ function FilterSheet({
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="sheet-panel"
         style={{
           background: '#fff', borderRadius: '24px 24px 0 0',
           width: '100%', maxWidth: 480, padding: '20px 20px 40px',
@@ -412,6 +417,7 @@ function FilterSheet({
 
         <button
           onClick={() => { onApply(local); onClose(); }}
+          className="btn-tap"
           style={{
             width: '100%', height: 52, borderRadius: 26, border: 'none',
             background: '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 16,
@@ -502,11 +508,13 @@ export default function HomePage() {
   const happenings = useListings({ isHappening: true, count: 12, country: filterCountry });
   const sponsored = useListings({ isSponsored: true, count: 12, country: filterCountry });
   const [explore, setExplore] = useState<Listing[]>([]);
+  const [exploreLoading, setExploreLoading] = useState(true);
 
   // Explore (all approved) — Supabase-filtered by country
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setExploreLoading(true);
       let q = supabase.from('listings')
         .select('*, listing_images(url, sort_order), sellers!seller_id(business_latitude, business_longitude)')
         .eq('status', 'active')
@@ -514,7 +522,10 @@ export default function HomePage() {
         .limit(40);
       if (selectedCountry) q = q.eq('country', selectedCountry);
       const { data } = await q;
-      if (!cancelled) setExplore((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+      if (!cancelled) {
+        setExplore((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+        setExploreLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [selectedCountry]);
@@ -661,6 +672,7 @@ export default function HomePage() {
             {/* Location pill — tappable, shows flag + country · region */}
             <button
               onClick={() => router.push('/location')}
+              className="btn-tap"
               style={{
                 background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
                 borderRadius: 20, padding: '5px 10px',
@@ -678,7 +690,7 @@ export default function HomePage() {
               </span>
               <ChevronDown size={11} color="rgba(255,255,255,0.8)" style={{ flexShrink: 0 }} />
             </button>
-            <Link href="/categories" style={{
+            <Link href="/categories" className="btn-tap" style={{
               background: '#F39C12', borderRadius: 10, padding: '7px 12px',
               display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', flexShrink: 0,
             }}>
@@ -721,6 +733,7 @@ export default function HomePage() {
           </div>
           <button
             onClick={() => router.push('/location')}
+            className="btn-tap"
             style={{
               background: '#E3F0FF', color: '#2E5BFF', border: 'none',
               borderRadius: 10, padding: '6px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer',
@@ -778,10 +791,11 @@ export default function HomePage() {
             />
             {/* Search dropdown */}
             {showSearch && (
-              <div style={{
+              <div className="anim-fade-up" style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 30,
                 background: '#fff', borderRadius: 14, border: '1.5px solid #e2e8f0',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: 4, maxHeight: 320, overflowY: 'auto',
+                animationDuration: '0.25s',
               }}>
                 {searchLoading ? (
                   <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('searchingDots', selectedLanguage)}</div>
@@ -794,6 +808,7 @@ export default function HomePage() {
                       <div
                         key={item.id}
                         onClick={() => { goToListing(item.id, searchQuery.trim()); setSearchQuery(''); setShowSearch(false); }}
+                        className="row-tap"
                         style={{
                           padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9',
                           display: 'flex', alignItems: 'flex-start', gap: 10,
@@ -830,6 +845,7 @@ export default function HomePage() {
           {/* Filter button */}
           <button
             onClick={() => setShowFilter(true)}
+            className="btn-tap"
             style={{
               width: 46, height: 46, borderRadius: 14,
               background: filterCount > 0 ? '#2E5BFF' : '#fff',
@@ -852,7 +868,7 @@ export default function HomePage() {
 
         {/* ── Flash Sales ── */}
         {flashSales.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#C62828', '#E53935']}
               icon={<Zap size={16} />}
@@ -876,7 +892,7 @@ export default function HomePage() {
 
         {/* ── Trending Near You ── */}
         {trending.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#E65100', '#FF6D00']}
               icon={<TrendingUp size={16} />}
@@ -899,7 +915,7 @@ export default function HomePage() {
 
         {/* ── Recommended For You ── */}
         {recommended.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#6A1B9A', '#8E24AA']}
               icon={<Star size={16} />}
@@ -921,7 +937,7 @@ export default function HomePage() {
 
         {/* ── Happenings ── */}
         {happenings.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#1B5E20', '#2E7D32']}
               icon={<Zap size={16} />}
@@ -945,7 +961,7 @@ export default function HomePage() {
 
         {/* ── Sponsored ── */}
         {sponsored.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#0D47A1', '#1976D2']}
               icon={<Crown size={16} />}
@@ -975,7 +991,20 @@ export default function HomePage() {
             <div style={{ flex: 1, height: 1, background: '#d1d5db' }} />
           </div>
 
-          {exploreItems.length === 0 ? (
+          {exploreLoading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="anim-fade-up" style={{ borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', animationDelay: `${i * 0.08}s` }}>
+                  <div className="skeleton" style={{ paddingTop: '83.33%' }} />
+                  <div style={{ padding: '8px 10px 10px' }}>
+                    <div className="skeleton" style={{ height: 13, borderRadius: 6, width: '80%' }} />
+                    <div className="skeleton" style={{ height: 14, borderRadius: 6, width: '45%', marginTop: 6 }} />
+                    <div className="skeleton" style={{ height: 11, borderRadius: 6, width: '65%', marginTop: 6 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : exploreItems.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
               <Globe size={40} style={{ opacity: 0.4, margin: '0 auto 12px', display: 'block' }} />
               {selectedCountry ? (
@@ -1015,6 +1044,7 @@ export default function HomePage() {
               {exploreCount < sortedExplore().length && (
                 <button
                   onClick={() => setExploreCount((c) => c + 8)}
+                  className="btn-tap"
                   style={{
                     width: '100%', height: 46, borderRadius: 14, marginTop: 12,
                     background: '#fff', border: '1.5px solid #e2e8f0',
