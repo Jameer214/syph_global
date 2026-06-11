@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Camera, X, ChevronDown, MapPin, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import { createHappening, getSellerProfile, uploadListingImages } from '@/lib/firestore';
 import { CATEGORIES } from '@/data/categories';
@@ -97,18 +98,24 @@ export default function HappeningsPage() {
     if (!locationText.trim()) { toast.error('Enter the venue location.'); return; }
     if (images.length === 0) { toast.error('Add at least one image.'); return; }
 
+    const safeTitle = sanitizeText(title, 100);
+    const safeDesc = sanitizeText(description, 1000);
+    const safeLocation = sanitizeText(locationText, 200);
+    if (!safeTitle) { toast.error('Title cannot be empty.'); return; }
+    if (!safeDesc) { toast.error('Description cannot be empty.'); return; }
+
     setSubmitting(true);
     try {
       const priceValue = price ? (parseFloat(price.replace(/[^0-9.]/g, '')) || 0) : 0;
       await createHappening({
-        title: title.trim(),
-        description: description.trim(),
+        title: safeTitle,
+        description: safeDesc,
         imageUrl: '',
         sellerName: seller.businessName || 'Organiser',
         ownerUid: uid,
         country: seller.operatingCountry,
         regionOrCity: seller.operatingRegion,
-        locationText: locationText.trim(),
+        locationText: safeLocation,
         priceText: price ? `${currency} ${price}` : undefined,
         priceValue: priceValue || undefined,
         currencyCode: currency,

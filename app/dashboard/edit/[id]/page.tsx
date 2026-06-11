@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Camera, X, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import { getListing, updateListing, uploadListingImages } from '@/lib/firestore';
 import { CATEGORIES } from '@/data/categories';
@@ -103,6 +104,13 @@ export default function EditListingPage() {
     if (!price.trim()) { toast.error('Enter a price.'); return; }
     if (existingImages.length + newImages.length === 0) { toast.error('Add at least one image.'); return; }
 
+    const safeTitle = sanitizeText(title, 100);
+    const safeDesc = sanitizeText(description, 1000);
+    const safeLocation = sanitizeText(locationText, 200);
+    const safeMessage = sanitizeText(messageForBuyers, 500);
+    if (!safeTitle) { toast.error('Title cannot be empty.'); return; }
+    if (!safeDesc) { toast.error('Description cannot be empty.'); return; }
+
     setSubmitting(true);
     try {
       let uploadedUrls: string[] = [];
@@ -112,9 +120,9 @@ export default function EditListingPage() {
       const allImages = [...existingImages, ...uploadedUrls];
       const priceValue = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
       await updateListing(id, {
-        title: title.trim(),
-        description: description.trim(),
-        messageAboutGoods: messageForBuyers.trim() || undefined,
+        title: safeTitle,
+        description: safeDesc,
+        messageAboutGoods: safeMessage || undefined,
         priceText: `${currency} ${price}`,
         priceValue,
         currencyCode: currency,
@@ -124,7 +132,7 @@ export default function EditListingPage() {
         subCategoryId: selectedSubId || undefined,
         country,
         regionOrCity: region,
-        locationText: locationText.trim(),
+        locationText: safeLocation,
         imageUrl: allImages[0] ?? '',
         imageUrls: allImages,
       });

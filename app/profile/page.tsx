@@ -6,6 +6,7 @@ import {
   Sun, Moon, MapPin, ChevronRight, User,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/firestore';
 import BottomNav from '@/components/BottomNav';
@@ -89,12 +90,13 @@ export default function ProfilePage() {
   }
 
   async function saveName() {
-    if (!authUser || !nameInput.trim()) return;
+    const safeName = sanitizeText(nameInput, 60);
+    if (!authUser || !safeName) return;
     setSavingName(true);
     try {
-      await supabase.auth.updateUser({ data: { full_name: nameInput.trim() } });
-      await supabase.from('profiles').upsert({ id: authUser.uid, display_name: nameInput.trim() });
-      setAuthUser((prev) => prev ? { ...prev, displayName: nameInput.trim() } : null);
+      await supabase.auth.updateUser({ data: { full_name: safeName } });
+      await supabase.from('profiles').upsert({ id: authUser.uid, display_name: safeName });
+      setAuthUser((prev) => prev ? { ...prev, displayName: safeName } : null);
       toast.success('Name updated!');
       setShowEditName(false);
     } catch {

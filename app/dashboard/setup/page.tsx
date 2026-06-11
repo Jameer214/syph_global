@@ -10,6 +10,7 @@ import { getSellerProfile, createSellerProfile, updateSellerProfile } from '@/li
 import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import type { SellerProfile } from '@/types';
 import toast from 'react-hot-toast';
+import { sanitizeText } from '@/lib/sanitize';
 
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern', 'Other'];
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -120,14 +121,19 @@ export default function SellerSetupPage() {
 
     setSaving(true);
     try {
+      const safeName = sanitizeText(businessName, 60);
+      const safeDesc = sanitizeText(description, 500);
+      const safeAddress = sanitizeText(address, 200);
+      if (!safeName) { toast.error('Business name cannot be empty.'); return; }
+      if (!safeDesc) { toast.error('Business description cannot be empty.'); return; }
       const profileData: Omit<SellerProfile, 'isVerified' | 'rating' | 'totalReviews'> = {
         uid,
-        businessName: businessName.trim(),
+        businessName: safeName,
         businessPhone: phone.trim(),
         operatingCountry: selectedCountry,
         operatingRegion: selectedRegion,
-        businessLocationText: address.trim() || undefined,
-        bio: description.trim(),
+        businessLocationText: safeAddress || undefined,
+        bio: safeDesc,
         mainCategoryIds: [],
         serviceSubcategoryIds: [],
       };
@@ -135,13 +141,13 @@ export default function SellerSetupPage() {
         country: selectedCountry,
         region: selectedRegion,
         contactNumber: phone.trim(),
-        description: description.trim(),
+        description: safeDesc,
         isServiceProvider,
         open24Hours,
         openingTime: open24Hours ? null : openingTime,
         closingTime: open24Hours ? null : closingTime,
         workingDays,
-        businessLocationAddress: address.trim() || null,
+        businessLocationAddress: safeAddress || null,
         businessLatitude: businessLat,
         businessLongitude: businessLng,
       };

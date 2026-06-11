@@ -823,6 +823,9 @@ export async function sendSupportMessage(
   email: string,
   text: string,
 ): Promise<void> {
+  const safeText = sanitizeText(text, 2000);
+  if (!safeText) return;
+  text = safeText;
   // Upsert support ticket
   let ticketId: string | null = null;
   const { data: existing } = await supabase

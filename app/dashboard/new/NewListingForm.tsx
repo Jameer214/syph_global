@@ -9,6 +9,7 @@ import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
 import { CATEGORIES } from '@/data/categories';
 import type { SellerProfile } from '@/types';
 import toast from 'react-hot-toast';
+import { sanitizeText } from '@/lib/sanitize';
 
 const CURRENCIES = ['USD', 'UGX', 'KES', 'TZS', 'RWF', 'ETB', 'GHS', 'NGN', 'ZAR'];
 const CONDITIONS = ['New', 'Used', 'Refurbished'];
@@ -117,23 +118,30 @@ export default function NewListingForm() {
     if (images.length === 0) { toast.error('Please add at least one image.'); return; }
     if (!locationText.trim()) { toast.error('Please enter your location.'); return; }
 
+    const safeTitle = sanitizeText(title, 100);
+    const safeDesc = sanitizeText(description, 1000);
+    const safeLocation = sanitizeText(locationText, 200);
+    const safeMessage = sanitizeText(messageForBuyers, 500);
+    if (!safeTitle) { toast.error('Title cannot be empty.'); return; }
+    if (!safeDesc) { toast.error('Description cannot be empty.'); return; }
+
     setSubmitting(true);
     try {
       const priceValue = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
       const listingId = await createListing({
-        title: title.trim(),
-        description: description.trim(),
+        title: safeTitle,
+        description: safeDesc,
         imageUrl: '',
         sellerName: seller.businessName || 'Seller',
         ownerUid: uid,
         country: country || seller.operatingCountry,
         regionOrCity: region || seller.operatingRegion,
-        locationText: locationText.trim(),
+        locationText: safeLocation,
         priceText: `${currency} ${price}`,
         priceValue,
         currencyCode: currency,
         negotiable,
-        messageAboutGoods: messageForBuyers.trim() || undefined,
+        messageAboutGoods: safeMessage || undefined,
         mainCategoryId: selectedMainId,
         subCategoryId: selectedSubId || undefined,
         condition,
@@ -155,7 +163,7 @@ export default function NewListingForm() {
           type: listingType,
           days: String(duration),
           listingId,
-          listingTitle: title.trim(),
+          listingTitle: safeTitle,
         });
         router.push(`/payment/method?${params}`);
       } else {
