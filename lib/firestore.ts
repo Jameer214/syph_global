@@ -458,7 +458,6 @@ export async function updateListing(id: string, updates: Partial<Listing>): Prom
   if (updates.mainCategoryId !== undefined) patch.category_id = updates.mainCategoryId;
   if (updates.subCategoryId !== undefined) patch.sub_category_id = updates.subCategoryId;
   if (updates.messageAboutGoods !== undefined) patch.message_about_goods = updates.messageAboutGoods;
-  if (updates.status !== undefined) patch.status = updates.status;
   await supabase.from('listings').update(patch).eq('id', id);
 }
 
