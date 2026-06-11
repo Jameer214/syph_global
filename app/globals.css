@@ -188,13 +188,68 @@ html, body {
 /* Touch feedback for lift cards (hover doesn't exist on mobile) */
 .lift:active { transform: scale(0.95); }
 
+/* ── Premium surfaces (welcome screen) ───────────────────────────────────── */
+@keyframes auroraDrift {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(45px, -35px) scale(1.18); }
+  100% { transform: translate(-35px, 30px) scale(0.92); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.85; }
+}
+@keyframes haloSpin { to { transform: rotate(360deg); } }
+@keyframes textShimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  animation: auroraDrift 16s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  animation: twinkle 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.halo {
+  position: absolute;
+  inset: -16px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(120, 165, 255, 0.55) 16%, transparent 38%, transparent 55%, rgba(108, 99, 255, 0.45) 74%, transparent 94%);
+  animation: haloSpin 7s linear infinite;
+  filter: blur(7px);
+  pointer-events: none;
+}
+.text-shimmer {
+  background: linear-gradient(90deg, #c7d6ff 0%, #ffffff 30%, #8fb0ff 50%, #ffffff 70%, #c7d6ff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: textShimmer 5s linear infinite;
+}
+.glass-card {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
 /* Image fade-in on load: start hidden, JS flips opacity via onLoad */
 .img-fade { opacity: 0; transition: opacity 0.4s ease; }
 .img-fade.img-loaded { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
   .anim-fade-up, .anim-fade-in, .anim-pop, .sheet-backdrop, .sheet-panel,
-  .skeleton, .cta-armed, .sweep::after, .radar::before, .radar::after, .bob {
+  .skeleton, .cta-armed, .sweep::after, .radar::before, .radar::after, .bob,
+  .aurora-blob, .star, .halo, .text-shimmer {
     animation: none !important;
   }
   .anim-fade-up, .anim-fade-in, .anim-pop { opacity: 1; transform: none; }
