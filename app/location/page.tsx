@@ -10,6 +10,7 @@ import { tr, getDir } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import MenuDrawer from '@/components/MenuDrawer';
+import Reveal from '@/components/Reveal';
 
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern'];
 
@@ -486,7 +487,9 @@ export default function LocationPage() {
                       animationDelay: `${idx * 0.035}s`, animationDuration: '0.3s',
                     }}
                   >
-                    <span className="row-flag" style={{ fontSize: 22, flexShrink: 0 }}>{COUNTRY_FLAGS[c] ?? '🌍'}</span>
+                    <span className="bob" style={{ fontSize: 22, flexShrink: 0, animationDelay: `${(idx * 0.45) % 2.8}s` }}>
+                      <span className="row-flag">{COUNTRY_FLAGS[c] ?? '🌍'}</span>
+                    </span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', flex: 1 }}>{c}</span>
                     {isSelected
                       ? <span className="anim-pop" style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 16 }}>✓</span>
@@ -532,7 +535,9 @@ export default function LocationPage() {
                     borderBottom: idx < recents.length - 1 ? '1px solid #f1f5f9' : 'none',
                   }}
                 >
-                  <span className="row-flag" style={{ fontSize: 24, flexShrink: 0 }}>{COUNTRY_FLAGS[c] ?? '🌍'}</span>
+                  <span className="bob" style={{ fontSize: 24, flexShrink: 0, animationDelay: `${(idx * 0.45) % 2.8}s` }}>
+                    <span className="row-flag">{COUNTRY_FLAGS[c] ?? '🌍'}</span>
+                  </span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e' }}>{c}</div>
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', marginTop: 1 }}>
@@ -552,11 +557,11 @@ export default function LocationPage() {
         <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '24px 0' }} />
 
         {/* Hero: The World's Marketplace */}
+        <Reveal>
         <div style={{
           background: 'linear-gradient(135deg, #0a1a4a 0%, #0F2B6E 45%, #1a3a9e 100%)',
           borderRadius: 20, padding: '24px 18px 22px', marginBottom: 16,
           position: 'relative', overflow: 'hidden',
-          animation: 'fadeInUp 0.5s ease forwards',
         }}>
           <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(46,91,255,0.2)', animation: 'float 5s ease-in-out infinite' }} />
           <div style={{ position: 'absolute', top: 20, right: 50, width: 55, height: 55, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', animation: 'floatReverse 7s ease-in-out infinite' }} />
@@ -578,15 +583,18 @@ export default function LocationPage() {
                 { value: '17+', label: 'Categories' },
                 { value: '100%', label: 'Free' },
                 { value: '24/7', label: 'Available' },
-              ].map(s => (
-                <div key={s.label} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '9px 4px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.14)' }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{s.value}</div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{s.label}</div>
-                </div>
+              ].map((s, i) => (
+                <Reveal key={s.label} delay={0.15 + i * 0.08} className="reveal-pop" style={{ flex: 1 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '9px 4px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.14)' }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{s.label}</div>
+                  </div>
+                </Reveal>
               ))}
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Auto-scrolling categories ticker */}
         <div style={{ marginBottom: 22 }}>
@@ -606,6 +614,7 @@ export default function LocationPage() {
         </div>
 
         {/* Global Reach — world regions grid */}
+        <Reveal>
         <div style={{ marginBottom: 24, background: '#fff', borderRadius: 18, padding: '20px 16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(46,91,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'glow 3s ease-in-out infinite' }}>
@@ -627,31 +636,39 @@ export default function LocationPage() {
               { flag: '🌏', region: 'Asia Pacific', count: '48 countries' },
               { flag: '🕌', region: 'Middle East', count: '18 countries' },
               { flag: '🌊', region: 'Oceania', count: '14 countries' },
-            ].map(r => (
-              <div key={r.region} className="lift" style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#F8FAFF', borderRadius: 12, padding: '10px 11px', border: '1px solid rgba(46,91,255,0.08)' }}>
-                <span className="lift-emoji" style={{ fontSize: 20 }}>{r.flag}</span>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: '#1a1a2e' }}>{r.region}</div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af' }}>{r.count}</div>
+            ].map((r, i) => (
+              <Reveal key={r.region} delay={i * 0.08}>
+                <div className="lift" style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#F8FAFF', borderRadius: 12, padding: '10px 11px', border: '1px solid rgba(46,91,255,0.08)', height: '100%' }}>
+                  <span className="bob" style={{ fontSize: 20, animationDelay: `${(i * 0.55) % 3}s` }}>
+                    <span className="lift-emoji">{r.flag}</span>
+                  </span>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#1a1a2e' }}>{r.region}</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af' }}>{r.count}</div>
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
+        </Reveal>
 
         {/* How It Works */}
         <div style={{ marginBottom: 28 }}>
+          <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>How It Works</div>
             <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Simple. Powerful. Global.</div>
             <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>From discovery to deal — SYPH makes every step effortless.</div>
           </div>
+          </Reveal>
           {([
             { step: '01', Icon: Search, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: 'Get location specific results', desc: "Browse listings filtered to your exact country or region — see only what's available near you." },
             { step: '02', Icon: MessageCircle, color: '#6C63FF', bg: 'rgba(108,99,255,0.08)', title: 'Contact your service provider', desc: 'Message sellers directly through the platform. Ask questions and build trust before you commit.' },
             { step: '03', Icon: Handshake, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Negotiate to a successful deal', desc: "Close the deal on your own terms — negotiate price, arrange pickup or delivery, and buy with confidence." },
           ] as const).map(({ step, Icon, color, bg, title, desc }, idx) => (
             <div key={step}>
+              <Reveal delay={idx * 0.1}>
               <div className="lift" style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 4, border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Icon size={20} color={color} />
@@ -662,6 +679,7 @@ export default function LocationPage() {
                   <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, lineHeight: 1.5 }}>{desc}</div>
                 </div>
               </div>
+              </Reveal>
               {idx < 2 && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
                   <div style={{ width: 2, height: 14, background: 'linear-gradient(to bottom, rgba(46,91,255,0.35), rgba(46,91,255,0.04))' }} />
@@ -673,29 +691,41 @@ export default function LocationPage() {
 
         {/* All Services & Goods grid */}
         <div style={{ marginBottom: 28 }}>
+          <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>Everything on SYPH</div>
             <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Every Product. Every Service.</div>
             <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>From everyday essentials to rare finds — if it exists, you&apos;ll find it on SYPH.</div>
           </div>
+          </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-            {CATEGORIES.map(cat => (
-              <div key={cat.name} className="lift" style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <div className="lift-emoji" style={{ fontSize: 28, marginBottom: 6 }}>{cat.emoji}</div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3 }}>{cat.name}</div>
-              </div>
+            {CATEGORIES.map((cat, i) => (
+              <Reveal key={cat.name} delay={(i % 9) * 0.06} className="reveal-pop">
+                <div className="lift" style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', height: '100%' }}>
+                  <div
+                    className="bob"
+                    style={{ fontSize: 28, marginBottom: 6, animationDelay: `${(i * 0.37) % 2.6}s`, animationDuration: `${2.8 + (i % 4) * 0.5}s` }}
+                  >
+                    <span className="lift-emoji">{cat.emoji}</span>
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3 }}>{cat.name}</div>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
 
         {/* Why SYPH */}
         <div style={{ marginBottom: 24 }}>
+          <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>Why SYPH</div>
             <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Find it. Locate it. Connect.</div>
             <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>Discover products, services, and happenings near you.</div>
           </div>
+          </Reveal>
           {/* For Sellers */}
+          <Reveal>
           <div style={{ background: '#fff', borderRadius: 18, padding: '20px 16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 12 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F0F4FF', borderRadius: 10, padding: '5px 12px', marginBottom: 14 }}>
               <span style={{ fontSize: 15 }}>🏪</span>
@@ -716,7 +746,9 @@ export default function LocationPage() {
               </div>
             ))}
           </div>
+          </Reveal>
           {/* For Buyers */}
+          <Reveal delay={0.08}>
           <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', borderRadius: 18, padding: '20px 16px', boxShadow: '0 4px 20px rgba(30,77,217,0.3)' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: '5px 12px', marginBottom: 14 }}>
               <span style={{ fontSize: 15 }}>🛒</span>
@@ -737,9 +769,11 @@ export default function LocationPage() {
               </div>
             ))}
           </div>
+          </Reveal>
         </div>
 
         {/* Global Broker manifesto */}
+        <Reveal>
         <div style={{
           background: 'linear-gradient(135deg, #1a1a2e 0%, #0F2B6E 55%, #1a3a9e 100%)',
           borderRadius: 20, padding: '26px 18px', marginBottom: 16,
@@ -762,19 +796,23 @@ export default function LocationPage() {
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Trust pillars */}
         <div style={{ marginBottom: 24 }}>
+          <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#1a1a2e' }}>Built on Trust</div>
             <div style={{ fontSize: 13, color: '#6B7A99', marginTop: 4, fontWeight: 500 }}>Your security and satisfaction are our priority</div>
           </div>
+          </Reveal>
           {([
             { Icon: Shield, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: 'Verified Listings', desc: 'Every listing is reviewed for quality and authenticity before going live on the platform.' },
             { Icon: Zap, color: '#F39C12', bg: 'rgba(243,156,18,0.1)', title: 'Instant Connections', desc: 'Connect with sellers and buyers in real-time through our built-in messaging platform.' },
             { Icon: CheckCircle, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Free Forever', desc: 'No listing fees. No commissions. No hidden charges. SYPH is completely free to use.' },
-          ] as const).map(({ Icon, color, bg, title, desc }) => (
-            <div key={title} className="lift" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 10, background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          ] as const).map(({ Icon, color, bg, title, desc }, i) => (
+            <Reveal key={title} delay={i * 0.1}>
+            <div className="lift" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 10, background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Icon size={20} color={color} />
               </div>
@@ -783,10 +821,12 @@ export default function LocationPage() {
                 <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, lineHeight: 1.5 }}>{desc}</div>
               </div>
             </div>
+            </Reveal>
           ))}
         </div>
 
         {/* Footer tagline */}
+        <Reveal>
         <div style={{
           textAlign: 'center', padding: '22px 16px',
           background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
@@ -796,13 +836,15 @@ export default function LocationPage() {
           <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
           <div style={{ position: 'absolute', bottom: -30, left: -30, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
+            <div className="bob" style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
             <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 8, letterSpacing: '0.5px' }}>SYPH — Find it. Locate it. Connect.</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 500, lineHeight: 1.6 }}>The global marketplace for every service, every product, and every region — connecting buyers and sellers worldwide, for free.</div>
           </div>
         </div>
+        </Reveal>
 
         {/* Download badges */}
+        <Reveal>
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>Available on</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
@@ -810,6 +852,7 @@ export default function LocationPage() {
             <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} onClick={() => setShowAppModal(true)} className="btn-tap" style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
           </div>
         </div>
+        </Reveal>
 
       </div>
 
