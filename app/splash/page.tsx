@@ -4,52 +4,31 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store';
 
-// Deterministic star field (fixed values — random would break SSR hydration).
-// Kept to the upper sky area so they sit above the mountain line.
+// One easing for every transition — this is what makes the sequence feel
+// like a single camera move instead of separate effects.
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+// Faint early-evening stars, upper sky only (deterministic for SSR hydration)
 const STARS = [
-  { top: '5%', left: '12%', size: 2, delay: 0 },
-  { top: '9%', left: '70%', size: 3, delay: 0.7 },
-  { top: '14%', left: '38%', size: 2, delay: 1.4 },
-  { top: '7%', left: '88%', size: 2, delay: 0.3 },
-  { top: '19%', left: '8%', size: 3, delay: 1.9 },
-  { top: '23%', left: '57%', size: 2, delay: 1.1 },
-  { top: '12%', left: '25%', size: 2, delay: 2.3 },
-  { top: '27%', left: '80%', size: 3, delay: 0.5 },
-  { top: '31%', left: '18%', size: 2, delay: 1.6 },
-  { top: '21%', left: '93%', size: 2, delay: 0.9 },
+  { top: '6%', left: '16%', size: 2, delay: 0.4 },
+  { top: '10%', left: '64%', size: 2, delay: 1.2 },
+  { top: '5%', left: '84%', size: 2, delay: 0.1 },
+  { top: '15%', left: '36%', size: 2, delay: 1.8 },
+  { top: '19%', left: '78%', size: 2, delay: 0.8 },
+  { top: '12%', left: '8%', size: 2, delay: 2.2 },
 ];
 
 const LETTERS = ['S', 'Y', 'P', 'H'];
-const GLYPHS = '◇◆△▽◈ΞΛΣΦΨΩ※01∆▣';
-// Each letter locks into place left-to-right while the others still cycle
-const LOCK_AT_MS = [420, 560, 700, 840];
 const TAGLINE_WORDS = ['FIND IT', 'LOCATE IT', 'CONNECT'];
 
-// Same overall duration as the original splash
-const SPLASH_MS = 2000;
-const EXIT_MS = 1600;
+const SPLASH_MS = 2400;
+const EXIT_MS = 1950;
 
 export default function SplashScreen() {
   const router = useRouter();
   const { selectedCountry, locationSet } = useAppStore();
   const routed = useRef(false);
   const [leaving, setLeaving] = useState(false);
-  const [display, setDisplay] = useState(['◇', '◇', '◇', '◇']);
-  const [locked, setLocked] = useState([false, false, false, false]);
-
-  // Cipher decode: letters flicker through glyphs, then lock left-to-right
-  useEffect(() => {
-    const start = performance.now();
-    const id = setInterval(() => {
-      const t = performance.now() - start;
-      setDisplay(LETTERS.map((ch, i) =>
-        t >= LOCK_AT_MS[i] ? ch : GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
-      ));
-      setLocked(LETTERS.map((_, i) => t >= LOCK_AT_MS[i]));
-      if (t > LOCK_AT_MS[3] + 60) clearInterval(id);
-    }, 45);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     const exitTimer = setTimeout(() => setLeaving(true), EXIT_MS);
@@ -68,172 +47,189 @@ export default function SplashScreen() {
 
   return (
     <div style={{
-      minHeight: '100dvh', background: '#060F2E',
+      minHeight: '100dvh', background: '#0B1030',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', position: 'relative', overflow: 'hidden',
     }}>
-      {/* Mountain photo — slow cinematic Ken Burns push-in */}
+      {/* Sunset peaks — camera pans across the ridge, left to right */}
       <motion.div
-        initial={{ scale: 1.18, y: 14 }}
-        animate={{ scale: 1.04, y: 0 }}
-        transition={{ duration: 3.2, ease: [0.22, 1, 0.36, 1] }}
-        style={{ position: 'absolute', inset: 0 }}
+        initial={{ x: '0%' }}
+        animate={{ x: '-14%' }}
+        transition={{ duration: SPLASH_MS / 1000 + 0.4, ease: 'easeInOut' }}
+        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '125%' }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/splash-mountain.jpg"
           alt=""
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.05)' }}
         />
       </motion.div>
 
-      {/* Brand color grade + readability vignette */}
+      {/* Sunset grade: warm tint above, deep navy below for text contrast */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'linear-gradient(to bottom, rgba(6,15,46,0.62) 0%, rgba(12,33,97,0.30) 42%, rgba(6,15,46,0.82) 100%)',
+        background: 'linear-gradient(to bottom, rgba(60,25,70,0.38) 0%, rgba(30,20,60,0.22) 40%, rgba(7,12,38,0.88) 100%)',
       }} />
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'radial-gradient(85% 70% at 50% 45%, transparent 55%, rgba(4,10,32,0.55) 100%)',
+        background: 'radial-gradient(85% 70% at 50% 42%, transparent 52%, rgba(6,10,32,0.5) 100%)',
       }} />
 
-      {/* Drifting mist banks along the peaks */}
+      {/* Warm mist drifting with the pan direction */}
       <motion.div
-        animate={{ x: [0, 48, 0] }}
-        transition={{ duration: 14, ease: 'easeInOut', repeat: Infinity }}
+        animate={{ x: [0, 60] }}
+        transition={{ duration: SPLASH_MS / 1000 + 0.4, ease: 'easeInOut' }}
         style={{
-          position: 'absolute', bottom: '24%', left: '-15%', width: '75%', height: 110,
-          background: 'radial-gradient(50% 50% at 50% 50%, rgba(190,210,255,0.16) 0%, transparent 70%)',
-          filter: 'blur(22px)', pointerEvents: 'none',
+          position: 'absolute', bottom: '26%', left: '-10%', width: '70%', height: 110,
+          background: 'radial-gradient(50% 50% at 50% 50%, rgba(255,205,160,0.14) 0%, transparent 70%)',
+          filter: 'blur(24px)', pointerEvents: 'none',
         }}
       />
       <motion.div
-        animate={{ x: [0, -56, 0] }}
-        transition={{ duration: 17, ease: 'easeInOut', repeat: Infinity, delay: -6 }}
+        animate={{ x: [0, 40] }}
+        transition={{ duration: SPLASH_MS / 1000 + 0.4, ease: 'easeInOut' }}
         style={{
-          position: 'absolute', bottom: '14%', right: '-20%', width: '85%', height: 130,
-          background: 'radial-gradient(50% 50% at 50% 50%, rgba(170,195,255,0.13) 0%, transparent 70%)',
-          filter: 'blur(26px)', pointerEvents: 'none',
+          position: 'absolute', bottom: '15%', right: '-15%', width: '80%', height: 130,
+          background: 'radial-gradient(50% 50% at 50% 50%, rgba(255,180,130,0.10) 0%, transparent 70%)',
+          filter: 'blur(28px)', pointerEvents: 'none',
         }}
       />
 
-      {/* Twinkling stars layered over the photo's sky */}
+      {/* First stars of dusk */}
       {STARS.map((s, i) => (
-        <span key={i} className="star" style={{ top: s.top, left: s.left, width: s.size, height: s.size, animationDelay: `${s.delay}s` }} />
+        <span key={i} className="star" style={{ top: s.top, left: s.left, width: s.size, height: s.size, animationDelay: `${s.delay}s`, opacity: 0.5 }} />
       ))}
 
+      {/* Cinema letterbox bars frame the scene */}
       <motion.div
-        animate={leaving ? { opacity: 0, scale: 1.08, filter: 'blur(6px)' } : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
-        transition={{ duration: 0.4, ease: 'easeIn' }}
+        initial={{ y: '-100%' }}
+        animate={{ y: '0%' }}
+        transition={{ duration: 0.7, ease: EASE }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '7dvh', background: '#02040E', zIndex: 2 }}
+      />
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: '0%' }}
+        transition={{ duration: 0.7, ease: EASE }}
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '7dvh', background: '#02040E', zIndex: 2 }}
+      />
+
+      {/* Film opening: fade up from black */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        style={{ position: 'absolute', inset: 0, background: '#02040E', zIndex: 3, pointerEvents: 'none' }}
+      />
+
+      {/* Composition exits drifting right — continuing the camera's motion */}
+      <motion.div
+        animate={leaving ? { opacity: 0, x: 26, filter: 'blur(5px)' } : { opacity: 1, x: 0, filter: 'blur(0px)' }}
+        transition={{ duration: 0.45, ease: 'easeIn' }}
         style={{ position: 'relative', textAlign: 'center' }}
       >
-        {/* Glow bloom behind the letters */}
+        {/* Warm glow bloom behind the wordmark */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.85, 0.5] }}
-          transition={{ duration: 1.2, times: [0, 0.6, 1], ease: 'easeOut' }}
+          animate={{ opacity: [0, 0.8, 0.5] }}
+          transition={{ duration: 1.4, times: [0, 0.6, 1], ease: 'easeOut' }}
           style={{
             position: 'absolute', top: '50%', left: '50%',
-            width: 320, height: 170, marginTop: -118, marginLeft: -160,
-            background: 'radial-gradient(50% 50% at 50% 50%, rgba(72,118,255,0.45) 0%, transparent 70%)',
-            filter: 'blur(14px)', pointerEvents: 'none',
+            width: 330, height: 170, marginTop: -120, marginLeft: -165,
+            background: 'radial-gradient(50% 50% at 50% 50%, rgba(255,160,90,0.28) 0%, transparent 70%)',
+            filter: 'blur(16px)', pointerEvents: 'none',
           }}
         />
 
-        {/* SYPH — cipher decode: glyphs flicker then lock with a chrome snap */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 14, position: 'relative' }}>
-          {display.map((ch, i) => (
-            <motion.span
-              key={i}
-              initial={{ opacity: 0, y: 30, rotateX: 75 }}
-              animate={{
-                opacity: 1, y: 0, rotateX: 0,
-                scale: locked[i] ? [1.22, 1] : 1,
-              }}
-              transition={{
-                opacity: { delay: 0.08 + i * 0.07, duration: 0.35 },
-                y: { delay: 0.08 + i * 0.07, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
-                rotateX: { delay: 0.08 + i * 0.07, duration: 0.45 },
-                scale: { duration: 0.28, ease: [0.34, 1.56, 0.64, 1] },
-              }}
-              style={{
-                display: 'inline-block', width: 58, fontSize: 62, fontWeight: 900, lineHeight: 1,
-                fontFamily: locked[i] ? 'inherit' : 'monospace',
-                color: locked[i] ? 'transparent' : 'rgba(141,200,255,0.55)',
-                background: locked[i] ? 'linear-gradient(180deg, #ffffff 25%, #9DB8FF 80%)' : 'none',
-                WebkitBackgroundClip: locked[i] ? 'text' : undefined,
-                backgroundClip: locked[i] ? 'text' : undefined,
-                textShadow: locked[i]
-                  ? '0 0 28px rgba(141,176,255,0.55)'
-                  : '0 0 14px rgba(141,200,255,0.4)',
-                filter: locked[i] ? 'none' : 'blur(0.6px)',
-              }}
-            >
-              {ch}
-            </motion.span>
+        {/* SYPH — letters rise out of a baseline mask, one after another */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 14, position: 'relative', overflow: 'hidden', paddingBottom: 6 }}>
+          {LETTERS.map((ch, i) => (
+            <span key={i} style={{ display: 'inline-block', overflow: 'hidden' }}>
+              <motion.span
+                initial={{ y: '112%' }}
+                animate={{ y: '0%' }}
+                transition={{ delay: 0.18 + i * 0.09, duration: 0.65, ease: EASE }}
+                style={{
+                  display: 'inline-block', fontSize: 62, fontWeight: 900, lineHeight: 1.05,
+                  background: 'linear-gradient(180deg, #FFFFFF 30%, #FFD9A8 95%)',
+                  WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+                  filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.45)) drop-shadow(0 0 22px rgba(255,190,120,0.35))',
+                }}
+              >
+                {ch}
+              </motion.span>
+            </span>
           ))}
+
+          {/* Light sweep travels through the letters, left to right */}
+          <motion.div
+            initial={{ x: '-130%', opacity: 0 }}
+            animate={{ x: '480%', opacity: [0, 1, 0] }}
+            transition={{ delay: 0.85, duration: 0.65, ease: EASE }}
+            style={{
+              position: 'absolute', top: 0, bottom: 0, left: 0, width: 70,
+              background: 'linear-gradient(105deg, transparent, rgba(255,235,210,0.45), transparent)',
+              transform: 'skewX(-18deg)', pointerEvents: 'none',
+            }}
+          />
         </div>
 
-        {/* Shine sweep across the assembled wordmark */}
+        {/* Sunset line draws left to right, handing off from the sweep */}
         <motion.div
-          initial={{ x: '-120%', opacity: 0 }}
-          animate={{ x: '160%', opacity: [0, 1, 0] }}
-          transition={{ delay: 0.9, duration: 0.6, ease: 'easeInOut' }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 1.05, duration: 0.45, ease: EASE }}
           style={{
-            position: 'absolute', top: -8, bottom: 48, width: 90,
-            background: 'linear-gradient(105deg, transparent, rgba(255,255,255,0.4), transparent)',
-            transform: 'skewX(-18deg)', pointerEvents: 'none',
+            height: 1.5, width: 210, margin: '20px auto',
+            background: 'linear-gradient(to right, transparent, #FFC98F, transparent)',
+            boxShadow: '0 0 12px rgba(255,180,120,0.6)',
+            transformOrigin: 'left center',
           }}
         />
 
-        {/* Energy line draws outward, then the slogan wipes through it */}
-        <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ delay: 0.85, duration: 0.45, ease: 'easeInOut' }}
-          style={{
-            height: 1.5, width: 210, margin: '22px auto',
-            background: 'linear-gradient(to right, transparent, #8FB0FF, transparent)',
-            boxShadow: '0 0 12px rgba(120,160,255,0.7)',
-            transformOrigin: 'center',
-          }}
-        />
-
-        {/* Slogan — futuristic wipe-in with cyan separators */}
-        <motion.div
-          initial={{ clipPath: 'inset(0 50% 0 50%)', opacity: 0 }}
-          animate={{ clipPath: 'inset(0 0% 0 0%)', opacity: 1 }}
-          transition={{ delay: 1.05, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}
-        >
+        {/* Slogan words ride in left to right, continuing the line's motion */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
           {TAGLINE_WORDS.map((word, i) => (
             <span key={word} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-              <span style={{
-                fontSize: 11, color: 'rgba(255,255,255,0.88)', fontWeight: 800,
-                letterSpacing: '3.5px', textShadow: '0 1px 8px rgba(0,0,0,0.5)',
-              }}>
+              <motion.span
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.2 + i * 0.12, duration: 0.45, ease: EASE }}
+                style={{
+                  fontSize: 11, color: 'rgba(255,255,255,0.92)', fontWeight: 800,
+                  letterSpacing: '3.5px', textShadow: '0 1px 8px rgba(0,0,0,0.55)',
+                }}
+              >
                 {word}
-              </span>
+              </motion.span>
               {i < TAGLINE_WORDS.length - 1 && (
-                <span style={{ color: '#6FA0FF', fontSize: 10, fontWeight: 900, textShadow: '0 0 8px rgba(111,160,255,0.8)' }}>◆</span>
+                <motion.span
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.26 + i * 0.12, duration: 0.45, ease: EASE }}
+                  style={{ color: '#FFB45F', fontSize: 9, fontWeight: 900, textShadow: '0 0 8px rgba(255,180,95,0.8)' }}
+                >
+                  ◆
+                </motion.span>
               )}
             </span>
           ))}
-        </motion.div>
+        </div>
 
-        {/* Loading bar fills across the splash duration */}
+        {/* Loading bar fills left to right — same direction as everything else */}
         <div style={{
           width: 150, height: 3, borderRadius: 2, margin: '30px auto 0',
-          background: 'rgba(255,255,255,0.18)', overflow: 'hidden',
+          background: 'rgba(255,255,255,0.16)', overflow: 'hidden',
         }}>
           <motion.div
             initial={{ x: '-100%' }}
             animate={{ x: '0%' }}
-            transition={{ delay: 0.2, duration: (SPLASH_MS - 250) / 1000, ease: 'easeInOut' }}
+            transition={{ delay: 0.18, duration: (SPLASH_MS - 250) / 1000, ease: 'easeInOut' }}
             style={{
               height: '100%', borderRadius: 2,
-              background: 'linear-gradient(90deg, #4876FF, #8FB0FF)',
-              boxShadow: '0 0 10px rgba(120,160,255,0.8)',
+              background: 'linear-gradient(90deg, #FF9E5E, #FFD9A8)',
+              boxShadow: '0 0 10px rgba(255,180,120,0.8)',
             }}
           />
         </div>
