@@ -331,10 +331,15 @@ export async function batchGetSellerHoursMap(
 
 // ─── Newsletter ───────────────────────────────────────────────────────────────
 
-export async function subscribeNewsletter(email: string): Promise<void> {
+export async function subscribeNewsletter(email: string): Promise<'ok' | 'exists' | 'invalid'> {
   const trimmed = email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return;
-  await supabase.from('newsletter_subscribers').insert({ email: trimmed, country: null });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return 'invalid';
+  const { error } = await supabase.from('newsletter_subscribers').insert({ email: trimmed, country: null });
+  if (error) {
+    if (error.code === '23505') return 'exists'; // unique constraint violation
+    throw error;
+  }
+  return 'ok';
 }
 
 // ─── User Profile ─────────────────────────────────────────────────────────────
