@@ -20,8 +20,11 @@ const NET_RAMP_START = 600;    // first connection lines
 const NET_FULL = 2000;   // network fully alive
 const MORPH_START = 2300;   // network begins forming SYPH
 const MORPH_DUR = 1100;
+const SOLIDIFY_DUR = 600;    // nodes melt into solid type after forming
 const SLOGAN_AT = 3500;
-const CTA_AT = 4000;   // Explore button rises
+const CTA_AT = 4000;   // Explore button rises (design accent — routing is automatic)
+const EXIT_AT = 5300;   // fade out begins
+const ROUTE_AT = 5700;   // navigate to select-location
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -85,6 +88,8 @@ export default function SplashScreen() {
       else router.replace('/location');
     }, 350);
   };
+  const goExploreRef = useRef(goExplore);
+  goExploreRef.current = goExplore;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -158,23 +163,23 @@ export default function SplashScreen() {
         for (const f of flies) { f.mx = f.x; f.my = f.y; }
       }
 
-      // The readable wordmark: crisp glowing type fades in under the nodes
-      // as the fireflies converge, so SYPH reads clearly — just glowing.
+      // The wordmark fades in as the fireflies converge, then solidifies:
+      // clean readable type with only a faint glow once the nodes melt away.
+      const solidify = Math.min(Math.max((t - (MORPH_START + MORPH_DUR)) / SOLIDIFY_DUR, 0), 1);
       if (mpRaw > 0.55) {
         const textAlpha = Math.min((mpRaw - 0.55) / 0.45, 1);
-        const pulse = formed ? 0.92 + 0.08 * Math.sin(t / 420) : 1;
         ctx.save();
         ctx.font = `900 ${OFF_FONT * textScale}px ${FONT_STACK}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        // outer glow pass
-        ctx.shadowColor = 'rgba(110, 165, 255, 0.95)';
-        ctx.shadowBlur = 34 * textScale * pulse;
-        ctx.fillStyle = `rgba(160, 200, 255, ${0.5 * textAlpha * pulse})`;
+        // halo — strong while forming, settles to a faint glow once solid
+        ctx.shadowColor = 'rgba(110, 165, 255, 0.7)';
+        ctx.shadowBlur = (26 - 16 * solidify) * textScale;
+        ctx.fillStyle = `rgba(160, 200, 255, ${(0.4 - 0.28 * solidify) * textAlpha})`;
         ctx.fillText(WORD, width / 2, wordY);
-        // bright core pass
-        ctx.shadowBlur = 12 * textScale;
-        ctx.fillStyle = `rgba(235, 244, 255, ${0.92 * textAlpha * pulse})`;
+        // solid core — fully opaque once formed
+        ctx.shadowBlur = (6 - 3 * solidify) * textScale;
+        ctx.fillStyle = `rgba(244, 248, 255, ${(0.85 + 0.15 * solidify) * textAlpha})`;
         ctx.fillText(WORD, width / 2, wordY);
         ctx.restore();
       }
@@ -205,7 +210,10 @@ export default function SplashScreen() {
         }
 
         const flick = 0.65 + 0.35 * Math.sin(f.flicker);
-        const dim = mpRaw > 0 && f.tx < 0 ? 0.3 : 1;
+        // ambient dust dims during the morph; letter nodes melt away once
+        // the solid wordmark has taken over
+        const dim = mpRaw > 0 && f.tx < 0 ? 0.3 : f.tx >= 0 ? 1 - solidify : 1;
+        if (dim <= 0.01) continue;
         const a = fadeIn * flick * dim;
         const color = f.gold ? '255, 205, 120' : '140, 200, 255';
 
@@ -250,6 +258,8 @@ export default function SplashScreen() {
 
       if (t > SLOGAN_AT) setShowSlogan(true);
       if (t > CTA_AT) setShowCTA(true);
+      if (t > EXIT_AT) setLeaving(true);
+      if (t > ROUTE_AT) { goExploreRef.current(); return; }
 
       raf = requestAnimationFrame(frame);
     };
@@ -346,13 +356,13 @@ export default function SplashScreen() {
         ))}
       </motion.div>
 
-      {/* Explore CTA */}
+      {/* Explore CTA — design accent below the slogan; routing is automatic */}
       <motion.div
         initial={false}
         animate={showCTA && !leaving ? { opacity: 1, y: 0 } : { opacity: showCTA ? 0 : 0, y: showCTA ? 0 : 24 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         style={{
-          position: 'absolute', left: 0, right: 0, top: '67%',
+          position: 'absolute', left: 0, right: 0, top: '74%',
           display: 'flex', justifyContent: 'center', padding: '0 22px',
           pointerEvents: showCTA ? 'auto' : 'none',
         }}
