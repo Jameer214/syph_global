@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/store';
 
 /*
@@ -9,8 +10,8 @@ import { useAppStore } from '@/store';
  * Fireflies (each one a listing / business / opportunity) drift in darkness,
  * discover each other, weave a golden-blue network, then converge into the
  * SYPH wordmark — rendered as crisp glowing type with firefly nodes living
- * on its surface. Auto-routes to location/home when the sequence ends;
- * tapping skips straight through.
+ * on its surface. The slogan and the Explore SYPH CTA then rise in; tapping
+ * during the intro fast-forwards to the finished scene.
  */
 
 // ── Timeline (ms) ──────────────────────────────────────────────────────────
@@ -20,8 +21,7 @@ const NET_FULL = 2000;   // network fully alive
 const MORPH_START = 2300;   // network begins forming SYPH
 const MORPH_DUR = 1100;
 const SLOGAN_AT = 3500;
-const EXIT_AT = 4000;   // fade out begins
-const ROUTE_AT = 4400;   // navigate
+const CTA_AT = 4000;   // Explore button rises
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -73,16 +73,18 @@ export default function SplashScreen() {
   const startRef = useRef<number>(0);
   const routedRef = useRef(false);
   const [showSlogan, setShowSlogan] = useState(false);
+  const [showCTA, setShowCTA] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
-  const route = () => {
+  const goExplore = () => {
     if (routedRef.current) return;
     routedRef.current = true;
-    if (locationSet && selectedCountry) router.replace('/home');
-    else router.replace('/location');
+    setLeaving(true);
+    setTimeout(() => {
+      if (locationSet && selectedCountry) router.replace('/home');
+      else router.replace('/location');
+    }, 350);
   };
-  const routeRef = useRef(route);
-  routeRef.current = route;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -130,8 +132,8 @@ export default function SplashScreen() {
     };
 
     setup();
-    startRef.current = performance.now() - (reducedMotion ? MORPH_START + MORPH_DUR : 0);
-    if (reducedMotion) setShowSlogan(true);
+    startRef.current = performance.now() - (reducedMotion ? CTA_AT : 0);
+    if (reducedMotion) { setShowSlogan(true); setShowCTA(true); }
 
     let morphFrozen = false;
 
@@ -247,8 +249,7 @@ export default function SplashScreen() {
       ctx.restore();
 
       if (t > SLOGAN_AT) setShowSlogan(true);
-      if (t > EXIT_AT) setLeaving(true);
-      if (t > ROUTE_AT) { routeRef.current(); return; }
+      if (t > CTA_AT) setShowCTA(true);
 
       raf = requestAnimationFrame(frame);
     };
@@ -259,14 +260,19 @@ export default function SplashScreen() {
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); };
   }, []);
 
-  // Tap anywhere to skip straight through
-  const handleSkip = () => routeRef.current();
+  // Tap anywhere during the intro fast-forwards to the formed wordmark + CTA
+  const handleSkip = () => {
+    if (showCTA) return;
+    startRef.current = performance.now() - CTA_AT;
+    setShowSlogan(true);
+    setShowCTA(true);
+  };
 
   return (
     <div
       onClick={handleSkip}
       style={{
-        minHeight: '100dvh', position: 'relative', overflow: 'hidden', cursor: 'pointer',
+        minHeight: '100dvh', position: 'relative', overflow: 'hidden',
         background: 'radial-gradient(120% 100% at 50% 0%, #0A1838 0%, #050B1E 55%, #02040C 100%)',
       }}
     >
@@ -295,20 +301,76 @@ export default function SplashScreen() {
       {/* The living network */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0 }} />
 
-      {/* Slogan */}
-      <motion.p
+      {/* Slogan — large, gradient words with glowing separators */}
+      <motion.div
         initial={false}
-        animate={showSlogan && !leaving ? { opacity: 1, y: 0 } : { opacity: 0, y: showSlogan ? 0 : 14 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        animate={showSlogan ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         style={{
-          position: 'absolute', left: 0, right: 0, top: '58%', margin: 0,
-          fontSize: 12, fontWeight: 700, letterSpacing: '4px',
-          color: 'rgba(255,255,255,0.85)', textAlign: 'center',
-          textShadow: '0 0 18px rgba(120,160,255,0.45)', pointerEvents: 'none',
+          position: 'absolute', left: 0, right: 0, top: '57%',
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          gap: 'clamp(10px, 3vw, 18px)', flexWrap: 'wrap', padding: '0 16px',
+          pointerEvents: 'none',
         }}
       >
-        FIND IT. LOCATE IT. CONNECT.
-      </motion.p>
+        {['FIND IT', 'LOCATE IT', 'CONNECT'].map((word, i) => (
+          <span key={word} style={{ display: 'inline-flex', alignItems: 'center', gap: 'clamp(10px, 3vw, 18px)' }}>
+            <motion.span
+              initial={false}
+              animate={showSlogan ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+              transition={{ duration: 0.6, delay: 0.12 * i, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                fontSize: 'clamp(17px, 4.6vw, 24px)', fontWeight: 900,
+                letterSpacing: 'clamp(3px, 1vw, 6px)', whiteSpace: 'nowrap',
+                background: 'linear-gradient(180deg, #FFFFFF 35%, #9DB8FF 100%)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+                filter: 'drop-shadow(0 0 16px rgba(120,160,255,0.5))',
+              }}
+            >
+              {word}
+            </motion.span>
+            {i < 2 && (
+              <motion.span
+                initial={false}
+                animate={showSlogan ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.4 }}
+                transition={{ duration: 0.5, delay: 0.12 * i + 0.08, ease: [0.34, 1.56, 0.64, 1] }}
+                style={{
+                  color: '#FFCD78', fontSize: 'clamp(8px, 2vw, 11px)',
+                  textShadow: '0 0 12px rgba(255,200,110,0.9)',
+                }}
+              >
+                ◆
+              </motion.span>
+            )}
+          </span>
+        ))}
+      </motion.div>
+
+      {/* Explore CTA */}
+      <motion.div
+        initial={false}
+        animate={showCTA && !leaving ? { opacity: 1, y: 0 } : { opacity: showCTA ? 0 : 0, y: showCTA ? 0 : 24 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          position: 'absolute', left: 0, right: 0, top: '67%',
+          display: 'flex', justifyContent: 'center', padding: '0 22px',
+          pointerEvents: showCTA ? 'auto' : 'none',
+        }}
+      >
+        <button
+          onClick={(e) => { e.stopPropagation(); goExplore(); }}
+          className="btn-tap sweep cta-armed"
+          style={{
+            width: '100%', maxWidth: 340, height: 54, borderRadius: 27, border: 'none',
+            background: 'linear-gradient(135deg, #2E5BFF 0%, #6C63FF 100%)',
+            color: '#fff', fontWeight: 800, fontSize: 16, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+            boxShadow: '0 14px 38px rgba(46,91,255,0.5)',
+          }}
+        >
+          Explore SYPH <ArrowRight size={18} />
+        </button>
+      </motion.div>
 
       {/* Exit fade to ease the cut into the next screen */}
       <motion.div
