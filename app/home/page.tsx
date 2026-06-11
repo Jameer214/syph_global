@@ -20,10 +20,19 @@ import type { Listing } from '@/types';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function mapListing(data: Record<string, unknown>, id: string): Listing {
   const imgs = Array.isArray(data.listing_images) ? (data.listing_images as { url: string; sort_order?: number }[]) : [];
   const sorted = [...imgs].sort((a, b) => ((a.sort_order ?? 0) - (b.sort_order ?? 0)));
   const status = String(data.status ?? 'pending');
+  const sellersRow = data.sellers as { business_latitude?: number; business_longitude?: number } | null;
   return {
     id,
     title: String(data.title ?? ''),
@@ -53,6 +62,8 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
     rating: typeof data.rating === 'number' ? data.rating : undefined,
     createdAt: data.created_at ? String(data.created_at) : undefined,
     flashSaleEndsAt: data.flash_sale_until ? String(data.flash_sale_until) : undefined,
+    venueLatitude: typeof sellersRow?.business_latitude === 'number' ? sellersRow.business_latitude : undefined,
+    venueLongitude: typeof sellersRow?.business_longitude === 'number' ? sellersRow.business_longitude : undefined,
   };
 }
 
@@ -431,7 +442,7 @@ export default function HomePage() {
   const [filters, setFilters] = useState<Filters>({
     timeSort: 'newest', priceSort: 'none', rating: 'any', openNow: false, nearMe: false,
   });
-  const [nearMeCountry, setNearMeCountry] = useState<string>('');
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [nearMeLoading, setNearMeLoading] = useState(false);
   const [exploreCount, setExploreCount] = useState(8);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -482,7 +493,7 @@ export default function HomePage() {
     let cancelled = false;
     (async () => {
       let q = supabase.from('listings')
-        .select('*, listing_images(url, sort_order)')
+        .select('*, listing_images(url, sort_order), sellers!seller_id(business_latitude, business_longitude)')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(40);
@@ -543,10 +554,16 @@ export default function HomePage() {
       );
     }
     if (filters.openNow) items = items.filter((l) => l.openNow);
-    if (filters.nearMe && nearMeCountry) {
-      items = items.filter((l) =>
-        l.country.toLowerCase() === nearMeCountry.toLowerCase()
-      );
+    if (filters.nearMe && userCoords) {
+      items.sort((a, b) => {
+        const distA = a.venueLatitude != null && a.venueLongitude != null
+          ? haversineKm(userCoords.lat, userCoords.lng, a.venueLatitude, a.venueLongitude)
+          : Infinity;
+        const distB = b.venueLatitude != null && b.venueLongitude != null
+          ? haversineKm(userCoords.lat, userCoords.lng, b.venueLatitude, b.venueLongitude)
+          : Infinity;
+        return distA - distB;
+      });
     }
     if (filters.rating !== 'any') {
       const min = parseInt(filters.rating);
@@ -556,7 +573,7 @@ export default function HomePage() {
     if (filters.priceSort === 'high') items.sort((a, b) => (b.priceValue ?? 0) - (a.priceValue ?? 0));
     if (filters.timeSort === 'oldest') items.reverse();
     return items;
-  }, [explore, filters, nearMeCountry, selectedCountry, selectedRegion]);
+  }, [explore, filters, userCoords, selectedCountry, selectedRegion]);
 
   const exploreItems = sortedExplore().slice(0, exploreCount);
 
@@ -591,39 +608,20 @@ export default function HomePage() {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
-      const { latitude, longitude } = pos.coords;
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-          { headers: { 'User-Agent': 'SyphMarketplace/1.0' } }
-        );
-        const data = await res.json();
-        const detectedCountry: string = data?.address?.country ?? '';
-        if (detectedCountry) {
-          setNearMeCountry(detectedCountry);
-          toast.success(`Near you: ${detectedCountry}`);
-        } else {
-          setNearMeCountry(selectedCountry || '');
-          if (selectedCountry) toast.success(`Near you: ${selectedCountry}`);
-          else toast.error('Could not detect country.');
-        }
-      } catch {
-        setNearMeCountry(selectedCountry || '');
-        if (selectedCountry) toast.success(`Near you: ${selectedCountry}`);
-        else toast.error('Could not detect country.');
-      }
+      setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      toast.success('Showing listings nearest to you.');
     } catch {
       toast.error('Location access denied.');
     } finally {
       setNearMeLoading(false);
     }
-  }, [selectedCountry]);
+  }, []);
 
   useEffect(() => {
     if (filters.nearMe) {
       handleNearMe();
     } else {
-      setNearMeCountry('');
+      setUserCoords(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.nearMe]);
