@@ -3,13 +3,13 @@ import type { Listing, SellerProfile, Review, SellerHoursInfo, ChatThread, ChatM
 
 // ─── File validation ──────────────────────────────────────────────────────────
 
-const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2 MB
 
 function validateImageFile(file: File, maxBytes = MAX_IMAGE_SIZE): void {
   if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-    throw new Error(`Invalid file type: ${file.type}. Only JPEG, PNG, WebP and GIF are allowed.`);
+    throw new Error(`Invalid file type: ${file.type}. Only JPEG and PNG images are allowed.`);
   }
   if (file.size > maxBytes) {
     throw new Error(`File too large. Maximum size is ${maxBytes / 1024 / 1024} MB.`);
