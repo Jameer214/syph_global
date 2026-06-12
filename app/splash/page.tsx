@@ -6,12 +6,11 @@ import { ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/store';
 
 /*
- * SYPH cinematic opening — "a digital ecosystem wakes up and connects itself".
- * Fireflies (each one a listing / business / opportunity) drift in darkness,
- * discover each other, weave a golden-blue network, then converge into the
- * SYPH wordmark — rendered as crisp glowing type with firefly nodes living
- * on its surface. The slogan and the Explore SYPH CTA then rise in; tapping
- * during the intro fast-forwards to the finished scene.
+ * SYPH opening — the wandering-fireflies intro is skipped: the experience
+ * starts at the converged wordmark. Firefly nodes sit on the letterforms and
+ * melt into solid glowing SYPH type within the first moments, ambient
+ * fireflies keep drifting as background dust, then the slogan and the
+ * Explore SYPH CTA rise in before auto-routing to select-location.
  */
 
 // ── Timeline (ms) ──────────────────────────────────────────────────────────
@@ -25,6 +24,10 @@ const SLOGAN_AT = 3500;
 const CTA_AT = 4000;   // Explore button rises (design accent — routing is automatic)
 const EXIT_AT = 5300;   // fade out begins
 const ROUTE_AT = 5700;   // navigate to select-location
+
+// Clock starts here: the wandering/convergence intro is skipped entirely and
+// the scene opens on the already-formed word solidifying.
+const START_AT = MORPH_START + MORPH_DUR;
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -137,7 +140,7 @@ export default function SplashScreen() {
     };
 
     setup();
-    startRef.current = performance.now() - (reducedMotion ? CTA_AT : 0);
+    startRef.current = performance.now() - (reducedMotion ? CTA_AT : START_AT);
     if (reducedMotion) { setShowSlogan(true); setShowCTA(true); }
 
     let morphFrozen = false;
@@ -270,17 +273,8 @@ export default function SplashScreen() {
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); };
   }, []);
 
-  // Tap anywhere during the intro fast-forwards to the formed wordmark + CTA
-  const handleSkip = () => {
-    if (showCTA) return;
-    startRef.current = performance.now() - CTA_AT;
-    setShowSlogan(true);
-    setShowCTA(true);
-  };
-
   return (
     <div
-      onClick={handleSkip}
       style={{
         minHeight: '100dvh', position: 'relative', overflow: 'hidden',
         background: 'radial-gradient(120% 100% at 50% 0%, #0A1838 0%, #050B1E 55%, #02040C 100%)',
