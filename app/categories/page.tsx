@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, LayoutGrid } from 'lucide-react';
 import { CATEGORIES } from '@/data/categories';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
@@ -80,8 +80,19 @@ const SUB_ICONS: Record<string, string> = {
 };
 
 export default function CategoriesPage() {
+  return (
+    <Suspense fallback={null}>
+      <CategoriesBrowser />
+    </Suspense>
+  );
+}
+
+function CategoriesBrowser() {
   const router = useRouter();
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const searchParams = useSearchParams();
+  // ?cat=<id> preselects a category (used by the location-screen cards)
+  const initialIndex = Math.max(0, CATEGORIES.findIndex(c => c.id === searchParams.get('cat')));
+  const [selectedIndex, setSelectedIndex] = useState(initialIndex);
   const { selectedLanguage } = useAppStore();
 
   const selectedMain = CATEGORIES[selectedIndex];
@@ -137,6 +148,7 @@ export default function CategoriesPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 4,
+                  transition: 'background 0.2s ease, border-color 0.2s ease',
                 }}
               >
                 <span style={{ fontSize: 20, lineHeight: 1 }}>{cat.icon}</span>
@@ -153,15 +165,15 @@ export default function CategoriesPage() {
           })}
         </div>
 
-        {/* Right panel */}
+        {/* Right panel — keyed by category so the grid re-animates on switch */}
         <div style={{ flex: 1, backgroundColor: '#fff', overflowY: 'auto' }}>
-          <div style={{ padding: '12px 12px 16px' }}>
+          <div key={selectedMain.id} style={{ padding: '12px 12px 16px' }}>
             {/* Category title + description */}
-            <p style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', lineHeight: 1.1, margin: 0 }}>
+            <p className="anim-fade-up" style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', lineHeight: 1.1, margin: 0, animationDuration: '0.3s' }}>
               {selectedMain.title}
             </p>
             {selectedMain.description && (
-              <p style={{ fontSize: 12.4, color: '#6B7A99', fontWeight: 600, lineHeight: 1.24, margin: '6px 0 0' }}>
+              <p className="anim-fade-up" style={{ fontSize: 12.4, color: '#6B7A99', fontWeight: 600, lineHeight: 1.24, margin: '6px 0 0', animationDuration: '0.3s', animationDelay: '0.04s' }}>
                 {selectedMain.description}
               </p>
             )}
@@ -174,13 +186,37 @@ export default function CategoriesPage() {
               gridTemplateColumns: 'repeat(3, 1fr)',
               gap: '16px 8px',
             }}>
-              {selectedMain.children.map((sub) => {
+              {/* View all — everything in this category */}
+              <button
+                onClick={() => router.push(`/category/${selectedMain.id}`)}
+                className="btn-tap anim-fade-up"
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: 8, padding: 4, animationDuration: '0.35s',
+                }}
+              >
+                <div style={{
+                  width: 82, height: 82, borderRadius: '50%',
+                  backgroundColor: mainColor + '14',
+                  border: `2px dashed ${mainColor}66`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <LayoutGrid size={26} color={mainColor} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 800, color: mainColor, lineHeight: 1.15, textAlign: 'center', maxWidth: 82 }}>
+                  View all
+                </span>
+              </button>
+
+              {selectedMain.children.map((sub, i) => {
                 const color = CATEGORY_COLORS[sub.id] ?? mainColor;
                 const icon = SUB_ICONS[sub.id] ?? '📦';
                 return (
                   <button
                     key={sub.id}
                     onClick={() => router.push(`/category/${selectedMain.id}/${sub.id}`)}
+                    className="btn-tap anim-fade-up"
                     style={{
                       background: 'none',
                       border: 'none',
@@ -190,6 +226,8 @@ export default function CategoriesPage() {
                       alignItems: 'center',
                       gap: 8,
                       padding: 4,
+                      animationDuration: '0.35s',
+                      animationDelay: `${(i + 1) * 0.04}s`,
                     }}
                   >
                     <div style={{

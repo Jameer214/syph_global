@@ -9,31 +9,14 @@ import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
+import { CATEGORIES as REAL_CATEGORIES } from '@/data/categories';
 import MenuDrawer from '@/components/MenuDrawer';
 import Reveal from '@/components/Reveal';
 
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern'];
 
-const CATEGORIES = [
-  { emoji: '🏠', name: 'Real Estate' },
-  { emoji: '🚗', name: 'Vehicles' },
-  { emoji: '👗', name: 'Fashion' },
-  { emoji: '📱', name: 'Electronics' },
-  { emoji: '🍕', name: 'Food & Dining' },
-  { emoji: '💼', name: 'Services' },
-  { emoji: '💻', name: 'Technology' },
-  { emoji: '🌿', name: 'Agriculture' },
-  { emoji: '🏋️', name: 'Sports' },
-  { emoji: '🎨', name: 'Art & Crafts' },
-  { emoji: '💊', name: 'Health' },
-  { emoji: '✈️', name: 'Travel' },
-  { emoji: '🏗️', name: 'Construction' },
-  { emoji: '🎵', name: 'Music & Media' },
-  { emoji: '📚', name: 'Education' },
-  { emoji: '🐾', name: 'Pets' },
-  { emoji: '🎮', name: 'Gaming' },
-  { emoji: '💰', name: 'Finance' },
-];
+// Real category tree — cards/chips route into the category browser
+const CATEGORIES = REAL_CATEGORIES.map(c => ({ id: c.id, emoji: c.icon, name: c.title }));
 
 const RECENT_KEY = 'syph-recent-countries';
 
@@ -604,7 +587,11 @@ export default function LocationPage() {
             <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 28, background: 'linear-gradient(to left, #F0F4FF, transparent)', zIndex: 2, pointerEvents: 'none' }} />
             <div className="ticker-row" style={{ display: 'flex', gap: 7, animation: 'scrollLeft 24s linear infinite', width: 'max-content' }}>
               {[...CATEGORIES, ...CATEGORIES].map((cat, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', borderRadius: 20, padding: '6px 12px', border: '1px solid rgba(0,0,0,0.07)', flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                <div
+                  key={i}
+                  onClick={() => router.push(`/categories?cat=${cat.id}`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', borderRadius: 20, padding: '6px 12px', border: '1px solid rgba(0,0,0,0.07)', flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.05)', cursor: 'pointer' }}
+                >
                   <span style={{ fontSize: 14 }}>{cat.emoji}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1a2e', whiteSpace: 'nowrap' }}>{cat.name}</span>
                 </div>
@@ -701,7 +688,10 @@ export default function LocationPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
             {CATEGORIES.map((cat, i) => (
               <Reveal key={cat.name} delay={(i % 9) * 0.06} className="reveal-pop">
-                <div className="lift" style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', height: '100%' }}>
+                <div
+                  className="lift"
+                  onClick={() => router.push(`/categories?cat=${cat.id}`)}
+                  style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', height: '100%', cursor: 'pointer' }}>
                   <div
                     className="bob"
                     style={{ fontSize: 28, marginBottom: 6, animationDelay: `${(i * 0.37) % 2.6}s`, animationDuration: `${2.8 + (i % 4) * 0.5}s` }}

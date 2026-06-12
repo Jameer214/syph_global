@@ -238,7 +238,18 @@ export default function CategoryResultsPage() {
 
         {/* Results */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>{tr('loading', selectedLanguage)}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="anim-fade-up" style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'flex', gap: 12, animationDelay: `${i * 0.08}s` }}>
+                <div className="skeleton" style={{ width: 72, height: 72, borderRadius: 10, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div className="skeleton" style={{ height: 14, borderRadius: 6, width: '70%' }} />
+                  <div className="skeleton" style={{ height: 13, borderRadius: 6, width: '40%', marginTop: 8 }} />
+                  <div className="skeleton" style={{ height: 12, borderRadius: 6, width: '55%', marginTop: 8 }} />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', color: '#6B7A99' }}>
             <div style={{ fontSize: 40 }}>🔍</div>
@@ -247,8 +258,8 @@ export default function CategoryResultsPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {filtered.map((l) => (
-              <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} />
+            {filtered.map((l, i) => (
+              <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} />
             ))}
           </div>
         )}
@@ -344,7 +355,7 @@ export default function CategoryResultsPage() {
   );
 }
 
-function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string }) {
+function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0 }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string; index?: number }) {
   const router = useRouter();
   const { selectedLanguage } = useAppStore();
   const img = l.imageUrls?.[0] ?? l.imageUrl;
@@ -352,7 +363,8 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay }: { listi
 
   return (
     <div
-      style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+      className="card-tap anim-fade-up"
+      style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', animationDelay: `${Math.min(index, 8) * 0.05}s`, animationDuration: '0.35s' }}
       onClick={() => router.push(`/listing/${l.id}`)}
     >
       {/* Image */}
