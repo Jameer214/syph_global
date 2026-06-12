@@ -806,7 +806,7 @@ export function subscribeSupportMessages(
   });
 
   // Get or create support ticket for this user
-  const loadMessages = async () => {
+  const loadMessages = async (): Promise<string | null> => {
     const { data: ticket } = await supabase
       .from('support_tickets')
       .select('id')
@@ -814,8 +814,8 @@ export function subscribeSupportMessages(
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
-    if (!ticket) { cb([]); return; }
-    const ticketId = (ticket as Record<string, unknown>).id;
+    if (!ticket) { cb([]); return null; }
+    const ticketId = String((ticket as Record<string, unknown>).id);
     const { data } = await supabase
       .from('support_messages')
       .select('*')
@@ -823,17 +823,35 @@ export function subscribeSupportMessages(
       .order('created_at', { ascending: true })
       .limit(200);
     cb((data ?? []).map(d => mapMsg(d as Record<string, unknown>)));
+    return ticketId;
   };
 
-  loadMessages();
+  // Subscribe only to THIS user's ticket. An unfiltered subscription would
+  // make every open support screen receive (and re-query on) every other
+  // user's support messages — a realtime fan-out problem at scale.
+  // New users have no ticket until their first message; poll lightly until
+  // one exists, then attach the filtered channel.
+  let channel: ReturnType<typeof supabase.channel> | null = null;
+  let disposed = false;
+  (async () => {
+    let ticketId = await loadMessages();
+    while (!disposed && !ticketId) {
+      await new Promise((r) => setTimeout(r, 4000));
+      if (disposed) return;
+      ticketId = await loadMessages();
+    }
+    if (disposed || !ticketId) return;
+    channel = supabase.channel(`support:${uid}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `ticket_id=eq.${ticketId}` }, () => {
+        loadMessages();
+      })
+      .subscribe();
+  })();
 
-  const channel = supabase.channel(`support:${uid}`)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, () => {
-      loadMessages();
-    })
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  return () => {
+    disposed = true;
+    if (channel) supabase.removeChannel(channel);
+  };
 }
 
 export async function sendSupportMessage(
