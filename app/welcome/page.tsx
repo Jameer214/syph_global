@@ -40,14 +40,6 @@ function GoogleIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg width="16" height="20" viewBox="0 0 814 1000" fill="white">
-      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 482.8 0 293.2 0 192.1c0-130.3 84.5-199 167.2-199 78.8 0 127.6 52.8 167.5 52.8 37.6 0 92.5-56.2 171.1-56.2 33.6 0 152.9 3.2 236.3 116.7zm-257.1-104.7C503.9 165.3 474 85.5 474 20.1c0-5.2.4-10.3 1-15.5 52.8 1.9 116.7 35.9 152.2 79.5 30.2 36.6 58.7 95.7 58.7 174 0 5.8-.7 11.7-1 17.5z"/>
-    </svg>
-  );
-}
-
 export default function WelcomePage() {
   const router = useRouter();
   const { setUser, locationSet, selectedCountry, selectedLanguage } = useAppStore();
@@ -97,23 +89,6 @@ export default function WelcomePage() {
       }
     } catch {
       toast.error('Google sign-in failed. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  const handleApple = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
-        options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
-      });
-      if (error) {
-        toast.error('Apple sign-in failed. Please try again.');
-        setLoading(false);
-      }
-    } catch {
-      toast.error('Apple sign-in failed. Please try again.');
       setLoading(false);
     }
   };
@@ -216,18 +191,6 @@ export default function WelcomePage() {
         }}>
           <GoogleIcon />
           {loading ? tr('loading', selectedLanguage) : tr('continueWithGoogle', selectedLanguage)}
-        </button>
-
-        {/* Apple button */}
-        <button onClick={handleApple} disabled={loading} className="btn-tap anim-fade-up" style={{
-          width: '100%', height: 52, borderRadius: 26, border: '1px solid rgba(255,255,255,0.12)',
-          background: '#000', color: '#fff', fontWeight: 800, fontSize: 15,
-          cursor: 'pointer', marginBottom: 12, opacity: loading ? 0.6 : 1,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          boxShadow: '0 10px 26px rgba(0,0,0,0.28)', animationDelay: '0.46s',
-        }}>
-          <AppleIcon />
-          Continue with Apple
         </button>
 
         {/* Divider */}
