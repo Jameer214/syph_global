@@ -451,7 +451,6 @@ export default function HomePage() {
   });
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [nearMeLoading, setNearMeLoading] = useState(false);
-  const [exploreCount, setExploreCount] = useState(8);
   const [menuOpen, setMenuOpen] = useState(false);
   const [announcement, setAnnouncement] = useState<{ title: string; body: string; type: string } | null>(null);
   const [announcementDismissed, setAnnouncementDismissed] = useState(false);
@@ -507,28 +506,56 @@ export default function HomePage() {
   const recommended = useListings({ orderField: 'createdAt', count: 12, country: filterCountry });
   const happenings = useListings({ isHappening: true, count: 12, country: filterCountry });
   const sponsored = useListings({ isSponsored: true, count: 12, country: filterCountry });
+  const EXPLORE_PAGE = 16;
   const [explore, setExplore] = useState<Listing[]>([]);
   const [exploreLoading, setExploreLoading] = useState(true);
+  const [exploreHasMore, setExploreHasMore] = useState(true);
+  const [exploreLoadingMore, setExploreLoadingMore] = useState(false);
 
-  // Explore (all approved) — Supabase-filtered by country
+  // Explore — keyset-paginated server-side (created_at cursor). Each "Load
+  // more" fetches the next page from the database instead of revealing more
+  // of one big pre-downloaded batch.
+  const fetchExplorePage = useCallback(async (cursor: string | null): Promise<Listing[]> => {
+    let q = supabase.from('listings')
+      .select('*, listing_images(url, sort_order), sellers!seller_id(business_latitude, business_longitude)')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(EXPLORE_PAGE);
+    if (selectedCountry) q = q.eq('country', selectedCountry);
+    if (cursor) q = q.lt('created_at', cursor);
+    const { data } = await q;
+    return (data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
+  }, [selectedCountry]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setExploreLoading(true);
-      let q = supabase.from('listings')
-        .select('*, listing_images(url, sort_order), sellers!seller_id(business_latitude, business_longitude)')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(40);
-      if (selectedCountry) q = q.eq('country', selectedCountry);
-      const { data } = await q;
+      const page = await fetchExplorePage(null);
       if (!cancelled) {
-        setExplore((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+        setExplore(page);
+        setExploreHasMore(page.length === EXPLORE_PAGE);
         setExploreLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [selectedCountry]);
+  }, [fetchExplorePage]);
+
+  const loadMoreExplore = async () => {
+    if (exploreLoadingMore || !exploreHasMore) return;
+    setExploreLoadingMore(true);
+    try {
+      const cursor = explore.length > 0 ? (explore[explore.length - 1].createdAt ?? null) : null;
+      const page = await fetchExplorePage(cursor);
+      setExplore((prev) => {
+        const seen = new Set(prev.map((l) => l.id));
+        return [...prev, ...page.filter((l) => !seen.has(l.id))];
+      });
+      setExploreHasMore(page.length === EXPLORE_PAGE);
+    } finally {
+      setExploreLoadingMore(false);
+    }
+  };
 
   // Search debounce
   useEffect(() => {
@@ -541,17 +568,41 @@ export default function HomePage() {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async () => {
       setSearchLoading(true);
+      const term = sanitizeText(searchQuery.trim(), 100);
       try {
-        const term = sanitizeText(searchQuery.trim(), 100);
+        // Indexed server-side search (pg_trgm RPC) over the whole catalog.
+        const { data: ranked, error } = await supabase.rpc('search_listings', {
+          search_term: term,
+          country_filter: null,
+          region_filter: null,
+          category_filter: null,
+          max_results: 20,
+        });
+        if (error) throw error;
+        const ids = (ranked ?? []).map((r: Record<string, unknown>) => String(r.id));
+        if (ids.length === 0) { setSearchResults([]); return; }
+        // Re-fetch matched ids with the images join, preserving rank order.
         const { data } = await supabase.from('listings')
           .select('*, listing_images(url, sort_order)')
-          .eq('status', 'active')
-          .or(`title.ilike.%${term}%,description.ilike.%${term}%,seller_name.ilike.%${term}%,location_text.ilike.%${term}%,region.ilike.%${term}%`)
-          .order('created_at', { ascending: false })
-          .limit(20);
-        setSearchResults((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+          .in('id', ids);
+        const byId = new Map((data ?? []).map((r) => [String((r as Record<string, unknown>).id), r]));
+        setSearchResults(ids
+          .map((id: string) => byId.get(id))
+          .filter(Boolean)
+          .map((r: unknown) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
       } catch {
-        setSearchResults([]);
+        // RPC unavailable — fall back to the legacy unindexed search.
+        try {
+          const { data } = await supabase.from('listings')
+            .select('*, listing_images(url, sort_order)')
+            .eq('status', 'active')
+            .or(`title.ilike.%${term}%,description.ilike.%${term}%,seller_name.ilike.%${term}%,location_text.ilike.%${term}%,region.ilike.%${term}%`)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          setSearchResults((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+        } catch {
+          setSearchResults([]);
+        }
       } finally {
         setSearchLoading(false);
       }
@@ -601,7 +652,7 @@ export default function HomePage() {
     return items;
   }, [explore, filters, userCoords, selectedCountry, selectedRegion]);
 
-  const exploreItems = sortedExplore().slice(0, exploreCount);
+  const exploreItems = sortedExplore();
 
   function saveSearch(term: string) {
     if (!term.trim()) return;
@@ -1041,17 +1092,19 @@ export default function HomePage() {
                 ))}
               </div>
 
-              {exploreCount < sortedExplore().length && (
+              {exploreHasMore && (
                 <button
-                  onClick={() => setExploreCount((c) => c + 8)}
+                  onClick={loadMoreExplore}
+                  disabled={exploreLoadingMore}
                   className="btn-tap"
                   style={{
                     width: '100%', height: 46, borderRadius: 14, marginTop: 12,
                     background: '#fff', border: '1.5px solid #e2e8f0',
                     color: '#2E5BFF', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                    opacity: exploreLoadingMore ? 0.6 : 1,
                   }}
                 >
-                  {tr('loadMore', selectedLanguage)}
+                  {exploreLoadingMore ? tr('loading', selectedLanguage) : tr('loadMore', selectedLanguage)}
                 </button>
               )}
             </>
@@ -1063,10 +1116,7 @@ export default function HomePage() {
       {showFilter && (
         <FilterSheet
           filters={filters}
-          onApply={(f) => {
-            setFilters(f);
-            setExploreCount(8);
-          }}
+          onApply={(f) => setFilters(f)}
           onClose={() => setShowFilter(false)}
           lang={selectedLanguage}
         />

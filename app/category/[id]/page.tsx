@@ -65,8 +65,11 @@ export default function CategoryResultsPage() {
     return 'Price not set';
   }
 
+  const PAGE_SIZE = 24;
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Filters
   const [openNow, setOpenNow] = useState(false);
@@ -91,6 +94,8 @@ export default function CategoryResultsPage() {
   const mainCat = getCategoryById(mainId);
   const title = mainCat?.title ?? 'Results';
 
+  // Keyset-paginated (created_at cursor) — an unbounded query here would
+  // download the entire category as inventory grows.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -99,14 +104,41 @@ export default function CategoryResultsPage() {
         .select('*, listing_images(url, sort_order)')
         .eq('status', 'active')
         .eq('category_id', mainId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(PAGE_SIZE);
       if (!cancelled) {
-        setListings((data ?? []).map((row) => mapListing(row as Record<string, unknown>)));
+        const page = (data ?? []).map((row) => mapListing(row as Record<string, unknown>));
+        setListings(page);
+        setHasMore(page.length === PAGE_SIZE);
         setLoading(false);
       }
     })();
     return () => { cancelled = true; };
   }, [mainId]);
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore || listings.length === 0) return;
+    setLoadingMore(true);
+    try {
+      const cursor = listings[listings.length - 1].createdAt;
+      let q = supabase.from('listings')
+        .select('*, listing_images(url, sort_order)')
+        .eq('status', 'active')
+        .eq('category_id', mainId)
+        .order('created_at', { ascending: false })
+        .limit(PAGE_SIZE);
+      if (cursor) q = q.lt('created_at', cursor);
+      const { data } = await q;
+      const page = (data ?? []).map((row) => mapListing(row as Record<string, unknown>));
+      setListings((prev) => {
+        const seen = new Set(prev.map((l) => l.id));
+        return [...prev, ...page.filter((l) => !seen.has(l.id))];
+      });
+      setHasMore(page.length === PAGE_SIZE);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   function applyFiltersAndSort(all: Listing[]): Listing[] {
     const minR = ratingFilter === '4+' ? 4 : ratingFilter === '3+' ? 3 : ratingFilter === '2+' ? 2 : 0;
@@ -257,11 +289,28 @@ export default function CategoryResultsPage() {
             <p style={{ margin: 0, fontSize: 13 }}>Try changing filters or check back later.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {filtered.map((l, i) => (
-              <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} />
-            ))}
-          </div>
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {filtered.map((l, i) => (
+                <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} />
+              ))}
+            </div>
+            {hasMore && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="btn-tap"
+                style={{
+                  width: '100%', height: 46, borderRadius: 14, marginTop: 12,
+                  background: '#fff', border: '1.5px solid #e2e8f0',
+                  color: '#2E5BFF', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                  opacity: loadingMore ? 0.6 : 1,
+                }}
+              >
+                {loadingMore ? tr('loading', selectedLanguage) : tr('loadMore', selectedLanguage)}
+              </button>
+            )}
+          </>
         )}
       </div>
 
