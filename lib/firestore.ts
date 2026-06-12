@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { sanitizeText } from '@/lib/sanitize';
+import { compressImage } from '@/lib/imageCompress';
 import type { Listing, SellerProfile, Review, SellerHoursInfo, ChatThread, ChatMessage, Report, PromotionRequest, UserProfile } from '@/types';
 
 // ─── File validation ──────────────────────────────────────────────────────────
@@ -494,8 +495,9 @@ export async function deleteListing(id: string): Promise<void> {
 
 export async function uploadListingImages(ownerUid: string, files: File[]): Promise<string[]> {
   const urls: string[] = [];
-  for (const file of files) {
-    validateImageFile(file);
+  for (const rawFile of files) {
+    validateImageFile(rawFile);
+    const file = await compressImage(rawFile);
     const path = `${ownerUid}/${Date.now()}_${file.name}`;
     const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
     if (uploadData) {
@@ -506,8 +508,9 @@ export async function uploadListingImages(ownerUid: string, files: File[]): Prom
   return urls;
 }
 
-export async function uploadAvatar(uid: string, file: File): Promise<string> {
-  validateImageFile(file, MAX_AVATAR_SIZE);
+export async function uploadAvatar(uid: string, rawFile: File): Promise<string> {
+  validateImageFile(rawFile, MAX_AVATAR_SIZE);
+  const file = await compressImage(rawFile, 800);
   const path = `${uid}_${Date.now()}`;
   const { data: uploadData } = await supabase.storage.from('avatars').upload(path, file);
   if (!uploadData) return '';

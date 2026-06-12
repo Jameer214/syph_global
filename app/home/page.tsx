@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Search, SlidersHorizontal, MapPin, Zap, TrendingUp,
   Star, Crown, Globe, Eye, Bookmark, MessageCircle, Menu,
@@ -68,6 +69,11 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
   };
 }
 
+// 60s session cache — navigating away and back re-renders home without
+// re-firing the same five feed queries against the database.
+const feedCache = new Map<string, { at: number; data: Listing[] }>();
+const FEED_TTL_MS = 60_000;
+
 function useListings(opts: {
   isFlashSale?: boolean;
   isHappening?: boolean;
@@ -81,6 +87,12 @@ function useListings(opts: {
 
   useEffect(() => {
     let cancelled = false;
+    const key = JSON.stringify([isFlashSale, isHappening, isSponsored, count, country ?? '']);
+    const hit = feedCache.get(key);
+    if (hit && Date.now() - hit.at < FEED_TTL_MS) {
+      setListings(hit.data);
+      return;
+    }
     const fetchListings = async () => {
       let q = supabase
         .from('listings')
@@ -93,7 +105,9 @@ function useListings(opts: {
       if (isSponsored !== undefined) q = q.eq('is_sponsored', isSponsored);
       if (country) q = q.eq('country', country);
       const { data } = await q;
-      if (!cancelled) setListings((data ?? []).map(r => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+      const items = (data ?? []).map(r => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
+      feedCache.set(key, { at: Date.now(), data: items });
+      if (!cancelled) setListings(items);
     };
     fetchListings();
     return () => { cancelled = true; };
@@ -165,8 +179,7 @@ function FlashCard({ listing, onClick, selectedCurrency }: { listing: Listing; o
     >
       <div style={{ position: 'relative', height: 90 }}>
         {listing.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={listing.imageUrl} alt={listing.title} className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <Image src={listing.imageUrl} alt={listing.title} fill sizes="120px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
         ) : (
           <div style={{ width: '100%', height: '100%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LayoutGrid size={24} color="#9ca3af" />
@@ -203,8 +216,7 @@ function FeaturedCard({ listing, onClick, selectedCurrency }: { listing: Listing
     >
       <div style={{ position: 'relative', paddingTop: '56.25%' /* 16:9 */ }}>
         {listing.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={listing.imageUrl} alt={listing.title} className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <Image src={listing.imageUrl} alt={listing.title} fill sizes="220px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LayoutGrid size={28} color="#9ca3af" />
@@ -263,8 +275,7 @@ function GridCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
     >
       <div style={{ position: 'relative', paddingTop: '83.33%' /* aspect 1.2 */ }}>
         {listing.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={listing.imageUrl} alt={listing.title} className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <Image src={listing.imageUrl} alt={listing.title} fill sizes="(max-width: 480px) 50vw, 240px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LayoutGrid size={24} color="#9ca3af" />
