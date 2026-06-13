@@ -21,19 +21,10 @@ import type { Listing } from '@/types';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 function mapListing(data: Record<string, unknown>, id: string): Listing {
   const imgs = Array.isArray(data.listing_images) ? (data.listing_images as { url: string; sort_order?: number }[]) : [];
   const sorted = [...imgs].sort((a, b) => ((a.sort_order ?? 0) - (b.sort_order ?? 0)));
   const status = String(data.status ?? 'pending');
-  const sellersRow = data.sellers as { business_latitude?: number; business_longitude?: number } | null;
   return {
     id,
     title: String(data.title ?? ''),
@@ -63,8 +54,6 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
     rating: typeof data.rating === 'number' ? data.rating : undefined,
     createdAt: data.created_at ? String(data.created_at) : undefined,
     flashSaleEndsAt: data.flash_sale_until ? String(data.flash_sale_until) : undefined,
-    venueLatitude: typeof sellersRow?.business_latitude === 'number' ? sellersRow.business_latitude : undefined,
-    venueLongitude: typeof sellersRow?.business_longitude === 'number' ? sellersRow.business_longitude : undefined,
     units: typeof data.unit_count === 'number' ? data.unit_count : undefined,
   };
 }
@@ -528,7 +517,7 @@ export default function HomePage() {
   // of one big pre-downloaded batch.
   const fetchExplorePage = useCallback(async (cursor: string | null): Promise<Listing[]> => {
     let q = supabase.from('listings')
-      .select('*, listing_images(url, sort_order), sellers!seller_id(business_latitude, business_longitude)')
+      .select('*, listing_images(url, sort_order)')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(EXPLORE_PAGE);
@@ -538,19 +527,48 @@ export default function HomePage() {
     return (data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
   }, [selectedCountry]);
 
+  // Near Me — server-side true-distance sort over the whole catalog via the
+  // listings_near RPC (earthdistance + GiST index). Replaces the old client
+  // haversine sort that could only rank the already-loaded page.
+  const fetchNearbyExplore = useCallback(async (): Promise<Listing[]> => {
+    if (!userCoords) return [];
+    const { data: near, error } = await supabase.rpc('listings_near', {
+      user_lat: userCoords.lat,
+      user_lng: userCoords.lng,
+      radius_km: 50,
+      country_filter: selectedCountry || null,
+      category_filter: null,
+      max_results: 60,
+    });
+    if (error || !near) return [];
+    const ids = (near as Record<string, unknown>[]).map((r) => String(r.id));
+    if (ids.length === 0) return [];
+    // Re-fetch matched ids with the images join, preserving distance order.
+    const { data } = await supabase.from('listings')
+      .select('*, listing_images(url, sort_order)')
+      .in('id', ids);
+    const byId = new Map((data ?? []).map((r) => [String((r as Record<string, unknown>).id), r]));
+    return ids
+      .map((id) => byId.get(id))
+      .filter(Boolean)
+      .map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
+  }, [userCoords, selectedCountry]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setExploreLoading(true);
-      const page = await fetchExplorePage(null);
+      const nearActive = filters.nearMe && !!userCoords;
+      const page = nearActive ? await fetchNearbyExplore() : await fetchExplorePage(null);
       if (!cancelled) {
         setExplore(page);
-        setExploreHasMore(page.length === EXPLORE_PAGE);
+        // Near mode returns a bounded distance set — no keyset "load more".
+        setExploreHasMore(!nearActive && page.length === EXPLORE_PAGE);
         setExploreLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [fetchExplorePage]);
+  }, [fetchExplorePage, fetchNearbyExplore, filters.nearMe, userCoords]);
 
   const loadMoreExplore = async () => {
     if (exploreLoadingMore || !exploreHasMore) return;
@@ -642,24 +660,17 @@ export default function HomePage() {
       );
     }
     if (filters.openNow) items = items.filter((l) => l.openNow);
-    if (filters.nearMe && userCoords) {
-      items.sort((a, b) => {
-        const distA = a.venueLatitude != null && a.venueLongitude != null
-          ? haversineKm(userCoords.lat, userCoords.lng, a.venueLatitude, a.venueLongitude)
-          : Infinity;
-        const distB = b.venueLatitude != null && b.venueLongitude != null
-          ? haversineKm(userCoords.lat, userCoords.lng, b.venueLatitude, b.venueLongitude)
-          : Infinity;
-        return distA - distB;
-      });
-    }
     if (filters.rating !== 'any') {
       const min = parseInt(filters.rating);
       items = items.filter((l) => (l.rating ?? 0) >= min);
     }
-    if (filters.priceSort === 'low') items.sort((a, b) => (a.priceValue ?? 0) - (b.priceValue ?? 0));
-    if (filters.priceSort === 'high') items.sort((a, b) => (b.priceValue ?? 0) - (a.priceValue ?? 0));
-    if (filters.timeSort === 'oldest') items.reverse();
+    // Near Me: `explore` already arrives ordered by true distance from the
+    // listings_near RPC — preserve that order, skip the local price/time sorts.
+    if (!(filters.nearMe && userCoords)) {
+      if (filters.priceSort === 'low') items.sort((a, b) => (a.priceValue ?? 0) - (b.priceValue ?? 0));
+      if (filters.priceSort === 'high') items.sort((a, b) => (b.priceValue ?? 0) - (a.priceValue ?? 0));
+      if (filters.timeSort === 'oldest') items.reverse();
+    }
     return items;
   }, [explore, filters, userCoords, selectedCountry, selectedRegion]);
 

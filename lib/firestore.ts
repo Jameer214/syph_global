@@ -251,8 +251,8 @@ export async function getSellerProfile(uid: string): Promise<SellerProfile | nul
   const d = data as Record<string, unknown>;
   return {
     uid: String(d.user_id ?? uid),
-    businessName: String(d.business_name ?? ''),
-    businessPhone: String(d.contact_number ?? ''),
+    businessName: String(d.shop_name ?? ''),
+    businessPhone: String(d.phone ?? ''),
     operatingCountry: String(d.country ?? ''),
     operatingRegion: String(d.region ?? ''),
     businessLocationText: d.business_location_address ? String(d.business_location_address) : undefined,
@@ -261,8 +261,8 @@ export async function getSellerProfile(uid: string): Promise<SellerProfile | nul
     isVerified: Boolean(d.is_verified),
     rating: typeof d.avg_rating === 'number' ? d.avg_rating : undefined,
     totalReviews: typeof d.review_count === 'number' ? d.review_count : undefined,
-    bio: d.description ? String(d.description) : undefined,
-    photoUrl: undefined,
+    bio: d.shop_description ? String(d.shop_description) : undefined,
+    photoUrl: d.shop_logo_url ? String(d.shop_logo_url) : undefined,
     createdAt: d.created_at ? String(d.created_at) : undefined,
   };
 }
@@ -318,14 +318,16 @@ export async function batchGetSellerHoursMap(
   // ownerUids are user_ids; sellers table keyed by user_id
   const { data } = await supabase
     .from('sellers')
-    .select('user_id')
+    .select('user_id, open_24_hours, opening_time, closing_time, working_days')
     .in('user_id', unique);
   for (const d of (data ?? []) as Record<string, unknown>[]) {
     result.set(String(d.user_id ?? ''), {
-      open24Hours: false,
-      openingTime: undefined,
-      closingTime: undefined,
-      workingDays: [],
+      open24Hours: d.open_24_hours === true,
+      openingTime: d.opening_time ? String(d.opening_time) : undefined,
+      closingTime: d.closing_time ? String(d.closing_time) : undefined,
+      workingDays: Array.isArray(d.working_days)
+        ? (d.working_days as unknown[]).map(e => Number(e))
+        : [],
     });
   }
   return result;
@@ -749,16 +751,16 @@ export async function createSellerProfile(
 ): Promise<void> {
   const row: Record<string, unknown> = {
     user_id: profile.uid,
-    business_name: profile.businessName,
-    description: profile.bio ?? null,
+    shop_name: profile.businessName,
+    shop_description: profile.bio ?? null,
     country: profile.operatingCountry,
     region: profile.operatingRegion,
-    contact_number: profile.businessPhone ?? null,
+    phone: profile.businessPhone ?? null,
     is_verified: false,
   };
   if (extra) {
-    if (extra.contactNumber !== undefined) row.contact_number = extra.contactNumber;
-    if (extra.description !== undefined) row.description = extra.description;
+    if (extra.contactNumber !== undefined) row.phone = extra.contactNumber;
+    if (extra.description !== undefined) row.shop_description = extra.description;
     if (extra.isServiceProvider !== undefined) row.is_service_provider = extra.isServiceProvider;
     if (extra.open24Hours !== undefined) row.open_24_hours = extra.open24Hours;
     if (extra.openingTime !== undefined) row.opening_time = extra.openingTime;
@@ -774,14 +776,14 @@ export async function createSellerProfile(
 export async function updateSellerProfile(uid: string, updates: Partial<SellerProfile>): Promise<void> {
   const u = updates as Record<string, unknown>;
   const patch: Record<string, unknown> = {};
-  if (u.businessName !== undefined) patch.business_name = u.businessName;
-  if (u.bio !== undefined) patch.description = u.bio;
+  if (u.businessName !== undefined) patch.shop_name = u.businessName;
+  if (u.bio !== undefined) patch.shop_description = u.bio;
   if (u.operatingCountry !== undefined) patch.country = u.operatingCountry;
   if (u.operatingRegion !== undefined) patch.region = u.operatingRegion;
-  if (u.businessPhone !== undefined) patch.contact_number = u.businessPhone;
+  if (u.businessPhone !== undefined) patch.phone = u.businessPhone;
   // Extra fields passed from setup/edit pages (camelCase → snake_case)
-  if (u.contactNumber !== undefined) patch.contact_number = u.contactNumber;
-  if (u.description !== undefined) patch.description = u.description;
+  if (u.contactNumber !== undefined) patch.phone = u.contactNumber;
+  if (u.description !== undefined) patch.shop_description = u.description;
   if (u.isServiceProvider !== undefined) patch.is_service_provider = u.isServiceProvider;
   if (u.open24Hours !== undefined) patch.open_24_hours = u.open24Hours;
   if (u.openingTime !== undefined) patch.opening_time = u.openingTime;
