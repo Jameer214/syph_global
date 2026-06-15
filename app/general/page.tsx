@@ -41,7 +41,7 @@ function mapListing(row: Record<string, unknown>): Listing {
   };
 }
 
-type SortMode = 'newest' | 'price_asc' | 'price_desc' | 'rating';
+type SortMode = 'random' | 'newest' | 'price_asc' | 'price_desc' | 'rating';
 
 export default function GeneralPage() {
   const router = useRouter();
@@ -61,7 +61,7 @@ export default function GeneralPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sort, setSort] = useState<SortMode>('newest');
+  const [sort, setSort] = useState<SortMode>('random');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const offsetRef = useRef<number>(0);
   const [hasMore, setHasMore] = useState(true);
@@ -70,16 +70,42 @@ export default function GeneralPage() {
   const loadListings = useCallback(async (reset: boolean) => {
     if (reset) setLoading(true); else setLoadingMore(true);
     try {
+      // Default = a whole-catalog random draw across ALL countries via the
+      // random_listings RPC (order by random()). The RPC returns base rows
+      // only, so a second query attaches listing_images. It's a single shuffled
+      // batch (no offset pagination — paging a reshuffling feed isn't coherent).
+      if (sort === 'random') {
+        const { data: baseRows } = await supabase.rpc('random_listings', { max_results: 60 });
+        const ids: string[] = (baseRows ?? []).map((r: Record<string, unknown>) => String(r.id));
+        let items: Listing[] = [];
+        if (ids.length > 0) {
+          const { data: withImgs } = await supabase.from('listings')
+            .select('*, listing_images(url, sort_order)')
+            .in('id', ids);
+          const byId = new Map(
+            (withImgs ?? []).map((r) => [String((r as Record<string, unknown>).id), r] as const),
+          );
+          items = ids
+            .map((id: string) => byId.get(id))
+            .filter((row): row is Record<string, unknown> => Boolean(row))
+            .map((row) => mapListing(row));
+        }
+        offsetRef.current = items.length;
+        setHasMore(false);
+        setListings(items);
+        return;
+      }
+
       const orderField = sort === 'rating' ? 'rating' : sort === 'price_asc' || sort === 'price_desc' ? 'price' : 'created_at';
       const ascending = sort === 'price_asc';
       const offset = reset ? 0 : offsetRef.current;
 
-      let q = supabase.from('listings')
+      // General browses ALL countries — no country filter (intentionally).
+      const q = supabase.from('listings')
         .select('*, listing_images(url, sort_order)')
         .eq('status', 'active')
         .order(orderField, { ascending })
         .range(offset, offset + PAGE - 1);
-      if (selectedCountry) q = q.eq('country', selectedCountry);
 
       const { data } = await q;
       const newItems = (data ?? []).map((row) => mapListing(row as Record<string, unknown>));
@@ -92,7 +118,7 @@ export default function GeneralPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [selectedCountry, sort]);
+  }, [sort]);
 
   useEffect(() => {
     offsetRef.current = 0;
@@ -109,6 +135,7 @@ export default function GeneralPage() {
     : listings;
 
   const sortLabels: Record<SortMode, string> = {
+    random: 'Random',
     newest: 'Newest',
     price_asc: 'Price: Low → High',
     price_desc: 'Price: High → Low',
@@ -129,7 +156,7 @@ export default function GeneralPage() {
           <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>{tr('listings', selectedLanguage)}</span>
         </div>
         <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
-          {selectedCountry ? `Listings in ${selectedCountry}` : 'All approved listings'}
+          All approved listings · all countries
         </div>
 
         {/* Search bar */}
