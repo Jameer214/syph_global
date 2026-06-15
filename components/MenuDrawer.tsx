@@ -267,7 +267,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
     selectedCurrency, isAutoCurrency, setManualCurrency, setAutoCurrency,
     selectedLanguage, setLanguage,
     sellerMode, setSellerMode,
-    selectedCountry,
+    selectedCountry, homeCountry,
   } = useAppStore();
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -340,11 +340,13 @@ export default function MenuDrawer({ open, onClose }: Props) {
     setLanguage(code);
   };
 
-  // Currency badge label
-  const autoCurrency = getCurrencyForCountry(selectedCountry);
+  // Currency badge label — auto currency is anchored to home (GPS/first setup),
+  // not the country being browsed.
+  const currencyAnchor = homeCountry || selectedCountry;
+  const autoCurrency = getCurrencyForCountry(currencyAnchor);
   const currencyBadgeText = isAutoCurrency ? `${autoCurrency} · Auto` : `${selectedCurrency} · Manual`;
   const currencySubLabel = isAutoCurrency
-    ? `Auto: ${selectedCountry || 'unknown'}`
+    ? `Auto: ${currencyAnchor || 'unknown'}`
     : 'Manual override';
 
   // Language badge
@@ -515,7 +517,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
           <CurrencySheet
             current={selectedCurrency}
             isAuto={isAutoCurrency}
-            country={selectedCountry}
+            country={currencyAnchor}
             onSelect={(code) => setManualCurrency(code)}
             onAuto={() => setAutoCurrency()}
             onClose={() => setSheet(null)}

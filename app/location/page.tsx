@@ -35,7 +35,7 @@ function pushRecent(country: string, current: string[]): string[] {
 
 export default function LocationPage() {
   const router = useRouter();
-  const { setLocationSet, setRegion, selectedCountry: storedCountry, selectedLanguage } = useAppStore();
+  const { setLocationSet, setRegion, setHomeCountry, homeCountry, selectedCountry: storedCountry, selectedLanguage } = useAppStore();
 
   const [countrySearch, setCountrySearch] = useState('');
   const [pickedCountry, setPickedCountry] = useState('');
@@ -109,6 +109,9 @@ export default function LocationPage() {
           if (country && COUNTRIES.includes(country)) {
             selectCountry(country);
             setGpsDetectedCountry(country);
+            // Establish the currency anchor from GPS once (mirrors Flutter:
+            // only when no home is set yet). Browsing later won't move currency.
+            if (!homeCountry) setHomeCountry(country);
           } else if (showErrors) {
             toast.error('Could not determine your country. Please select manually.');
           }

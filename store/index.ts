@@ -9,8 +9,9 @@ interface AppStore {
   savedIds: string[];
   selectedCountry: string;
   selectedRegion: string;
+  homeCountry: string;        // currency anchor: where the user is/their home (GPS or first setup). NEVER the browse country.
   selectedCurrency: string;   // effective display currency code
-  isAutoCurrency: boolean;    // true = derived from country, false = manual override
+  isAutoCurrency: boolean;    // true = derived from homeCountry, false = manual override
   selectedLanguage: string;
   sellerMode: boolean;
   locationSet: boolean;
@@ -20,6 +21,7 @@ interface AppStore {
   toggleSaved: (id: string) => void;
   isSaved: (id: string) => boolean;
   setCountry: (c: string) => void;
+  setHomeCountry: (c: string) => void;
   setRegion: (r: string) => void;
   setCurrency: (c: string) => void;
   setManualCurrency: (c: string) => void;
@@ -37,6 +39,7 @@ export const useAppStore = create<AppStore>()(
       savedIds: [],
       selectedCountry: '',
       selectedRegion: '',
+      homeCountry: '',
       selectedCurrency: 'USD',
       isAutoCurrency: true,
       selectedLanguage: 'en',
@@ -54,10 +57,14 @@ export const useAppStore = create<AppStore>()(
         });
       },
       isSaved: (id) => get().savedIds.includes(id),
-      setCountry: (c) => {
+      // Browsing a country must NOT move the currency. Currency stays anchored
+      // to homeCountry until an explicit manual override.
+      setCountry: (c) => set({ selectedCountry: c }),
+      // The currency anchor (GPS-detected / home). Drives auto currency.
+      setHomeCountry: (c) => {
         const { isAutoCurrency } = get();
         set({
-          selectedCountry: c,
+          homeCountry: c,
           ...(isAutoCurrency ? { selectedCurrency: getCurrencyForCountry(c) } : {}),
         });
       },
@@ -65,20 +72,27 @@ export const useAppStore = create<AppStore>()(
       setCurrency: (c) => set({ selectedCurrency: c }),
       setManualCurrency: (c) => set({ selectedCurrency: c, isAutoCurrency: false }),
       setAutoCurrency: () => {
-        const country = get().selectedCountry;
-        set({ isAutoCurrency: true, selectedCurrency: getCurrencyForCountry(country) });
+        const { homeCountry, selectedCountry } = get();
+        const anchor = homeCountry || selectedCountry;
+        set({ isAutoCurrency: true, selectedCurrency: getCurrencyForCountry(anchor) });
       },
       setLanguage: (l) => set({ selectedLanguage: l }),
       setSellerMode: (v) => set({ sellerMode: v }),
       setLocationSet: (v, location) => {
-        const { isAutoCurrency } = get();
+        const { isAutoCurrency, homeCountry } = get();
+        if (!location) {
+          set({ locationSet: v });
+          return;
+        }
+        // First location setup establishes the home anchor; later changes are
+        // treated as browsing and leave the existing anchor (and currency) intact.
+        const anchor = homeCountry || location;
         set({
           locationSet: v,
-          ...(location ? {
-            selectedLocation: location,
-            selectedCountry: location,
-            ...(isAutoCurrency ? { selectedCurrency: getCurrencyForCountry(location) } : {}),
-          } : {}),
+          selectedLocation: location,
+          selectedCountry: location,
+          homeCountry: anchor,
+          ...(isAutoCurrency ? { selectedCurrency: getCurrencyForCountry(anchor) } : {}),
         });
       },
       setUnreadMessages: (n) => set({ unreadMessages: n }),
