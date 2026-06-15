@@ -232,14 +232,15 @@ export default function SellerShopPage() {
     (async () => {
       const [{ data }, { data: profileData }] = await Promise.all([
         supabase.from('sellers').select('*').eq('user_id', uid).single(),
-        supabase.from('profiles').select('avatar_url, photo_url').eq('id', uid).single(),
+        // get_public_profile RPC (id/full_name/avatar_url only) so the avatar
+        // shows for logged-out visitors — the profiles SELECT policy requires
+        // a signed-in user, which would blank it for guests.
+        supabase.rpc('get_public_profile', { p_uid: uid }),
       ]);
       if (!cancelled) {
         if (data) setShop(parseShopData(data as Record<string, unknown>));
-        if (profileData) {
-          const pd = profileData as Record<string, unknown>;
-          setPhotoUrl((pd.avatar_url ?? pd.photo_url) as string | null);
-        }
+        const prof = Array.isArray(profileData) ? profileData[0] : profileData;
+        if (prof) setPhotoUrl((prof as Record<string, unknown>).avatar_url as string | null);
         setLoadingSeller(false);
       }
     })();
