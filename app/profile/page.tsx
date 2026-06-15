@@ -79,7 +79,7 @@ export default function ProfilePage() {
     try {
       const url = await uploadAvatar(authUser.uid, file);
       await supabase.auth.updateUser({ data: { avatar_url: url } });
-      await supabase.from('profiles').upsert({ id: authUser.uid, photo_url: url });
+      await supabase.from('profiles').upsert({ id: authUser.uid, avatar_url: url });
       setAuthUser((prev) => prev ? { ...prev, photoURL: url } : null);
       toast.success('Profile photo updated!');
     } catch {

@@ -353,7 +353,7 @@ export async function createOrUpdateUserProfile(profile: UserProfile): Promise<v
     id: profile.uid,
     email: profile.email,
     display_name: profile.displayName,
-    photo_url: profile.photoUrl ?? null,
+    avatar_url: profile.photoUrl ?? null,
     country: profile.country ?? null,
     region: profile.regionOrCity ?? null,
   });
@@ -371,7 +371,7 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
     uid: String(d.id ?? uid),
     email: String(d.email ?? ''),
     displayName: String(d.display_name ?? ''),
-    photoUrl: d.photo_url ? String(d.photo_url) : undefined,
+    photoUrl: (d.avatar_url ?? d.photo_url) ? String(d.avatar_url ?? d.photo_url) : undefined,
     country: d.country ? String(d.country) : undefined,
     regionOrCity: d.region ? String(d.region) : undefined,
   };
@@ -411,8 +411,9 @@ export async function createListing(
   imageFiles: File[],
 ): Promise<string> {
   const imageUrls: string[] = [];
-  for (const file of imageFiles) {
-    validateImageFile(file);
+  for (const rawFile of imageFiles) {
+    validateImageFile(rawFile);
+    const file = await compressImage(rawFile);
     const path = `${data.ownerUid}/${Date.now()}_${file.name}`;
     const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
     if (uploadData) {
@@ -910,8 +911,9 @@ export async function createHappening(
   imageFiles: File[],
 ): Promise<string> {
   const imageUrls: string[] = [];
-  for (const file of imageFiles) {
-    validateImageFile(file);
+  for (const rawFile of imageFiles) {
+    validateImageFile(rawFile);
+    const file = await compressImage(rawFile);
     const path = `${data.ownerUid}/${Date.now()}_${file.name}`;
     const { data: uploadData } = await supabase.storage.from('listing-images').upload(path, file);
     if (uploadData) {

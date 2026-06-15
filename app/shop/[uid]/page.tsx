@@ -232,11 +232,14 @@ export default function SellerShopPage() {
     (async () => {
       const [{ data }, { data: profileData }] = await Promise.all([
         supabase.from('sellers').select('*').eq('user_id', uid).single(),
-        supabase.from('profiles').select('photo_url').eq('id', uid).single(),
+        supabase.from('profiles').select('avatar_url, photo_url').eq('id', uid).single(),
       ]);
       if (!cancelled) {
         if (data) setShop(parseShopData(data as Record<string, unknown>));
-        if (profileData) setPhotoUrl((profileData as Record<string, unknown>).photo_url as string | null);
+        if (profileData) {
+          const pd = profileData as Record<string, unknown>;
+          setPhotoUrl((pd.avatar_url ?? pd.photo_url) as string | null);
+        }
         setLoadingSeller(false);
       }
     })();
