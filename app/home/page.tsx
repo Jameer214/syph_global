@@ -1,12 +1,12 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
   Search, SlidersHorizontal, MapPin, Zap, TrendingUp,
   Star, Crown, Globe, Eye, Bookmark, MessageCircle, Menu,
-  LayoutGrid, X, ChevronDown,
+  LayoutGrid, X, ChevronDown, ShoppingBag, Sparkles, Award,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
@@ -18,7 +18,8 @@ import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
 import MenuDrawer from '@/components/MenuDrawer';
 import type { Listing } from '@/types';
-import { readListingsCache, writeListingsCache, isCacheFresh } from '@/lib/listingsCache';
+import { readListingsCache, writeListingsCache, isCacheFresh, HOT_SELLING_TTL_MS } from '@/lib/listingsCache';
+import { mainCategoryForQuery, getCategoryById } from '@/data/categories';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,76 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
   };
 }
 
+// ─── personalised-rail helpers (mirror the Flutter app) ─────────────────────────
+
+// Deterministic seeded RNG so a given seed always yields the same shuffle.
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Stable per-device seed persisted once, so a visitor's rails stay consistent
+// for them but differ from other people.
+function getRailSeed(): number {
+  if (typeof window === 'undefined') return 1;
+  try {
+    const existing = window.localStorage.getItem('syph-rail-seed');
+    if (existing) return parseInt(existing, 10) || 1;
+    const seed = Math.floor(Math.random() * (1 << 30)) + 1;
+    window.localStorage.setItem('syph-rail-seed', String(seed));
+    return seed;
+  } catch {
+    return 1;
+  }
+}
+
+function dedupeById(pool: Listing[]): Listing[] {
+  const seen = new Set<string>();
+  const out: Listing[] = [];
+  for (const l of pool) if (!seen.has(l.id)) { seen.add(l.id); out.push(l); }
+  return out;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+function dayIndex(): number {
+  return Math.floor((Date.now() - Date.UTC(2024, 0, 1)) / DAY_MS);
+}
+
+// "Shuffled per user, one new item leads each day" — a per-user shuffle fixes a
+// personal order; rotating the start index by the day count surfaces a new lead
+// item daily while the set stays stable within the day.
+function dailyRotatedRail(pool: Listing[], seed: number, take = 12): Listing[] {
+  const unique = dedupeById(pool);
+  if (unique.length === 0) return unique;
+  const rng = mulberry32(seed);
+  // Fisher–Yates with the seeded RNG.
+  for (let i = unique.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [unique[i], unique[j]] = [unique[j], unique[i]];
+  }
+  const offset = ((dayIndex() % unique.length) + unique.length) % unique.length;
+  const rotated = [...unique.slice(offset), ...unique.slice(0, offset)];
+  return rotated.slice(0, take);
+}
+
+// A rotating window over the views-ordered pool: a different block each day so
+// the rail looks fresh daily while the pool itself refreshes only every 3 days.
+function hotSellingDailySlice(pool: Listing[], take = 12): Listing[] {
+  if (pool.length === 0) return pool;
+  const windows = Math.ceil(pool.length / take);
+  const start = ((dayIndex() % windows) * take) % pool.length;
+  const out: Listing[] = [];
+  for (let i = 0; i < take && i < pool.length; i++) {
+    out.push(pool[(start + i) % pool.length]);
+  }
+  return out;
+}
+
 // 60s session cache — navigating away and back re-renders home without
 // re-firing the same five feed queries against the database.
 const feedCache = new Map<string, { at: number; data: Listing[] }>();
@@ -68,16 +139,16 @@ function useListings(opts: {
   isFlashSale?: boolean;
   isHappening?: boolean;
   isSponsored?: boolean;
-  orderField?: string;
+  orderColumn?: string;
   count?: number;
   country?: string;
 }): Listing[] {
   const [listings, setListings] = useState<Listing[]>([]);
-  const { isFlashSale, isHappening, isSponsored, count = 16, country } = opts;
+  const { isFlashSale, isHappening, isSponsored, orderColumn = 'created_at', count = 16, country } = opts;
 
   useEffect(() => {
     let cancelled = false;
-    const key = JSON.stringify([isFlashSale, isHappening, isSponsored, count, country ?? '']);
+    const key = JSON.stringify([isFlashSale, isHappening, isSponsored, orderColumn, count, country ?? '']);
 
     // 1. Fast in-session path (60s) — avoids re-querying on quick navigation.
     const hit = feedCache.get(key);
@@ -98,7 +169,7 @@ function useListings(opts: {
         .from('listings')
         .select('*, listing_images(url, sort_order)')
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
+        .order(orderColumn, { ascending: false })
         .limit(count);
       if (isFlashSale !== undefined) q = q.eq('is_flash_sale', isFlashSale);
       if (isHappening !== undefined) q = q.eq('is_happening', isHappening);
@@ -117,7 +188,7 @@ function useListings(opts: {
       fetchListings();
     }
     return () => { cancelled = true; };
-  }, [isFlashSale, isHappening, isSponsored, count, country]);
+  }, [isFlashSale, isHappening, isSponsored, orderColumn, count, country]);
 
   return listings;
 }
@@ -516,13 +587,82 @@ export default function HomePage() {
       });
   }, []);
 
+  // Per-device seed + last-searched category power the personalised rails.
+  // Start at 0/null so the server render and first client render match, then
+  // hydrate the real values in an effect (avoids hydration mismatch).
+  const [railSeed, setRailSeed] = useState(0);
+  const [lastSearchCat, setLastSearchCat] = useState<string | null>(null);
+  useEffect(() => {
+    setRailSeed(getRailSeed());
+    try {
+      const c = localStorage.getItem('syph-last-search-category');
+      if (c) setLastSearchCat(c);
+    } catch { /* ignore */ }
+  }, []);
+
   // Data subscriptions — ALL sections filtered by selected country
   const filterCountry = selectedCountry || undefined;
   const flashSales = useListings({ isFlashSale: true, count: 20, country: filterCountry });
-  const trending = useListings({ orderField: 'viewsCount', count: 12, country: filterCountry });
-  const recommended = useListings({ orderField: 'createdAt', count: 12, country: filterCountry });
+  // Trending = the most-viewed listings in the country (pure view_count).
+  const trending = useListings({ orderColumn: 'view_count', count: 20, country: filterCountry });
   const happenings = useListings({ isHappening: true, count: 12, country: filterCountry });
   const sponsored = useListings({ isSponsored: true, count: 12, country: filterCountry });
+
+  // Broad country pool (newest) that feeds Recommended / Just In / Top Rated.
+  const railPool = useListings({ count: 40, country: filterCountry });
+
+  // Recommended: personalise the POOL by the user's searched categories, then
+  // order it per-user with a daily-rotating lead item.
+  const recommended = useMemo(() => {
+    let pool = railPool;
+    if (lastSearchCat) {
+      const matched = railPool.filter((l) => l.mainCategoryId === lastSearchCat);
+      if (matched.length >= 4) pool = matched;
+    }
+    return dailyRotatedRail(pool, railSeed);
+  }, [railPool, railSeed, lastSearchCat]);
+
+  // Just In — recent items, shuffled per user, rotating daily.
+  const justIn = useMemo(
+    () => dailyRotatedRail(railPool.slice(0, 30), railSeed),
+    [railPool, railSeed],
+  );
+
+  // Top Rated — 4.5★+, shuffled per user, rotating daily.
+  const topRated = useMemo(
+    () => dailyRotatedRail(railPool.filter((l) => (l.rating ?? 0) >= 4.5), railSeed),
+    [railPool, railSeed],
+  );
+
+  // Hot Selling [Category] — most-viewed in the last-searched category (default
+  // electronics), pool cached 3 days, a different daily slice shown within them.
+  const HOT_DEFAULT_CATEGORY = 'electronics';
+  const hotCatId = lastSearchCat || HOT_DEFAULT_CATEGORY;
+  const hotCatTitle = getCategoryById(hotCatId)?.title ?? '';
+  const [hotSellingPool, setHotSellingPool] = useState<Listing[]>([]);
+  useEffect(() => {
+    if (!selectedCountry) { setHotSellingPool([]); return; }
+    let cancelled = false;
+    const cacheKey = `hot_${selectedCountry}_${hotCatId}`;
+    const cached = readListingsCache(cacheKey);
+    if (cached && cached.items.length > 0) setHotSellingPool(cached.items);
+    // Refetch only when missing or older than 3 days.
+    if (cached && cached.items.length > 0 && isCacheFresh(cached, HOT_SELLING_TTL_MS)) return;
+    (async () => {
+      const { data } = await supabase.from('listings')
+        .select('*, listing_images(url, sort_order)')
+        .eq('status', 'active')
+        .eq('country', selectedCountry)
+        .eq('category_id', hotCatId)
+        .order('view_count', { ascending: false })
+        .limit(30);
+      const items = (data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
+      writeListingsCache(cacheKey, items);
+      if (!cancelled) setHotSellingPool(items);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedCountry, hotCatId]);
+  const hotSelling = useMemo(() => hotSellingDailySlice(hotSellingPool), [hotSellingPool]);
   const EXPLORE_PAGE = 16;
   const [explore, setExplore] = useState<Listing[]>([]);
   const [exploreLoading, setExploreLoading] = useState(true);
@@ -712,6 +852,12 @@ export default function HomePage() {
     const updated = [term, ...current.filter((s) => s !== term)].slice(0, 5);
     localStorage.setItem('syph-recent-searches', JSON.stringify(updated));
     setRecentSearches(updated);
+    // Remember the category this search resolved to — powers Hot Selling.
+    const cat = mainCategoryForQuery(term);
+    if (cat) {
+      try { localStorage.setItem('syph-last-search-category', cat.id); } catch { /* ignore */ }
+      setLastSearchCat(cat.id);
+    }
   }
 
   const goToListing = (id: string, term?: string) => {
@@ -996,7 +1142,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#E65100', '#FF6D00']}
               icon={<TrendingUp size={16} />}
-              title={tr('trendingNearYou', selectedLanguage)}
+              title={selectedCountry ? `Trending in ${selectedCountry}` : tr('trendingNearYou', selectedLanguage)}
               subtitle={tr('hotNow', selectedLanguage)}
             />
             <div style={{
@@ -1007,6 +1153,29 @@ export default function HomePage() {
               className="no-scrollbar"
             >
               {trending.map((l) => (
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Hot Selling [Category] ── */}
+        {hotSelling.length > 0 && (
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
+            <SectionStrip
+              gradient={['#AD1457', '#D81B60']}
+              icon={<ShoppingBag size={16} />}
+              title={hotCatTitle ? `Hot Selling ${hotCatTitle}` : 'Hot Selling'}
+              subtitle={tr('hotNow', selectedLanguage)}
+            />
+            <div style={{
+              background: '#fff', borderRadius: '0 0 14px 14px',
+              padding: '12px 12px',
+              overflowX: 'auto', display: 'flex', gap: 10,
+            }}
+              className="no-scrollbar"
+            >
+              {hotSelling.map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
@@ -1029,6 +1198,52 @@ export default function HomePage() {
               className="no-scrollbar"
             >
               {recommended.map((l) => (
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Just In ── */}
+        {justIn.length > 0 && (
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
+            <SectionStrip
+              gradient={['#00695C', '#00897B']}
+              icon={<Sparkles size={16} />}
+              title="Just In"
+              subtitle={tr('newest', selectedLanguage)}
+            />
+            <div style={{
+              background: '#fff', borderRadius: '0 0 14px 14px',
+              padding: '12px 12px',
+              overflowX: 'auto', display: 'flex', gap: 10,
+            }}
+              className="no-scrollbar"
+            >
+              {justIn.map((l) => (
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Top Rated ── */}
+        {topRated.length > 0 && (
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
+            <SectionStrip
+              gradient={['#B8860B', '#F6A609']}
+              icon={<Award size={16} />}
+              title="Top Rated"
+              subtitle="4.5★+"
+            />
+            <div style={{
+              background: '#fff', borderRadius: '0 0 14px 14px',
+              padding: '12px 12px',
+              overflowX: 'auto', display: 'flex', gap: 10,
+            }}
+              className="no-scrollbar"
+            >
+              {topRated.map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>

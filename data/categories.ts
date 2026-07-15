@@ -282,3 +282,29 @@ export function getSubcategoryTitle(mainId: string, subId: string): string {
   if (!main) return subId;
   return main.children.find((c) => c.id === subId)?.title ?? subId;
 }
+
+/**
+ * Resolves a free-text search query to its best-matching MAIN category — used to
+ * label/power the "Hot Selling [Category]" rail from the user's last search.
+ * Prefers a direct main-category hit, then the parent of the first matching
+ * subcategory. Returns null when nothing matches. Mirrors the Flutter app's
+ * CategoryRepository.mainCategoryForQuery.
+ */
+export function mainCategoryForQuery(query: string): CategoryNode | null {
+  const q = query.trim().toLowerCase();
+  if (!q) return null;
+  const terms = q.split(/\s+/).filter(Boolean);
+  const hit = (id: string, title: string): boolean => {
+    const hay = `${title} ${id.replace(/_/g, ' ')}`.toLowerCase();
+    return hay.includes(q) || (terms.length > 0 && terms.every((t) => hay.includes(t)));
+  };
+  for (const main of CATEGORIES) {
+    if (hit(main.id, main.title)) return main;
+  }
+  for (const main of CATEGORIES) {
+    for (const sub of main.children) {
+      if (hit(sub.id, sub.title)) return main;
+    }
+  }
+  return null;
+}

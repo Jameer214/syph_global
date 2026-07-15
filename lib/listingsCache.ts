@@ -37,6 +37,12 @@ export function writeListingsCache(key: string, items: Listing[]): void {
   }
 }
 
-export function isCacheFresh(entry: ListingsCacheEntry | null): boolean {
-  return !!entry && Date.now() - entry.fetchedAt < CACHE_TTL_MS;
+export function isCacheFresh(
+  entry: ListingsCacheEntry | null,
+  maxAgeMs: number = CACHE_TTL_MS,
+): boolean {
+  return !!entry && Date.now() - entry.fetchedAt < maxAgeMs;
 }
+
+// 3-day freshness window for the Hot Selling pool (refreshes every 3 days).
+export const HOT_SELLING_TTL_MS = 3 * 24 * 60 * 60 * 1000;
