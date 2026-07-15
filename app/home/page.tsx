@@ -18,6 +18,7 @@ import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
 import MenuDrawer from '@/components/MenuDrawer';
 import type { Listing } from '@/types';
+import { readListingsCache, writeListingsCache, isCacheFresh } from '@/lib/listingsCache';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -77,11 +78,21 @@ function useListings(opts: {
   useEffect(() => {
     let cancelled = false;
     const key = JSON.stringify([isFlashSale, isHappening, isSponsored, count, country ?? '']);
+
+    // 1. Fast in-session path (60s) — avoids re-querying on quick navigation.
     const hit = feedCache.get(key);
     if (hit && Date.now() - hit.at < FEED_TTL_MS) {
       setListings(hit.data);
       return;
     }
+
+    // 2. Persistent 24h cache — paint saved listings immediately on load.
+    const persisted = readListingsCache(`feed_${key}`);
+    if (persisted && !cancelled) {
+      setListings(persisted.items);
+      feedCache.set(key, { at: Date.now(), data: persisted.items });
+    }
+
     const fetchListings = async () => {
       let q = supabase
         .from('listings')
@@ -96,9 +107,15 @@ function useListings(opts: {
       const { data } = await q;
       const items = (data ?? []).map(r => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
       feedCache.set(key, { at: Date.now(), data: items });
+      writeListingsCache(`feed_${key}`, items);
       if (!cancelled) setListings(items);
     };
-    fetchListings();
+
+    // 3. Stale-while-revalidate: only hit the network when the persisted cache
+    //    is missing or older than 24h; otherwise the instant paint stands.
+    if (!isCacheFresh(persisted)) {
+      fetchListings();
+    }
     return () => { cancelled = true; };
   }, [isFlashSale, isHappening, isSponsored, count, country]);
 
@@ -596,8 +613,14 @@ export default function HomePage() {
     setShowSearch(true);
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async () => {
-      setSearchLoading(true);
       const term = sanitizeText(searchQuery.trim(), 100);
+      // 24h per-term cache: show saved results instantly; only re-query when
+      // the cache is missing or stale (>24h).
+      const searchCacheKey = `search_${term.toLowerCase()}`;
+      const persistedSearch = readListingsCache(searchCacheKey);
+      if (persistedSearch) setSearchResults(persistedSearch.items);
+      if (isCacheFresh(persistedSearch)) { setSearchLoading(false); return; }
+      setSearchLoading(true);
       try {
         // Indexed server-side search (pg_trgm RPC) over the whole catalog.
         const { data: ranked, error } = await supabase.rpc('search_listings', {
@@ -609,16 +632,18 @@ export default function HomePage() {
         });
         if (error) throw error;
         const ids = (ranked ?? []).map((r: Record<string, unknown>) => String(r.id));
-        if (ids.length === 0) { setSearchResults([]); return; }
+        if (ids.length === 0) { writeListingsCache(searchCacheKey, []); setSearchResults([]); return; }
         // Re-fetch matched ids with the images join, preserving rank order.
         const { data } = await supabase.from('listings')
           .select('*, listing_images(url, sort_order)')
           .in('id', ids);
         const byId = new Map((data ?? []).map((r) => [String((r as Record<string, unknown>).id), r]));
-        setSearchResults(ids
+        const results = ids
           .map((id: string) => byId.get(id))
           .filter(Boolean)
-          .map((r: unknown) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+          .map((r: unknown) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
+        writeListingsCache(searchCacheKey, results);
+        setSearchResults(results);
       } catch {
         // RPC unavailable — fall back to the legacy unindexed search.
         try {
@@ -628,9 +653,11 @@ export default function HomePage() {
             .or(`title.ilike.%${term}%,description.ilike.%${term}%,seller_name.ilike.%${term}%,location_text.ilike.%${term}%,region.ilike.%${term}%`)
             .order('created_at', { ascending: false })
             .limit(20);
-          setSearchResults((data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? ''))));
+          const fbResults = (data ?? []).map((r) => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
+          writeListingsCache(searchCacheKey, fbResults);
+          setSearchResults(fbResults);
         } catch {
-          setSearchResults([]);
+          setSearchResults(persistedSearch?.items ?? []);
         }
       } finally {
         setSearchLoading(false);
