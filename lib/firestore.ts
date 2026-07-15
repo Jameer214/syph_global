@@ -528,17 +528,17 @@ function mapThread(d: Record<string, unknown>): ChatThread {
     id: String(d.id ?? ''),
     participants: [String(d.buyer_id ?? ''), String(d.seller_id ?? '')].filter(Boolean),
     sellerUid: String(d.seller_id ?? ''),
-    sellerName: '',
+    sellerName: String(d.seller_name ?? ''),
     buyerUid: String(d.buyer_id ?? ''),
-    buyerName: '',
+    buyerName: String(d.buyer_name ?? ''),
     listingId: String(d.listing_id ?? ''),
-    listingTitle: '',
-    listingImageUrl: '',
+    listingTitle: String(d.listing_title ?? ''),
+    listingImageUrl: String(d.listing_image_url ?? ''),
     lastMessage: String(d.last_message ?? ''),
     lastSenderUid: '',
     updatedAt: d.last_message_at ? String(d.last_message_at) : '',
-    unreadForSeller: typeof d.unread_for_seller === 'number' ? d.unread_for_seller : 0,
-    unreadForBuyer: typeof d.unread_for_buyer === 'number' ? d.unread_for_buyer : 0,
+    unreadForSeller: typeof d.seller_unread_count === 'number' ? d.seller_unread_count : 0,
+    unreadForBuyer: typeof d.buyer_unread_count === 'number' ? d.buyer_unread_count : 0,
   };
 }
 
@@ -638,8 +638,8 @@ export async function sendMessage(
     last_message: safeText,
     last_message_at: now,
     ...(isSeller
-      ? { unread_for_seller: 0, unread_for_buyer: 1 }
-      : { unread_for_buyer: 0, unread_for_seller: 1 }),
+      ? { seller_unread_count: 0, buyer_unread_count: 1 }
+      : { buyer_unread_count: 0, seller_unread_count: 1 }),
   });
 
   // Insert message
@@ -653,8 +653,8 @@ export async function sendMessage(
 
 export async function markThreadRead(threadId: string, isSeller: boolean): Promise<void> {
   const patch = isSeller
-    ? { unread_for_seller: 0 }
-    : { unread_for_buyer: 0 };
+    ? { seller_unread_count: 0 }
+    : { buyer_unread_count: 0 };
   await supabase.from('chats').update(patch).eq('id', threadId);
 }
 

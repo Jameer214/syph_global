@@ -216,13 +216,29 @@ export default function ListingDetailsPage() {
         chatId = existing[0].id;
       } else {
         const starter = (initialMessage ?? '').trim();
+        // Denormalised display fields so the chat list/header show the buyer's
+        // name + listing title/thumbnail (parity with the Flutter app).
+        const { data: buyerProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', fireUser.id)
+          .single();
+        const buyerName =
+          (buyerProfile?.full_name as string | undefined)?.trim() ||
+          fireUser.email?.split('@')[0] ||
+          'User';
         const { data: newChat } = await supabase.from('chats').insert({
           listing_id: listing.id,
           buyer_id: fireUser.id,
           seller_id: listing.ownerUid,
+          buyer_name: buyerName,
+          seller_name: listing.sellerName,
+          listing_title: listing.title,
+          listing_image_url: listing.imageUrl,
           last_message: starter,
-          unread_for_seller: starter ? 1 : 0,
-          unread_for_buyer: 0,
+          seller_unread_count: starter ? 1 : 0,
+          buyer_unread_count: 0,
+          is_admin_chat: false,
           last_message_at: new Date().toISOString(),
         }).select('id').single();
         chatId = newChat!.id;
@@ -239,7 +255,7 @@ export default function ListingDetailsPage() {
         await supabase.from('chats').update({
           last_message: starter,
           last_message_at: new Date().toISOString(),
-          unread_for_seller: 1,
+          seller_unread_count: 1,
         }).eq('id', chatId);
       }
 
