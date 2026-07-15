@@ -103,7 +103,7 @@ function dayIndex(): number {
 // "Shuffled per user, one new item leads each day" — a per-user shuffle fixes a
 // personal order; rotating the start index by the day count surfaces a new lead
 // item daily while the set stays stable within the day.
-function dailyRotatedRail(pool: Listing[], seed: number, take = 12): Listing[] {
+function dailyRotatedRail(pool: Listing[], seed: number, take = 10): Listing[] {
   const unique = dedupeById(pool);
   if (unique.length === 0) return unique;
   const rng = mulberry32(seed);
@@ -119,7 +119,7 @@ function dailyRotatedRail(pool: Listing[], seed: number, take = 12): Listing[] {
 
 // A rotating window over the views-ordered pool: a different block each day so
 // the rail looks fresh daily while the pool itself refreshes only every 3 days.
-function hotSellingDailySlice(pool: Listing[], take = 12): Listing[] {
+function hotSellingDailySlice(pool: Listing[], take = 10): Listing[] {
   if (pool.length === 0) return pool;
   const windows = Math.ceil(pool.length / take);
   const start = ((dayIndex() % windows) * take) % pool.length;
@@ -134,6 +134,12 @@ function hotSellingDailySlice(pool: Listing[], take = 12): Listing[] {
 // re-firing the same five feed queries against the database.
 const feedCache = new Map<string, { at: number; data: Listing[] }>();
 const FEED_TTL_MS = 60_000;
+
+// Until a feed's cache holds at least this many listings the catalogue is still
+// filling up, so we always revalidate on load — new listings surface right away
+// instead of being hidden behind a still-fresh 24h cache. Past it, the standard
+// 24h stale-while-revalidate takes over and network reads drop back down.
+const FEED_MATURITY_THRESHOLD = 42;
 
 function useListings(opts: {
   isFlashSale?: boolean;
@@ -182,9 +188,11 @@ function useListings(opts: {
       if (!cancelled) setListings(items);
     };
 
-    // 3. Stale-while-revalidate: only hit the network when the persisted cache
-    //    is missing or older than 24h; otherwise the instant paint stands.
-    if (!isCacheFresh(persisted)) {
+    // 3. Stale-while-revalidate, catalogue-size aware: while the catalogue is
+    //    still small always revalidate so new listings appear; once a feed has
+    //    matured (>= 42 cached) only refetch when the cache is missing or >24h.
+    const mature = (persisted?.items.length ?? 0) >= FEED_MATURITY_THRESHOLD;
+    if (!mature || !isCacheFresh(persisted)) {
       fetchListings();
     }
     return () => { cancelled = true; };
@@ -663,6 +671,20 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, [selectedCountry, hotCatId]);
   const hotSelling = useMemo(() => hotSellingDailySlice(hotSellingPool), [hotSellingPool]);
+
+  // Progressive reveal — with a tiny catalogue every rail draws from the same
+  // handful of listings and looks repetitive, so rails unlock only as the
+  // country gains distinct listings. Just In + More to Explore always show.
+  const catalogSize = useMemo(() => {
+    const ids = new Set<string>();
+    for (const l of [...trending, ...railPool, ...happenings, ...sponsored, ...flashSales]) ids.add(l.id);
+    return ids.size;
+  }, [trending, railPool, happenings, sponsored, flashSales]);
+  const REVEAL_TRENDING = 8;
+  const REVEAL_RECOMMENDED = 12;
+  const REVEAL_HOT_SELLING = 12;
+  const REVEAL_TOP_RATED = 20;
+  const EXPLORE_MAX = 42;
   const EXPLORE_PAGE = 16;
   const [explore, setExplore] = useState<Listing[]>([]);
   const [exploreLoading, setExploreLoading] = useState(true);
@@ -1129,15 +1151,15 @@ export default function HomePage() {
             }}
               className="no-scrollbar"
             >
-              {flashSales.map((l) => (
+              {flashSales.slice(0, 4).map((l) => (
                 <FlashCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
           </div>
         )}
 
-        {/* ── Trending Near You ── */}
-        {trending.length > 0 && (
+        {/* ── Trending in Country ── */}
+        {trending.length > 0 && catalogSize >= REVEAL_TRENDING && (
           <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#E65100', '#FF6D00']}
@@ -1152,7 +1174,7 @@ export default function HomePage() {
             }}
               className="no-scrollbar"
             >
-              {trending.map((l) => (
+              {trending.slice(0, 10).map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
@@ -1160,7 +1182,7 @@ export default function HomePage() {
         )}
 
         {/* ── Hot Selling [Category] ── */}
-        {hotSelling.length > 0 && (
+        {hotSelling.length > 0 && catalogSize >= REVEAL_HOT_SELLING && (
           <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#AD1457', '#D81B60']}
@@ -1183,7 +1205,7 @@ export default function HomePage() {
         )}
 
         {/* ── Recommended For You ── */}
-        {recommended.length > 0 && (
+        {recommended.length > 0 && catalogSize >= REVEAL_RECOMMENDED && (
           <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#6A1B9A', '#8E24AA']}
@@ -1228,7 +1250,7 @@ export default function HomePage() {
         )}
 
         {/* ── Top Rated ── */}
-        {topRated.length > 0 && (
+        {topRated.length > 0 && catalogSize >= REVEAL_TOP_RATED && (
           <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#B8860B', '#F6A609']}
@@ -1267,7 +1289,7 @@ export default function HomePage() {
             }}
               className="no-scrollbar"
             >
-              {happenings.map((l) => (
+              {happenings.slice(0, 4).map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
@@ -1289,7 +1311,7 @@ export default function HomePage() {
             }}
               className="no-scrollbar"
             >
-              {sponsored.map((l) => (
+              {sponsored.slice(0, 4).map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
               ))}
             </div>
@@ -1351,12 +1373,12 @@ export default function HomePage() {
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {exploreItems.map((l) => (
+                {exploreItems.slice(0, EXPLORE_MAX).map((l) => (
                   <GridCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
                 ))}
               </div>
 
-              {exploreHasMore && (
+              {exploreHasMore && explore.length < EXPLORE_MAX && (
                 <button
                   onClick={loadMoreExplore}
                   disabled={exploreLoadingMore}
