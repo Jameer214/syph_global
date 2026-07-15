@@ -88,9 +88,12 @@ function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sel
       await supabase.from('reviews').insert({
         listing_id: listingId,
         seller_id: sellerUid,
+        // reviewer_id is the column the RLS insert policy checks
+        // (auth.uid() = reviewer_id); buyer_id/buyer_name kept for display.
+        reviewer_id: u.id,
         buyer_id: u.id,
         buyer_name: u.user_metadata?.full_name || 'User',
-        rating,
+        rating: Math.round(rating),
         comment: comment.trim(),
         status: 'pending',
       });
