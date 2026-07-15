@@ -77,11 +77,32 @@ function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sel
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Reviews are gated behind an existing conversation with the seller (same
+  // rule as the Flutter app + enforced by the reviews_insert_own RLS policy).
+  const [checkingChat, setCheckingChat] = useState(true);
+  const [hasChatted, setHasChatted] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const u = session?.user;
+      if (!u) { setCheckingChat(false); setHasChatted(false); return; }
+      const { data } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('listing_id', listingId)
+        .or(`buyer_id.eq.${u.id},seller_id.eq.${u.id}`)
+        .limit(1);
+      setHasChatted((data ?? []).length > 0);
+      setCheckingChat(false);
+    })();
+  }, [listingId]);
 
   async function submit() {
     const { data: { session } } = await supabase.auth.getSession();
     const u = session?.user;
     if (!u) { toast.error('Sign in to review.'); return; }
+    if (!hasChatted) { toast.error('Message the seller about this listing before leaving a review.'); return; }
     if (!comment.trim()) { toast.error('Add a comment.'); return; }
     setSubmitting(true);
     try {
@@ -110,19 +131,37 @@ function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sel
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F2B6E' }}>Share Your Review</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="#6B7A99" /></button>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 18 }}>
-          {[1, 2, 3, 4, 5].map((s) => (
-            <button key={s} onClick={() => setRating(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
-              <Star size={32} fill={s <= rating ? '#FF9800' : 'none'} color={s <= rating ? '#FF9800' : '#d1d5db'} />
+        {checkingChat ? (
+          <div style={{ textAlign: 'center', padding: '32px 0', color: '#6B7A99', fontWeight: 700 }}>Checking…</div>
+        ) : !hasChatted ? (
+          <div style={{ textAlign: 'center', padding: '12px 4px 8px' }}>
+            <MessageCircle size={40} color="#FF8F00" style={{ marginBottom: 12 }} />
+            <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 800, color: '#0F2B6E' }}>Contact the seller first</p>
+            <p style={{ margin: '0 0 20px', fontSize: 13.5, fontWeight: 600, color: '#6B7A99', lineHeight: 1.45 }}>
+              You need to message the seller about this listing before you can leave a review.
+            </p>
+            <button onClick={onClose}
+              style={{ width: '100%', height: 48, borderRadius: 24, border: 'none', background: '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
+              Got it
             </button>
-          ))}
-        </div>
-        <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Write your experience…" rows={4}
-          style={{ width: '100%', borderRadius: 12, border: '1.5px solid #e2e8f0', padding: '10px 14px', fontSize: 14, outline: 'none', marginBottom: 14, resize: 'none', fontFamily: 'inherit' }} />
-        <button onClick={submit} disabled={submitting}
-          style={{ width: '100%', height: 50, borderRadius: 25, border: 'none', background: submitting ? '#9ca3af' : '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: submitting ? 'not-allowed' : 'pointer' }}>
-          {submitting ? 'Submitting…' : 'Submit Review'}
-        </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 18 }}>
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button key={s} onClick={() => setRating(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
+                  <Star size={32} fill={s <= rating ? '#FF9800' : 'none'} color={s <= rating ? '#FF9800' : '#d1d5db'} />
+                </button>
+              ))}
+            </div>
+            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Write your experience…" rows={4}
+              style={{ width: '100%', borderRadius: 12, border: '1.5px solid #e2e8f0', padding: '10px 14px', fontSize: 14, outline: 'none', marginBottom: 14, resize: 'none', fontFamily: 'inherit' }} />
+            <button onClick={submit} disabled={submitting}
+              style={{ width: '100%', height: 50, borderRadius: 25, border: 'none', background: submitting ? '#9ca3af' : '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+              {submitting ? 'Submitting…' : 'Submit Review'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
