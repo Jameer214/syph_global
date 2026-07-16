@@ -47,11 +47,13 @@ const STATUS_COLORS: Record<string, string> = {
   approved: '#1F8B4C',
   pending: '#E08A00',
   rejected: '#D13B3B',
+  blocked: '#D13B3B',
 };
 const STATUS_BG: Record<string, string> = {
   approved: '#E6F7EC',
   pending: '#FFF4E5',
   rejected: '#FFECEC',
+  blocked: '#FFECEC',
 };
 
 export default function DashboardPage() {
@@ -62,6 +64,8 @@ export default function DashboardPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [listingTab, setListingTab] = useState<ListingTab>('all');
   const [showAppModal, setShowAppModal] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockMessage, setBlockMessage] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -83,9 +87,13 @@ export default function DashboardPage() {
     if (!uid) return;
     let cancelled = false;
     const loadListings = async () => {
-      const { data: sellerRow } = await supabase.from('sellers').select('id').eq('user_id', uid).single();
+      const { data: sellerRow } = await supabase.from('sellers').select('id, is_blocked, block_message').eq('user_id', uid).single();
       if (!sellerRow || cancelled) return;
-      const { data } = await supabase.from('listings').select('*').eq('seller_id', (sellerRow as Record<string, unknown>).id);
+      const sr = sellerRow as Record<string, unknown>;
+      setBlocked(sr.is_blocked === true);
+      setBlockMessage(String(sr.block_message ?? ''));
+      // Admin-removed listings are hidden from the seller too.
+      const { data } = await supabase.from('listings').select('*').eq('seller_id', sr.id).neq('status', 'removed_by_admin');
       if (!cancelled) setListings((data ?? []).map(d => mapListing(d as Record<string, unknown>, String((d as Record<string, unknown>).id ?? ''))));
     };
     loadListings();
@@ -174,6 +182,24 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ padding: '16px 16px 90px' }}>
+
+        {/* Blocked banner */}
+        {blocked && (
+          <div style={{
+            background: '#FFF1F0', border: '1.2px solid #F3B4B0', borderRadius: 20,
+            padding: 16, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'flex-start',
+          }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(229,57,53,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Store size={20} color="#E53935" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 900, fontSize: 15, color: '#C62828' }}>Your account is blocked</div>
+              <div style={{ color: '#7A2E2B', fontWeight: 600, fontSize: 12.8, lineHeight: 1.4, marginTop: 4 }}>
+                {blockMessage.trim() || 'Your listings are currently hidden from buyers. Please contact support.'}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Seller profile card or CTA */}
         {seller ? (
