@@ -1,14 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export const revalidate = 3600;
-
-interface FirestoreField {
-  stringValue?: string;
-  doubleValue?: number;
-  integerValue?: string;
-  booleanValue?: boolean;
-}
 
 async function fetchListingMeta(id: string): Promise<{
   title: string;
@@ -18,27 +12,34 @@ async function fetchListingMeta(id: string): Promise<{
   price: string;
 } | null> {
   try {
-    const res = await fetch(
-      `https://firestore.googleapis.com/v1/projects/syph-733fb/databases/(default)/documents/listings/${id}`,
-      { next: { revalidate: 3600 } },
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    const f: Record<string, FirestoreField> = data.fields ?? {};
+    const { data } = await supabase
+      .from('listings')
+      .select('title, description, image_url, location_text, price, price_text, currency, status, listing_images(url, sort_order)')
+      .eq('id', id)
+      .single();
 
-    const status = f.status?.stringValue ?? '';
-    if (status !== 'approved') return null;
+    if (!data || data.status !== 'active') return null;
 
-    const priceValue = f.priceValue?.doubleValue ?? Number(f.priceValue?.integerValue ?? 0);
-    const currencyCode = f.currencyCode?.stringValue ?? 'USD';
-    const priceText = f.priceText?.stringValue ?? '';
-    const price = priceText || (priceValue ? `${currencyCode} ${priceValue.toLocaleString()}` : '');
+    const row = data as Record<string, unknown>;
+
+    // Prefer the first ordered gallery image, fall back to legacy image_url.
+    const imgs = Array.isArray(row.listing_images)
+      ? [...(row.listing_images as { url: string; sort_order?: number }[])].sort(
+          (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+        )
+      : [];
+    const imageUrl = imgs[0]?.url ?? String(row.image_url ?? '');
+
+    const currency = String(row.currency ?? 'USD');
+    const priceText = String(row.price_text ?? '');
+    const priceValue = typeof row.price === 'number' ? row.price : undefined;
+    const price = priceText || (priceValue != null ? `${currency} ${priceValue.toLocaleString()}` : '');
 
     return {
-      title: f.title?.stringValue ?? '',
-      description: f.description?.stringValue ?? '',
-      imageUrl: f.imageUrl?.stringValue ?? '',
-      locationText: f.locationText?.stringValue ?? '',
+      title: String(row.title ?? ''),
+      description: String(row.description ?? ''),
+      imageUrl,
+      locationText: String(row.location_text ?? ''),
       price,
     };
   } catch {
@@ -61,6 +62,7 @@ export async function generateMetadata({
     };
   }
 
+  const canonical = `/listing/${id}`;
   const metaTitle = `${listing.title} — SYPH`;
   const parts = [
     listing.description.slice(0, 120),
@@ -72,9 +74,11 @@ export async function generateMetadata({
   return {
     title: metaTitle,
     description: metaDesc,
+    alternates: { canonical },
     openGraph: {
       title: metaTitle,
       description: metaDesc,
+      url: canonical,
       images: listing.imageUrl
         ? [{ url: listing.imageUrl, width: 800, height: 600, alt: listing.title }]
         : [],
