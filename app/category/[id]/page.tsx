@@ -171,6 +171,9 @@ export default function CategoryResultsPage() {
 
   const hasActiveFilters = minPrice || maxPrice || ratingFilter !== 'Any' || conditionFilter;
 
+  // Count of active filters shown as a badge on the filter button (parity with mobile).
+  const filterCount = [openNow, nearMe, ratingFilter !== 'Any', Boolean(minPrice || maxPrice), Boolean(conditionFilter)].filter(Boolean).length;
+
   function openFilterSheet() {
     setTempMinPrice(minPrice);
     setTempMaxPrice(maxPrice);
@@ -217,8 +220,11 @@ export default function CategoryResultsPage() {
         <button onClick={() => { setTempSort(sortBy); setShowSortSheet(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
           <ArrowUpDown size={20} />
         </button>
-        <button onClick={openFilterSheet} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
+        <button onClick={openFilterSheet} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
           <SlidersHorizontal size={20} />
+          {filterCount > 0 && (
+            <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, padding: '0 3px', boxSizing: 'border-box', background: '#E53935', color: '#fff', borderRadius: 999, fontSize: 10, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{filterCount}</span>
+          )}
         </button>
       </div>
 
