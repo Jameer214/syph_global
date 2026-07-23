@@ -15,6 +15,7 @@ import { useAppStore } from '@/store';
 import { translate as tr, getDir } from '@/lib/i18n';
 import { getListing, getListingReviews, getRelatedListings } from '@/lib/firestore';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import Reveal from '@/components/Reveal';
 import type { Listing, Review } from '@/types';
 
 // ─── Report Modal ─────────────────────────────────────────────────────────────
@@ -379,7 +380,7 @@ export default function ListingDetailsPage() {
   return (
     <div dir={getDir(selectedLanguage)} className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
+      <div className="sweep" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><ArrowLeft size={22} /></button>
         <span style={{ color: '#fff', fontWeight: 800, fontSize: 15, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.title}</span>
         <button onClick={shareListing} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><Share2 size={20} /></button>
@@ -392,16 +393,18 @@ export default function ListingDetailsPage() {
       <div style={{ padding: '14px 16px 24px' }}>
 
         {/* Image gallery */}
-        <div style={{ borderRadius: 24, overflow: 'hidden', aspectRatio: '16/9', position: 'relative', backgroundColor: '#f2f5f9' }}>
+        <div className="card-media" style={{ borderRadius: 24, overflow: 'hidden', aspectRatio: '16/9', position: 'relative', backgroundColor: '#f2f5f9' }}>
           {images.length === 0 ? (
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>📷</div>
           ) : (
             <>
               <Image
+                key={currentImage}
                 src={images[currentImage]}
                 alt={listing.title}
                 fill
-                style={{ objectFit: 'cover' }}
+                className="anim-fade-in"
+                style={{ objectFit: 'cover', animationDuration: '0.45s' }}
                 sizes="480px"
               />
               {images.length > 1 && (
@@ -427,7 +430,7 @@ export default function ListingDetailsPage() {
         <div style={{ height: 14 }} />
 
         {/* Top card */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 18, boxShadow: '0 5px 12px rgba(0,0,0,0.03)', border: '1px solid #e8edf5', marginBottom: 14 }}>
+        <div className="anim-fade-up" style={{ background: '#fff', borderRadius: 20, padding: 18, boxShadow: '0 5px 12px rgba(0,0,0,0.03)', border: '1px solid #e8edf5', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <p style={{ flex: 1, margin: 0, fontWeight: 900, fontSize: 21, color: '#0f172a', lineHeight: 1.2 }}>{sanitizeText(listing.title)}</p>
             <button onClick={() => toggleSaved(listing.id)} style={{ background: '#f8fafc', borderRadius: 14, border: 'none', cursor: 'pointer', padding: 8, display: 'flex', flexShrink: 0 }}>
@@ -445,7 +448,7 @@ export default function ListingDetailsPage() {
         </div>
 
         {/* Stats strip */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: '12px 16px', boxShadow: '0 5px 12px rgba(0,0,0,0.03)', border: '1px solid #e8edf5', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
+        <div className="anim-fade-up" style={{ background: '#fff', borderRadius: 20, padding: '12px 16px', boxShadow: '0 5px 12px rgba(0,0,0,0.03)', border: '1px solid #e8edf5', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-around', animationDelay: '0.06s' }}>
           <StatItem icon={<Eye size={20} color="#2E5BFF" />} value={String(listing.viewsCount)} label={tr('viewsLabel', selectedLanguage)} />
           <div style={{ width: 1, height: 36, background: '#e8edf5' }} />
           <StatItem icon={<Bookmark size={20} color="#2E5BFF" />} value={String(listing.savesCount)} label={tr('savesLabel', selectedLanguage)} />
@@ -627,7 +630,7 @@ export default function ListingDetailsPage() {
 
         {/* Related listings */}
         {related.length > 0 && (
-          <div>
+          <Reveal once>
             <div style={{ background: '#0f172a', borderRadius: 16, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Grid3x3 size={18} color="#fff" />
               <span style={{ flex: 1, color: '#fff', fontWeight: 900, fontSize: 15 }}>{tr('relatedItems', selectedLanguage)}</span>
@@ -638,8 +641,8 @@ export default function ListingDetailsPage() {
                 const rPrice = r.priceValue != null ? `${r.currencyCode} ${r.priceValue.toLocaleString()}` : r.priceText ?? 'Price not set';
                 const rImg = r.imageUrls?.[0] ?? r.imageUrl;
                 return (
-                  <div key={r.id} onClick={() => router.push(`/listing/${r.id}`)} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 3px 6px rgba(0,0,0,0.03)', cursor: 'pointer' }}>
-                    <div style={{ aspectRatio: '1.2', position: 'relative', backgroundColor: '#f2f5f9' }}>
+                  <div key={r.id} onClick={() => router.push(`/listing/${r.id}`)} className="card-tap card-zoom" style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 3px 6px rgba(0,0,0,0.03)', cursor: 'pointer' }}>
+                    <div className="card-media" style={{ aspectRatio: '1.2', position: 'relative', backgroundColor: '#f2f5f9' }}>
                       {rImg ? <Image src={rImg} alt={r.title} fill style={{ objectFit: 'cover' }} sizes="220px" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>📦</div>}
                     </div>
                     <div style={{ padding: '10px 10px 8px' }}>
@@ -661,7 +664,7 @@ export default function ListingDetailsPage() {
                 );
               })}
             </div>
-          </div>
+          </Reveal>
         )}
       </div>
 
@@ -673,6 +676,7 @@ export default function ListingDetailsPage() {
             {saved ? <BookmarkCheck size={20} color="#2E5BFF" /> : <Bookmark size={20} color="#6B7A99" />}
           </button>
           <button onClick={() => openOrCreateChat()} disabled={startingChat}
+            className={startingChat ? 'btn-tap' : 'btn-tap cta-armed'}
             style={{ flex: 1, height: 50, borderRadius: 25, border: 'none', background: startingChat ? '#9ca3af' : '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: startingChat ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <MessageCircle size={18} /> {startingChat ? 'Opening…' : tr('messageSeller', selectedLanguage)}
           </button>

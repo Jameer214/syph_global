@@ -418,12 +418,12 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
 
   return (
     <div
-      className="card-tap anim-fade-up"
+      className="card-tap anim-fade-up card-zoom"
       style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', animationDelay: `${Math.min(index, 8) * 0.05}s`, animationDuration: '0.35s' }}
       onClick={() => router.push(`/listing/${l.id}`)}
     >
       {/* Image */}
-      <div style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>
+      <div className="card-media" style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>
         {img ? (
           <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="72px" />
         ) : (

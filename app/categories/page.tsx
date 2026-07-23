@@ -151,7 +151,11 @@ function CategoriesBrowser() {
                   transition: 'background 0.2s ease, border-color 0.2s ease',
                 }}
               >
-                <span style={{ fontSize: 20, lineHeight: 1 }}>{cat.icon}</span>
+                <span style={{
+                  fontSize: 20, lineHeight: 1, display: 'inline-block',
+                  transition: 'transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  transform: isSelected ? 'scale(1.22)' : 'scale(1)',
+                }}>{cat.icon}</span>
                 <span style={{
                   fontSize: 11.8,
                   lineHeight: 1.12,
