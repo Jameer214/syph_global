@@ -215,7 +215,7 @@ function displayPrice(listing: Listing, selectedCurrency: string): string {
 // ─── sub-components ───────────────────────────────────────────────────────────
 
 function SectionStrip({
-  gradient, icon, title, subtitle, href, seeAllLabel,
+  gradient, icon, title, subtitle, href, seeAllLabel, sweep,
 }: {
   gradient: [string, string];
   icon: React.ReactNode;
@@ -223,15 +223,16 @@ function SectionStrip({
   subtitle?: string;
   href?: string;
   seeAllLabel?: string;
+  sweep?: boolean;
 }) {
   return (
-    <div style={{
+    <div className={sweep ? 'sweep' : undefined} style={{
       background: `linear-gradient(135deg, ${gradient[0]} 0%, ${gradient[1]} 100%)`,
       borderRadius: '14px 14px 0 0', padding: '10px 14px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ color: '#fff', display: 'flex' }}>{icon}</span>
+        <span className="bob" style={{ color: '#fff', display: 'flex' }}>{icon}</span>
         <span style={{ color: '#fff', fontWeight: 800, fontSize: 15 }}>{title}</span>
         {subtitle && (
           <span style={{
@@ -255,14 +256,14 @@ function FlashCard({ listing, onClick, selectedCurrency }: { listing: Listing; o
   return (
     <div
       onClick={onClick}
-      className="card-tap"
+      className="card-tap card-zoom"
       style={{
         width: 120, borderRadius: 12, overflow: 'hidden',
         background: '#fff', flexShrink: 0,
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)', cursor: 'pointer',
       }}
     >
-      <div style={{ position: 'relative', height: 90 }}>
+      <div className="card-media" style={{ position: 'relative', height: 90 }}>
         {listing.imageUrl ? (
           <Image src={listing.imageUrl} alt={listing.title} fill sizes="120px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
         ) : (
@@ -270,7 +271,7 @@ function FlashCard({ listing, onClick, selectedCurrency }: { listing: Listing; o
             <LayoutGrid size={24} color="#9ca3af" />
           </div>
         )}
-        <span style={{
+        <span className="flash-badge" style={{
           position: 'absolute', top: 6, left: 6,
           background: '#E53935', color: '#fff', fontSize: 8, fontWeight: 900,
           padding: '2px 6px', borderRadius: 8,
@@ -292,14 +293,14 @@ function FeaturedCard({ listing, onClick, selectedCurrency }: { listing: Listing
   return (
     <div
       onClick={onClick}
-      className="card-tap"
+      className="card-tap card-zoom"
       style={{
         width: 220, borderRadius: 14, overflow: 'hidden',
         background: '#fff', flexShrink: 0,
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)', cursor: 'pointer',
       }}
     >
-      <div style={{ position: 'relative', paddingTop: '56.25%' /* 16:9 */ }}>
+      <div className="card-media" style={{ position: 'relative', paddingTop: '56.25%' /* 16:9 */ }}>
         {listing.imageUrl ? (
           <Image src={listing.imageUrl} alt={listing.title} fill sizes="220px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
         ) : (
@@ -352,13 +353,13 @@ function GridCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
   return (
     <div
       onClick={onClick}
-      className="card-tap anim-fade-up"
+      className="card-tap anim-fade-up card-zoom"
       style={{
         borderRadius: 14, overflow: 'hidden',
         background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', cursor: 'pointer',
       }}
     >
-      <div style={{ position: 'relative', paddingTop: '83.33%' /* aspect 1.2 */ }}>
+      <div className="card-media" style={{ position: 'relative', paddingTop: '83.33%' /* aspect 1.2 */ }}>
         {listing.imageUrl ? (
           <Image src={listing.imageUrl} alt={listing.title} fill sizes="(max-width: 480px) 50vw, 240px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
         ) : (
@@ -540,6 +541,7 @@ export default function HomePage() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<Filters>({
@@ -920,11 +922,22 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.nearMe]);
 
+  // Rotating search placeholder — cycles category hints while the field is idle.
+  const searchHints = useMemo(() => [
+    tr('searchListings', selectedLanguage),
+    'Cars 🚗', 'Phones 📱', 'Real Estate 🏠', 'Fashion 👗', 'Electronics 🎧', 'Furniture 🛋️',
+  ], [selectedLanguage]);
+  useEffect(() => {
+    if (searchFocused || searchQuery) return;
+    const t = setInterval(() => setPlaceholderIdx((i) => (i + 1) % searchHints.length), 2600);
+    return () => clearInterval(t);
+  }, [searchFocused, searchQuery, searchHints.length]);
+
   return (
     <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 80 }} dir={getDir(selectedLanguage)}>
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
       {/* ── Top App Bar ── */}
-      <div style={{
+      <div className="sweep" style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
         padding: '14px 16px 14px',
         position: 'sticky', top: 0, zIndex: 40,
@@ -934,7 +947,7 @@ export default function HomePage() {
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 600, letterSpacing: '0.5px' }}>
               {tr('tagline', selectedLanguage).toUpperCase()}
             </p>
-            <p style={{ margin: '2px 0 0', color: '#fff', fontSize: 20, fontWeight: 900, letterSpacing: '1px' }}>SYPH</p>
+            <p className="text-shimmer" style={{ margin: '2px 0 0', fontSize: 20, fontWeight: 900, letterSpacing: '1px' }}>SYPH</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {/* Location pill — tappable, shows flag + country · region */}
@@ -980,7 +993,7 @@ export default function HomePage() {
       <div style={{ padding: '14px 14px 0' }}>
 
         {/* Location banner */}
-        <div style={{
+        <div className="anim-fade-up" style={{
           background: '#fff', borderRadius: 14, padding: '10px 14px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           border: '1px solid #e8edf5', marginBottom: 12,
@@ -1049,7 +1062,8 @@ export default function HomePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              placeholder={tr('searchListings', selectedLanguage)}
+              placeholder={searchFocused ? searchHints[0] : searchHints[placeholderIdx]}
+              className="input-anim"
               style={{
                 width: '100%', height: 46, borderRadius: 14,
                 border: '1.5px solid #e2e8f0', background: '#fff',
@@ -1143,13 +1157,14 @@ export default function HomePage() {
               title={tr('flashSalesEndingSoon', selectedLanguage)}
               href="/flash-sales"
               seeAllLabel={tr('seeAll', selectedLanguage)}
+              sweep
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
               padding: '12px 12px',
               overflowX: 'auto', display: 'flex', gap: 10,
             }}
-              className="no-scrollbar"
+              className="no-scrollbar rail rail-stagger"
             >
               {flashSales.slice(0, 4).map((l) => (
                 <FlashCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
@@ -1172,7 +1187,7 @@ export default function HomePage() {
               padding: '12px 12px',
               overflowX: 'auto', display: 'flex', gap: 10,
             }}
-              className="no-scrollbar"
+              className="no-scrollbar rail rail-stagger"
             >
               {trending.slice(0, 10).map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
@@ -1195,7 +1210,7 @@ export default function HomePage() {
               padding: '12px 12px',
               overflowX: 'auto', display: 'flex', gap: 10,
             }}
-              className="no-scrollbar"
+              className="no-scrollbar rail rail-stagger"
             >
               {hotSelling.map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
@@ -1217,7 +1232,7 @@ export default function HomePage() {
               padding: '12px 12px',
               overflowX: 'auto', display: 'flex', gap: 10,
             }}
-              className="no-scrollbar"
+              className="no-scrollbar rail rail-stagger"
             >
               {recommended.map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
@@ -1240,7 +1255,7 @@ export default function HomePage() {
               padding: '12px 12px',
               overflowX: 'auto', display: 'flex', gap: 10,
             }}
-              className="no-scrollbar"
+              className="no-scrollbar rail rail-stagger"
             >
               {justIn.map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
@@ -1263,7 +1278,7 @@ export default function HomePage() {
               padding: '12px 12px',
               overflowX: 'auto', display: 'flex', gap: 10,
             }}
-              className="no-scrollbar"
+              className="no-scrollbar rail rail-stagger"
             >
               {topRated.map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
@@ -1287,7 +1302,7 @@ export default function HomePage() {
               padding: '12px 12px',
               overflowX: 'auto', display: 'flex', gap: 10,
             }}
-              className="no-scrollbar"
+              className="no-scrollbar rail rail-stagger"
             >
               {happenings.slice(0, 4).map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
@@ -1309,7 +1324,7 @@ export default function HomePage() {
               padding: '12px 12px',
               overflowX: 'auto', display: 'flex', gap: 10,
             }}
-              className="no-scrollbar"
+              className="no-scrollbar rail rail-stagger"
             >
               {sponsored.slice(0, 4).map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />

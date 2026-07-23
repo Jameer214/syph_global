@@ -246,13 +246,54 @@ html, body {
 .img-fade { opacity: 0; transition: opacity 0.4s ease; }
 .img-fade.img-loaded { opacity: 1; }
 
+/* ── Home browse — premium motion ─────────────────────────────────────────── */
+
+/* Rails: horizontal scroll-snap for a tactile, inertial feel */
+.rail { scroll-snap-type: x proximity; scroll-padding-left: 12px; }
+.rail > * { scroll-snap-align: start; }
+
+/* Staggered card entrance within a rail (first 8 cascade, rest appear instant) */
+.rail-stagger > * { animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.rail-stagger > *:nth-child(2) { animation-delay: 0.05s; }
+.rail-stagger > *:nth-child(3) { animation-delay: 0.10s; }
+.rail-stagger > *:nth-child(4) { animation-delay: 0.15s; }
+.rail-stagger > *:nth-child(5) { animation-delay: 0.20s; }
+.rail-stagger > *:nth-child(6) { animation-delay: 0.25s; }
+.rail-stagger > *:nth-child(7) { animation-delay: 0.30s; }
+.rail-stagger > *:nth-child(8) { animation-delay: 0.35s; }
+
+/* Card media: image zoom + diagonal light-shine on hover (desktop pointer) */
+.card-media { position: relative; overflow: hidden; }
+.card-media img { transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+.card-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.38) 50%, transparent 68%);
+  transform: translateX(-130%);
+  transition: transform 0.65s ease;
+}
+.card-zoom:hover .card-media img { transform: scale(1.08); }
+.card-zoom:hover .card-media::after { transform: translateX(130%); }
+
+/* Flash badge — urgent scale pulse (box-shadow would be clipped by media overflow) */
+@keyframes flashPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.09); opacity: 0.85; }
+}
+.flash-badge { animation: flashPulse 1.8s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .anim-fade-up, .anim-fade-in, .anim-pop, .sheet-backdrop, .sheet-panel,
   .skeleton, .cta-armed, .sweep::after, .radar::before, .radar::after, .bob,
-  .aurora-blob, .star, .halo, .text-shimmer {
+  .aurora-blob, .star, .halo, .text-shimmer, .flash-badge, .rail-stagger > * {
     animation: none !important;
   }
-  .anim-fade-up, .anim-fade-in, .anim-pop { opacity: 1; transform: none; }
-  .card-tap, .btn-tap, .lift, .row-tap .row-flag, .row-tap .row-chev, .reveal { transition: none; }
+  .anim-fade-up, .anim-fade-in, .anim-pop, .rail-stagger > * { opacity: 1; transform: none; }
+  .card-tap, .btn-tap, .lift, .row-tap .row-flag, .row-tap .row-chev, .reveal,
+  .card-media img, .card-media::after { transition: none; }
   .reveal { opacity: 1; transform: none; }
+  .card-zoom:hover .card-media img { transform: none; }
 }
