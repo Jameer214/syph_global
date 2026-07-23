@@ -31,12 +31,28 @@ export default function BottomNav() {
     return unsub;
   }, [user]);
 
+  const activeIndex = tabs.findIndex(
+    (t) => pathname === t.href || (t.href !== '/home' && pathname?.startsWith(t.href))
+  );
+
   return (
     <nav style={{
       position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
       width: '100%', maxWidth: 480, backgroundColor: '#fff',
       borderTop: '1px solid #f1f5f9', zIndex: 50, height: 60,
     }}>
+      {/* Morphing active indicator — a pill that glides between tabs */}
+      {activeIndex >= 0 && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0,
+          width: `${100 / tabs.length}%`,
+          transform: `translateX(${activeIndex * 100}%)`,
+          transition: 'transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)',
+          display: 'flex', justifyContent: 'center', pointerEvents: 'none',
+        }}>
+          <div style={{ width: 26, height: 3, borderRadius: 3, background: '#2E5BFF' }} />
+        </div>
+      )}
       <div style={{ display: 'flex', height: '100%' }}>
         {tabs.map((tab) => {
           const active = pathname === tab.href || (tab.href !== '/home' && pathname?.startsWith(tab.href));

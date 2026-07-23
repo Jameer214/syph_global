@@ -170,7 +170,7 @@ export default function DashboardPage() {
       )}
 
       {/* Header */}
-      <div style={{
+      <div className="sweep" style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
         padding: '52px 16px 20px',
         display: 'flex', alignItems: 'center', gap: 12,
@@ -332,9 +332,9 @@ export default function DashboardPage() {
               No {listingTab === 'all' ? '' : listingTab} listings yet.
             </div>
           ) : (
-            filteredListings.map((l) => (
-              <div key={l.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F4FF' }}>
-                <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#E8EDFF' }}>
+            filteredListings.map((l, i) => (
+              <div key={l.id} className="anim-fade-up card-zoom" style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F4FF', animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
+                <div className="card-media" style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#E8EDFF' }}>
                   {l.imageUrl ? (
                     <Image src={l.imageUrl} alt={l.title} width={56} height={56} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                   ) : (
@@ -359,7 +359,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Listing Policies */}
-        <div onClick={() => router.push('/dashboard/policy')} style={{
+        <div onClick={() => router.push('/dashboard/policy')} className="card-tap" style={{
           background: '#F0F4FF', border: '1.2px solid #BDD0FF', borderRadius: 26, padding: '18px 16px',
           marginBottom: 16, cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.025)',
           display: 'flex', alignItems: 'center', gap: 16,

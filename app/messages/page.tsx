@@ -103,13 +103,13 @@ export default function MessagesPage() {
   return (
     <div dir={getDir(selectedLanguage)} className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 40 }}>
+      <div className="sweep" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 40 }}>
         <span style={{ color: '#fff', fontWeight: 900, fontSize: 18, flex: 1 }}>{tr('messages', selectedLanguage)}</span>
       </div>
 
       <div style={{ padding: '12px 16px', paddingBottom: 80 }}>
         {/* SYPH Support entry */}
-        <div onClick={() => router.push('/support')} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, cursor: 'pointer', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+        <div onClick={() => router.push('/support')} className="card-tap anim-fade-up" style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, cursor: 'pointer', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
           <div style={{ width: 56, height: 56, borderRadius: 12, background: 'linear-gradient(135deg, #0F2B6E, #2E5BFF)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <ShieldCheck size={26} color="#fff" />
           </div>
@@ -121,7 +121,18 @@ export default function MessagesPage() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>{tr('loading', selectedLanguage)}</div>
+          <>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="anim-fade-up" style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, border: '1px solid #e2e8f0', animationDelay: `${i * 0.07}s` }}>
+                <div className="skeleton" style={{ width: 56, height: 56, borderRadius: 12, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="skeleton" style={{ height: 14, borderRadius: 6, width: '55%' }} />
+                  <div className="skeleton" style={{ height: 12, borderRadius: 6, width: '35%', marginTop: 8 }} />
+                  <div className="skeleton" style={{ height: 12, borderRadius: 6, width: '80%', marginTop: 8 }} />
+                </div>
+              </div>
+            ))}
+          </>
         ) : threads.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', border: '1px solid #e2e8f0' }}>
             <MessageCircle size={40} color="#9ca3af" />
@@ -129,14 +140,14 @@ export default function MessagesPage() {
             <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>Start a chat from a listing page.</p>
           </div>
         ) : (
-          threads.map((thread) => {
+          threads.map((thread, ti) => {
             const isSeller = uid === thread.sellerUid;
             const otherName = isSeller ? thread.buyerName : thread.sellerName;
             const unreadCount = isSeller ? thread.unreadForSeller : thread.unreadForBuyer;
             const isUnread = unreadCount > 0;
 
             return (
-              <div key={thread.id} style={{ position: 'relative', marginBottom: 8 }}>
+              <div key={thread.id} className="anim-fade-up" style={{ position: 'relative', marginBottom: 8, animationDelay: `${Math.min(ti, 8) * 0.05}s` }}>
                 {/* Swipe-to-delete reveal */}
                 <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, display: 'flex', alignItems: 'stretch', borderRadius: '0 12px 12px 0', overflow: 'hidden', zIndex: 0 }}>
                   <button
@@ -150,10 +161,11 @@ export default function MessagesPage() {
 
                 <div
                   onClick={() => router.push(`/chat/${thread.id}`)}
+                  className="card-tap card-zoom"
                   style={{ position: 'relative', background: '#fff', borderRadius: 12, padding: 12, display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.03)', zIndex: 1 }}
                 >
                   {/* Thumbnail */}
-                  <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, backgroundColor: '#EEF3FF', position: 'relative' }}>
+                  <div className="card-media" style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, backgroundColor: '#EEF3FF', position: 'relative' }}>
                     {thread.listingImageUrl ? (
                       <Image src={thread.listingImageUrl} alt={thread.listingTitle} fill style={{ objectFit: 'cover' }} sizes="56px" />
                     ) : (
