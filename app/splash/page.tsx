@@ -4,6 +4,14 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { useAppStore } from '@/store';
+import { CONTINENTS, CONTINENT_VIEWBOX } from '@/data/continentPaths';
+
+// Glow palette for the background continents — silver / gold / green outlines
+const GLOW: Record<string, { stroke: string; glow: string }> = {
+  silver: { stroke: '#CBD6E6', glow: 'rgba(200,214,235,0.75)' },
+  gold: { stroke: '#FFCE7A', glow: 'rgba(255,200,110,0.8)' },
+  green: { stroke: '#7FE3AA', glow: 'rgba(120,225,160,0.75)' },
+};
 
 /*
  * SYPH opening — the wandering-fireflies intro is skipped: the experience
@@ -333,6 +341,38 @@ export default function SplashScreen() {
         background: 'radial-gradient(120% 100% at 50% 0%, #0A1838 0%, #050B1E 55%, #02040C 100%)',
       }}
     >
+      {/* Background world map — accurate continent silhouettes spanning the
+          backdrop, each outline glowing silver / gold / green. Fades in early
+          and away on exit; sits behind the particle field. */}
+      <motion.svg
+        viewBox={CONTINENT_VIEWBOX}
+        preserveAspectRatio="xMidYMid meet"
+        initial={false}
+        animate={{ opacity: leaving ? 0 : 0.5 }}
+        transition={{ duration: leaving ? 0.5 : 1.6, ease: 'easeOut' }}
+        style={{
+          position: 'absolute', left: '50%', top: '41%', width: '134%',
+          transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+        }}
+      >
+        {CONTINENTS.map((c) => {
+          const g = GLOW[c.color];
+          return (
+            <path
+              key={c.key}
+              d={c.d}
+              fill={g.stroke}
+              fillOpacity={0.05}
+              stroke={g.stroke}
+              strokeWidth={0.7}
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              style={{ filter: `drop-shadow(0 0 2px ${g.glow}) drop-shadow(0 0 6px ${g.glow})` }}
+            />
+          );
+        })}
+      </motion.svg>
+
       {/* Living-map graticule — latitude/longitude grid + contour "landmasses",
           giving the SYPH intro a cartographic identity (find it · locate it). */}
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }} preserveAspectRatio="none" viewBox="0 0 100 100">
