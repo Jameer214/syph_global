@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame } from 'lucide-react';
@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import DistanceChip from '@/components/DistanceChip';
+import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 
 interface ShopData {
@@ -218,6 +220,8 @@ export default function SellerShopPage() {
   const { uid } = useParams() as { uid: string };
   const router = useRouter();
   const { selectedCurrency, selectedLanguage } = useAppStore();
+  // One "how far away" chip for the whole shop (single seller).
+  const shopKm = useDistances(useMemo(() => [{ id: uid, ownerUid: uid }], [uid])).get(uid);
 
   const [shop, setShop] = useState<ShopData | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -387,6 +391,9 @@ export default function SellerShopPage() {
                     <MapPin size={13} color="rgba(255,255,255,0.6)" style={{ marginTop: 1, flexShrink: 0 }} />
                     <span style={{ color: 'rgba(255,255,255,0.70)', fontWeight: 600, fontSize: 12.5, lineHeight: 1.4 }}>{sanitizeText(loc)}</span>
                   </div>
+                )}
+                {shopKm != null && (
+                  <div style={{ marginTop: 6 }}><DistanceChip km={shopKm} /></div>
                 )}
               </div>
             </div>

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -16,6 +16,8 @@ import { translate as tr, getDir } from '@/lib/i18n';
 import { getListing, getListingReviews, getRelatedListings } from '@/lib/firestore';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import Reveal from '@/components/Reveal';
+import DistanceChip from '@/components/DistanceChip';
+import { useDistances } from '@/lib/useDistances';
 import type { Listing, Review } from '@/types';
 
 // ─── Report Modal ─────────────────────────────────────────────────────────────
@@ -189,6 +191,10 @@ export default function ListingDetailsPage() {
   const [showReview, setShowReview] = useState(false);
   const viewTracked = useRef(false);
   const lastMessageSent = useRef<number>(0);
+
+  // Distance chips — main listing + related items.
+  const mainDist = useDistances(useMemo(() => (listing ? [listing] : []), [listing]));
+  const relatedDist = useDistances(related);
 
   // Load listing
   useEffect(() => {
@@ -436,6 +442,9 @@ export default function ListingDetailsPage() {
             </button>
           </div>
           <p style={{ margin: '10px 0 6px', fontWeight: 900, fontSize: 26, color: '#0F2B6E' }}>{price}</p>
+          {mainDist.get(listing.id) != null && (
+            <div style={{ marginBottom: 6 }}><DistanceChip km={mainDist.get(listing.id)} /></div>
+          )}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {listing.negotiable && <Badge icon={<Handshake size={15} color="#2E9B55" />} text={tr('negotiable', selectedLanguage)} fg="#2E9B55" />}
             {listing.condition && <Badge icon={<span style={{ fontSize: 14 }}>{listing.condition === 'New' ? '✨' : '🔄'}</span>} text={listing.condition === 'New' ? tr('new', selectedLanguage) : tr('used', selectedLanguage)} fg={listing.condition === 'New' ? '#2E9B55' : '#FF9800'} />}
@@ -653,6 +662,9 @@ export default function ListingDetailsPage() {
                         <MapPin size={12} color="#6B7A99" />
                         <span style={{ fontSize: 11, color: '#6B7A99', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.locationText}</span>
                       </div>
+                      {relatedDist.get(r.id) != null && (
+                        <div style={{ marginTop: 4 }}><DistanceChip km={relatedDist.get(r.id)} size="xs" /></div>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
                         <Eye size={12} color="#6B7A99" />
                         <span style={{ fontSize: 11, color: '#6B7A99', fontWeight: 700 }}>{r.viewsCount}</span>
