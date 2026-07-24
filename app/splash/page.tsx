@@ -319,12 +319,34 @@ export default function SplashScreen() {
         background: 'radial-gradient(120% 100% at 50% 0%, #0A1838 0%, #050B1E 55%, #02040C 100%)',
       }}
     >
-      {/* Digital topography — faint contour rings */}
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.05 }} preserveAspectRatio="none" viewBox="0 0 100 100">
-        {[18, 30, 44, 60, 78].map((r, i) => (
-          <ellipse key={i} cx={i % 2 ? 78 : 22} cy={i % 2 ? 24 : 76} rx={r} ry={r * 0.62} fill="none" stroke="#7FA8FF" strokeWidth="0.15" />
+      {/* Living-map graticule — latitude/longitude grid + contour "landmasses",
+          giving the SYPH intro a cartographic identity (find it · locate it). */}
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }} preserveAspectRatio="none" viewBox="0 0 100 100">
+        {/* meridians — gently curved longitude lines */}
+        {[12, 31, 50, 69, 88].map((x, i) => (
+          <path key={`m${i}`} d={`M ${x} 0 Q ${50 + (x - 50) * 0.4} 50 ${x} 100`} fill="none" stroke="#7FA8FF" strokeWidth="0.13" />
+        ))}
+        {/* parallels — latitude lines */}
+        {[14, 30, 46, 62, 78, 92].map((y, i) => (
+          <line key={`p${i}`} x1="0" y1={y} x2="100" y2={y} stroke="#7FA8FF" strokeWidth="0.09" />
+        ))}
+        {/* contour "landmasses" */}
+        {[20, 34, 50].map((r, i) => (
+          <ellipse key={`c${i}`} cx={i % 2 ? 76 : 24} cy={i % 2 ? 26 : 74} rx={r} ry={r * 0.6} fill="none" stroke="#7FA8FF" strokeWidth="0.11" />
         ))}
       </svg>
+
+      {/* Radar sweep — a slow rotating beam centred on the wordmark, the classic
+          "locating…" motif that ties the swarm to SYPH's map identity. */}
+      <div
+        style={{
+          position: 'absolute', top: '44%', left: '50%', width: '160vmax', height: '160vmax',
+          transform: 'translate(-50%, -50%)', pointerEvents: 'none', opacity: leaving ? 0 : 0.55,
+          transition: 'opacity 0.5s ease', borderRadius: '50%', mixBlendMode: 'screen',
+          background: 'conic-gradient(from 0deg, transparent 0deg, rgba(120,170,255,0.12) 34deg, transparent 62deg)',
+          animation: 'haloSpin 9s linear infinite',
+        }}
+      />
 
       {/* Aurora depth layers */}
       <div className="aurora-blob" style={{ width: 420, height: 420, top: '-14%', left: '-12%', background: 'rgba(36,80,220,0.25)' }} />
