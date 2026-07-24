@@ -104,7 +104,7 @@ export default function AboutPage() {
               <div key={i} className="anim-fade-up about-hero-title" style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.6, lineHeight: 1.12, animationDelay: `${0.15 + i * 0.12}s` }}>{line}</div>
             ))}
             <div className="anim-fade-up" style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, marginTop: 12, maxWidth: 300, animationDelay: '0.55s' }}>
-              Your pocket broker — connecting you to the businesses you want, in any country, any region.
+              Your digital broker — connecting you to the businesses you want, in any country, any region.
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function AboutPage() {
           <div style={{ background: '#fff', borderRadius: 28, padding: 22, marginBottom: 20, boxShadow: '0 8px 20px rgba(30,77,217,0.08)' }}>
             <div style={{ fontWeight: 900, fontSize: 18, color: '#0F2B6E', letterSpacing: -0.3 }}>Skip the middleman hustle</div>
             <div style={{ color: '#6B7A99', fontSize: 13.5, fontWeight: 600, marginTop: 6, lineHeight: 1.5 }}>
-              No more roaming markets, asking around, or paying a physical broker to find a business. SYPH <b>is</b> the broker — right in your pocket.
+              No more roaming markets, asking around, or paying a physical broker to find a business. SYPH <b>is</b> your digital broker — online, instant, everywhere.
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
               <div style={{ background: '#FFF1F0', border: '1px solid #F3D2CF', borderRadius: 18, padding: '14px 14px' }}>

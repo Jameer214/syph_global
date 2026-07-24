@@ -7,12 +7,12 @@ import AuthSync from '@/components/AuthSync';
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.syphglobal.com'),
   title: 'SYPH — Find It. Locate It. Connect.',
-  description: 'Buy and sell anything across Africa and beyond.',
+  description: 'SYPH is your digital broker — find and connect with the businesses you want, anywhere. Search nearby, get GPS directions, and chat directly. No middleman.',
   // icon / apple-icon / opengraph-image / twitter-image are auto-attached from
   // the matching files in app/ (Next.js metadata file conventions).
   openGraph: {
     title: 'SYPH — Find It. Locate It. Connect.',
-    description: 'Buy and sell anything across Africa and beyond.',
+    description: 'SYPH is your digital broker — find and connect with the businesses you want, anywhere. Search nearby, get GPS directions, and chat directly. No middleman.',
     url: 'https://www.syphglobal.com',
     siteName: 'SYPH',
     type: 'website',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'SYPH — Find It. Locate It. Connect.',
-    description: 'Buy and sell anything across Africa and beyond.',
+    description: 'SYPH is your digital broker — find and connect with the businesses you want, anywhere. Search nearby, get GPS directions, and chat directly. No middleman.',
   },
 };
 
