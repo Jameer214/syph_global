@@ -554,7 +554,12 @@ export function subscribeChatThreads(uid: string, cb: (threads: ChatThread[]) =>
       cb((data ?? []).map(r => mapThread(r as Record<string, unknown>)));
     });
 
-  const channel = supabase.channel(`chats:${uid}`)
+  // Channel name must be unique PER CALL: supabase.channel() returns the
+  // existing instance for a repeated topic, and adding postgres_changes
+  // callbacks to an already-subscribed channel throws. BottomNav (unread
+  // badge) and the messages page both subscribe for the same uid, so a
+  // shared name crashed whichever mounted second.
+  const channel = supabase.channel(`chats:${uid}:${Date.now()}-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'chats', filter: `buyer_id=eq.${uid}` }, () => {
       supabase
         .from('chats')
@@ -595,7 +600,8 @@ export function subscribeChatMessages(threadId: string, cb: (msgs: ChatMessage[]
       })));
     });
 
-  const channel = supabase.channel(`messages:${threadId}`)
+  // Unique per call — same collision hazard as subscribeChatThreads above.
+  const channel = supabase.channel(`messages:${threadId}:${Date.now()}-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${threadId}` }, () => {
       supabase
         .from('messages')
