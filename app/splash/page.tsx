@@ -81,6 +81,11 @@ export default function SplashScreen() {
   const [showSlogan, setShowSlogan] = useState(false);
   const [showCTA, setShowCTA] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }, []);
 
   const goExplore = () => {
     if (routedRef.current) return;
@@ -344,7 +349,7 @@ export default function SplashScreen() {
           transform: 'translate(-50%, -50%)', pointerEvents: 'none', opacity: leaving ? 0 : 0.55,
           transition: 'opacity 0.5s ease', borderRadius: '50%', mixBlendMode: 'screen',
           background: 'conic-gradient(from 0deg, transparent 0deg, rgba(120,170,255,0.12) 34deg, transparent 62deg)',
-          animation: 'haloSpin 9s linear infinite',
+          animation: reducedMotion ? 'none' : 'haloSpin 9s linear infinite',
         }}
       />
 
