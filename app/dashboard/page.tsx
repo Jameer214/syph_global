@@ -9,6 +9,8 @@ import {
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getSellerProfile } from '@/lib/firestore';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 import type { Listing, SellerProfile } from '@/types';
 
 function mapListing(data: Record<string, unknown>, id: string): Listing {
@@ -58,6 +60,7 @@ const STATUS_BG: Record<string, string> = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { selectedLanguage } = useAppStore();
   const [uid, setUid] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [seller, setSeller] = useState<SellerProfile | null>(null);
@@ -123,8 +126,8 @@ export default function DashboardPage() {
       <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         <Store size={48} color="#2E5BFF" />
-        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45', marginTop: 16 }}>Sign in to access your dashboard</div>
-        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>Sign In</button>
+        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45', marginTop: 16 }}>{tr('dashSignInAccess', selectedLanguage)}</div>
+        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>{tr('signIn', selectedLanguage)}</button>
       </div>
     );
   }
@@ -146,14 +149,14 @@ export default function DashboardPage() {
             animation: 'fadeInUp 0.25s ease forwards',
           }}>
             <div style={{ fontSize: 52, marginBottom: 14 }}>🚀</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#0F2B6E', marginBottom: 10 }}>Releasing Soon!</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#0F2B6E', marginBottom: 10 }}>{tr('releasingSoon', selectedLanguage)}</div>
             <div style={{ fontSize: 14, color: '#6B7A99', fontWeight: 500, lineHeight: 1.65, marginBottom: 22 }}>
-              Welcome to SYPH! The mobile app is on its way — packed with everything you love on the website plus real-time notifications, in-app payments, sponsored listings, flash sales, and more.
+              {tr('releasingSoonBody', selectedLanguage)}
             </div>
             <div style={{ background: 'linear-gradient(135deg, #F0F4FF 0%, #E8EEFF 100%)', borderRadius: 14, padding: '14px 16px', marginBottom: 22, border: '1px solid #D7E5FF' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#2E5BFF', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 4 }}>Stay tuned</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#2E5BFF', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 4 }}>{tr('stayTuned', selectedLanguage)}</div>
               <div style={{ fontSize: 13, color: '#4A5878', fontWeight: 500, lineHeight: 1.5 }}>
-                We&apos;ll notify you the moment SYPH hits the App Store and Google Play. The global marketplace is coming to your pocket.
+                {tr('stayTunedBody', selectedLanguage)}
               </div>
             </div>
             <button
@@ -163,7 +166,7 @@ export default function DashboardPage() {
                 border: 'none', borderRadius: 14, color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer',
               }}
             >
-              Got it!
+              {tr('gotItExcl', selectedLanguage)}
             </button>
           </div>
         </div>
@@ -178,7 +181,7 @@ export default function DashboardPage() {
         <button onClick={() => router.back()} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}>
           <ArrowLeft size={20} color="#fff" />
         </button>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 20 }}>Seller Dashboard</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 20 }}>{tr('sellerDashboard', selectedLanguage)}</span>
       </div>
 
       <div style={{ padding: '16px 16px 90px' }}>
@@ -193,9 +196,9 @@ export default function DashboardPage() {
               <Store size={20} color="#E53935" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 15, color: '#C62828' }}>Your account is blocked</div>
+              <div style={{ fontWeight: 900, fontSize: 15, color: '#C62828' }}>{tr('accountBlocked', selectedLanguage)}</div>
               <div style={{ color: '#7A2E2B', fontWeight: 600, fontSize: 12.8, lineHeight: 1.4, marginTop: 4 }}>
-                {blockMessage.trim() || 'Your listings are currently hidden from buyers. Please contact support.'}
+                {blockMessage.trim() || tr('accountBlockedFallback', selectedLanguage)}
               </div>
             </div>
           </div>
@@ -212,7 +215,7 @@ export default function DashboardPage() {
                 <Store size={30} color="#2E5BFF" />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 12, letterSpacing: 0.6 }}>SELLER PROFILE</div>
+                <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 12, letterSpacing: 0.6 }}>{tr('sellerProfileLabel', selectedLanguage)}</div>
                 <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45', marginTop: 4 }}>{seller.businessName}</div>
                 {(seller.operatingRegion || seller.operatingCountry) && (
                   <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13, marginTop: 4 }}>
@@ -235,14 +238,14 @@ export default function DashboardPage() {
                 borderRadius: 16, color: '#2E5BFF', fontWeight: 800, fontSize: 14, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}>
-                <Edit3 size={16} /> Edit Setup
+                <Edit3 size={16} /> {tr('editSetup', selectedLanguage)}
               </button>
               <button onClick={() => router.push(`/shop/${uid}`)} style={{
                 flex: 1, padding: '11px 0', background: '#2E5BFF', border: 'none',
                 borderRadius: 16, color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}>
-                <Store size={16} /> View Shop
+                <Store size={16} /> {tr('viewShop', selectedLanguage)}
               </button>
             </div>
           </div>
@@ -255,15 +258,15 @@ export default function DashboardPage() {
             <div style={{ width: 68, height: 68, background: '#EAF1FF', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
               <Store size={34} color="#2E5BFF" />
             </div>
-            <div style={{ fontWeight: 900, fontSize: 17, color: '#1E2B45' }}>Seller Setup Not Completed</div>
+            <div style={{ fontWeight: 900, fontSize: 17, color: '#1E2B45' }}>{tr('sellerSetupNotCompleted', selectedLanguage)}</div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 8, lineHeight: 1.45 }}>
-              Complete your seller profile to start listing items and reaching customers.
+              {tr('sellerSetupNotCompletedDesc', selectedLanguage)}
             </div>
             <button onClick={() => router.push('/dashboard/setup')} style={{
               marginTop: 16, width: '100%', background: '#2E5BFF', border: 'none',
               borderRadius: 16, padding: '14px 0', color: '#fff', fontWeight: 800,
               fontSize: 14, cursor: 'pointer',
-            }}>Complete Seller Setup</button>
+            }}>{tr('completeSellerSetup', selectedLanguage)}</button>
           </div>
         )}
 
@@ -273,9 +276,9 @@ export default function DashboardPage() {
           borderRadius: 28, padding: 22, marginBottom: 18,
           boxShadow: '0 10px 18px rgba(36,83,212,0.22)',
         }}>
-          <div style={{ color: '#fff', fontWeight: 900, fontSize: 21, lineHeight: 1.2, marginBottom: 12 }}>Grow your business</div>
+          <div style={{ color: '#fff', fontWeight: 900, fontSize: 21, lineHeight: 1.2, marginBottom: 12 }}>{tr('growYourBusiness', selectedLanguage)}</div>
           <div style={{ color: '#fff', fontSize: 14, fontWeight: 500, lineHeight: 1.5 }}>
-            List items, get discovered by customers, and boost visibility with sponsored listings and flash sales.
+            {tr('growYourBusinessDesc', selectedLanguage)}
           </div>
         </div>
 
@@ -288,14 +291,14 @@ export default function DashboardPage() {
             <div style={{ background: '#E8F0FF', borderRadius: 12, padding: 8 }}>
               <BarChart2 size={20} color="#2E5BFF" />
             </div>
-            <span style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>Your Analytics</span>
+            <span style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>{tr('yourAnalytics', selectedLanguage)}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
             {[
-              { icon: <Eye size={20} color="#2F6BFF" />, value: totalViews, label: 'Views', color: '#2F6BFF' },
-              { icon: <MessageCircle size={20} color="#00B97C" />, value: totalMessages, label: 'Chats', color: '#00B97C' },
-              { icon: <Bookmark size={20} color="#FF8C00" />, value: totalSaves, label: 'Saves', color: '#FF8C00' },
-              { icon: <Package size={20} color="#9B59B6" />, value: totalListings, label: 'Listings', color: '#9B59B6' },
+              { icon: <Eye size={20} color="#2F6BFF" />, value: totalViews, label: tr('statViews', selectedLanguage), color: '#2F6BFF' },
+              { icon: <MessageCircle size={20} color="#00B97C" />, value: totalMessages, label: tr('statChats', selectedLanguage), color: '#00B97C' },
+              { icon: <Bookmark size={20} color="#FF8C00" />, value: totalSaves, label: tr('statSaves', selectedLanguage), color: '#FF8C00' },
+              { icon: <Package size={20} color="#9B59B6" />, value: totalListings, label: tr('statListings', selectedLanguage), color: '#9B59B6' },
             ].map((chip, i) => (
               <div key={i} style={{ background: `${chip.color}12`, borderRadius: 16, padding: '12px 6px', textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>{chip.icon}</div>
@@ -309,11 +312,11 @@ export default function DashboardPage() {
         {/* My Listings section */}
         <div style={{ background: '#fff', borderRadius: 22, padding: 16, marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontWeight: 900, fontSize: 16, color: '#1E2B45' }}>My Listings</div>
+            <div style={{ fontWeight: 900, fontSize: 16, color: '#1E2B45' }}>{tr('myListings', selectedLanguage)}</div>
             <button onClick={() => router.push('/dashboard/new')} style={{
               background: '#2E5BFF', border: 'none', borderRadius: 10,
               padding: '6px 14px', color: '#fff', fontWeight: 800, fontSize: 12, cursor: 'pointer',
-            }}>+ New Listing</button>
+            }}>{tr('newListingBtn', selectedLanguage)}</button>
           </div>
 
           <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto' }}>
@@ -322,14 +325,14 @@ export default function DashboardPage() {
                 padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
                 background: listingTab === tab ? '#2E5BFF' : '#F0F4FF',
                 color: listingTab === tab ? '#fff' : '#6B7A99',
-                fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap', textTransform: 'capitalize',
-              }}>{tab}</button>
+                fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap',
+              }}>{tr(tab === 'all' ? 'tabAll' : tab === 'pending' ? 'tabPending' : tab === 'approved' ? 'tabApproved' : 'tabRejected', selectedLanguage)}</button>
             ))}
           </div>
 
           {filteredListings.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 0', color: '#6B7A99', fontSize: 14 }}>
-              No {listingTab === 'all' ? '' : listingTab} listings yet.
+              {tr('noListingsYet', selectedLanguage)}
             </div>
           ) : (
             filteredListings.map((l, i) => (
@@ -346,12 +349,12 @@ export default function DashboardPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 13, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    <span style={{ background: STATUS_BG[l.status] ?? '#F2F5F9', color: STATUS_COLORS[l.status] ?? '#6B7A99', fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '2px 8px', textTransform: 'capitalize' }}>{l.status}</span>
+                    <span style={{ background: STATUS_BG[l.status] ?? '#F2F5F9', color: STATUS_COLORS[l.status] ?? '#6B7A99', fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '2px 8px' }}>{tr(l.status === 'approved' ? 'tabApproved' : l.status === 'pending' ? 'tabPending' : l.status === 'rejected' ? 'tabRejected' : l.status === 'blocked' ? 'statusBlocked' : 'tabPending', selectedLanguage)}</span>
                     <span style={{ color: '#9AA0B2', fontSize: 11 }}>👁 {l.viewsCount}</span>
                   </div>
                 </div>
                 <button onClick={() => router.push(`/dashboard/edit/${l.id}`)} style={{ background: '#F0F4FF', border: 'none', borderRadius: 10, padding: '7px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: '#2E5BFF', fontWeight: 700, fontSize: 12 }}>
-                  <Edit3 size={13} /> Edit
+                  <Edit3 size={13} /> {tr('editShort', selectedLanguage)}
                 </button>
               </div>
             ))
@@ -368,9 +371,9 @@ export default function DashboardPage() {
             <FileText size={30} color="#2E5BFF" />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 15, lineHeight: 1.2, letterSpacing: 0.3 }}>Listing Policies</div>
+            <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 15, lineHeight: 1.2, letterSpacing: 0.3 }}>{tr('listingPolicies', selectedLanguage)}</div>
             <div style={{ color: '#2D3340', fontSize: 13, fontWeight: 500, lineHeight: 1.45, marginTop: 8 }}>
-              Understand how upgrades, promotions, and happenings work — and what happens when they expire.
+              {tr('listingPoliciesDesc', selectedLanguage)}
             </div>
           </div>
           <ChevronRight size={34} color="#6E7785" />
@@ -387,20 +390,20 @@ export default function DashboardPage() {
               <Smartphone size={24} color="#fff" />
             </div>
             <div>
-              <div style={{ fontWeight: 900, fontSize: 16, color: '#fff' }}>More on the SYPH App</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>Exclusive mobile features</div>
+              <div style={{ fontWeight: 900, fontSize: 16, color: '#fff' }}>{tr('moreOnSyphApp', selectedLanguage)}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{tr('exclusiveMobileFeatures', selectedLanguage)}</div>
             </div>
           </div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', fontWeight: 500, lineHeight: 1.65, marginBottom: 16 }}>
-            The following requesting screens are available exclusively in the SYPH mobile app and are not accessible on this website.
+            {tr('appOnlyIntro', selectedLanguage)}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
             {[
-              { emoji: '⭐', label: 'Sponsor My Item', desc: 'Boost listing visibility to the top of search results' },
-              { emoji: '⚡', label: 'Flash Sales', desc: 'Run time-limited discount offers to attract buyers fast' },
-              { emoji: '📅', label: 'Post Happenings', desc: 'Share events, markets and local happenings near you' },
-              { emoji: '📈', label: 'My Promotions', desc: 'Track and manage all your active promotional campaigns' },
+              { emoji: '⭐', label: tr('featSponsorTitle', selectedLanguage), desc: tr('featSponsorDesc', selectedLanguage) },
+              { emoji: '⚡', label: tr('flashSales', selectedLanguage), desc: tr('featFlashDesc', selectedLanguage) },
+              { emoji: '📅', label: tr('featHappeningsTitle', selectedLanguage), desc: tr('featHappeningsDesc', selectedLanguage) },
+              { emoji: '📈', label: tr('featPromotionsTitle', selectedLanguage), desc: tr('featPromotionsDesc', selectedLanguage) },
             ].map(f => (
               <div key={f.label} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 14, padding: '13px 12px', border: '1px solid rgba(255,255,255,0.12)' }}>
                 <div style={{ fontSize: 22, marginBottom: 7 }}>{f.emoji}</div>
@@ -411,9 +414,9 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(255,255,255,0.16)' }}>
-            <div style={{ fontWeight: 800, fontSize: 13, color: '#fff', marginBottom: 6 }}>Why app-only?</div>
+            <div style={{ fontWeight: 800, fontSize: 13, color: '#fff', marginBottom: 6 }}>{tr('whyAppOnly', selectedLanguage)}</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', lineHeight: 1.6, fontWeight: 500 }}>
-              These features rely on real-time push notifications, in-app payment flows, and mobile-native interactions that deliver the best experience on the SYPH mobile app. Download the app to unlock them — it&apos;s free.
+              {tr('whyAppOnlyDesc', selectedLanguage)}
             </div>
           </div>
         </div>
@@ -423,12 +426,12 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <div style={{ fontSize: 28 }}>📱</div>
             <div>
-              <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>Get the SYPH App</div>
-              <div style={{ fontSize: 12, color: '#6B7A99', marginTop: 2 }}>Available on iOS & Android</div>
+              <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>{tr('getSyphApp', selectedLanguage)}</div>
+              <div style={{ fontSize: 12, color: '#6B7A99', marginTop: 2 }}>{tr('availableIosAndroid', selectedLanguage)}</div>
             </div>
           </div>
           <div style={{ fontSize: 13, color: '#4A5878', fontWeight: 500, lineHeight: 1.65, marginBottom: 14 }}>
-            The SYPH app gives you the full seller experience — sponsor listings, run flash sales, post happenings, track promotions, receive real-time buyer messages, and manage everything from your phone.
+            {tr('getAppDesc', selectedLanguage)}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} onClick={() => setShowAppModal(true)} style={{ flex: 1, height: 48, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
