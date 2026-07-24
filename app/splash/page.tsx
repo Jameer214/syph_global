@@ -149,7 +149,12 @@ export default function SplashScreen() {
       const t = now - startRef.current;
       ctx.clearRect(0, 0, width, height);
 
-      const zoom = 1 + 0.06 * (1 - Math.min(t / NET_FULL, 1));
+      // Exit choreography — the scene dives forward, the wordmark blooms and
+      // the swarm bursts outward as we hand off to the (light) app screen.
+      const exitP = t > EXIT_AT ? easeInOutCubic(Math.min((t - EXIT_AT) / (ROUTE_AT - EXIT_AT), 1)) : 0;
+      const exitFade = exitP > 0.6 ? 1 - (exitP - 0.6) / 0.4 : 1; // last 40% fades to the wash
+
+      const zoom = 1 + 0.06 * (1 - Math.min(t / NET_FULL, 1)) + 0.42 * exitP;
       ctx.save();
       ctx.translate(width / 2, height / 2);
       ctx.scale(zoom, zoom);
@@ -169,20 +174,42 @@ export default function SplashScreen() {
       // The wordmark fades in as the fireflies converge, then solidifies:
       // clean readable type with only a faint glow once the nodes melt away.
       const solidify = Math.min(Math.max((t - (MORPH_START + MORPH_DUR)) / SOLIDIFY_DUR, 0), 1);
+
+      // Location-pulse rings — once SYPH is formed, soft signal rings breathe
+      // outward from the wordmark, echoing SYPH's "locate it / connect" identity.
+      if (formed) {
+        const pulseFade = Math.min(solidify, 1) * (1 - exitP);
+        if (pulseFade > 0.01) {
+          const cyc = (t - START_AT) / 2200;
+          const maxR = Math.min(width, height) * 0.6;
+          for (let k = 0; k < 3; k++) {
+            const phase = (cyc + k / 3) % 1;
+            const alpha = (1 - phase) * 0.16 * pulseFade;
+            if (alpha <= 0.002) continue;
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(130, 180, 255, ${alpha})`;
+            ctx.lineWidth = 1.1;
+            ctx.arc(width / 2, wordY, phase * maxR, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+      }
+
       if (mpRaw > 0.55) {
         const textAlpha = Math.min((mpRaw - 0.55) / 0.45, 1);
         ctx.save();
         ctx.font = `900 ${OFF_FONT * textScale}px ${FONT_STACK}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        // halo — strong while forming, settles to a faint glow once solid
-        ctx.shadowColor = 'rgba(110, 165, 255, 0.7)';
-        ctx.shadowBlur = (26 - 16 * solidify) * textScale;
-        ctx.fillStyle = `rgba(160, 200, 255, ${(0.4 - 0.28 * solidify) * textAlpha})`;
+        // halo — strong while forming, settles to a faint glow once solid,
+        // then flares on exit as the wordmark blooms into the handoff
+        ctx.shadowColor = 'rgba(150, 195, 255, 0.75)';
+        ctx.shadowBlur = ((26 - 16 * solidify) + 46 * exitP) * textScale;
+        ctx.fillStyle = `rgba(160, 200, 255, ${(0.4 - 0.28 * solidify + 0.5 * exitP) * textAlpha * exitFade})`;
         ctx.fillText(WORD, width / 2, wordY);
-        // solid core — fully opaque once formed
-        ctx.shadowBlur = (6 - 3 * solidify) * textScale;
-        ctx.fillStyle = `rgba(244, 248, 255, ${(0.85 + 0.15 * solidify) * textAlpha})`;
+        // solid core — fully opaque once formed, brightening toward white on exit
+        ctx.shadowBlur = ((6 - 3 * solidify) + 10 * exitP) * textScale;
+        ctx.fillStyle = `rgba(${244 + 11 * exitP}, ${248 + 7 * exitP}, 255, ${(0.85 + 0.15 * solidify) * textAlpha * exitFade})`;
         ctx.fillText(WORD, width / 2, wordY);
         ctx.restore();
       }
@@ -212,12 +239,21 @@ export default function SplashScreen() {
           if (f.y < 0) f.y += height; if (f.y > height) f.y -= height;
         }
 
+        // on exit the whole swarm bursts radially outward from the wordmark
+        if (exitP > 0) {
+          const dx = f.x - width / 2, dy = f.y - height / 2;
+          const dist = Math.hypot(dx, dy) || 1;
+          const push = exitP * exitP * 9;
+          f.x += (dx / dist) * push;
+          f.y += (dy / dist) * push;
+        }
+
         const flick = 0.65 + 0.35 * Math.sin(f.flicker);
         // ambient dust dims during the morph; letter nodes melt away once
         // the solid wordmark has taken over
         const dim = mpRaw > 0 && f.tx < 0 ? 0.3 : f.tx >= 0 ? 1 - solidify : 1;
         if (dim <= 0.01) continue;
-        const a = fadeIn * flick * dim;
+        const a = fadeIn * flick * dim * exitFade;
         const color = f.gold ? '255, 205, 120' : '140, 200, 255';
 
         ctx.beginPath();
@@ -274,7 +310,10 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <div
+    <motion.div
+      initial={false}
+      animate={{ scale: leaving ? 1.08 : 1 }}
+      transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
       style={{
         minHeight: '100dvh', position: 'relative', overflow: 'hidden',
         background: 'radial-gradient(120% 100% at 50% 0%, #0A1838 0%, #050B1E 55%, #02040C 100%)',
@@ -308,8 +347,8 @@ export default function SplashScreen() {
       {/* Slogan — large, gradient words with glowing separators */}
       <motion.div
         initial={false}
-        animate={showSlogan ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        animate={leaving ? { opacity: 0, y: -22 } : showSlogan ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
+        transition={{ duration: leaving ? 0.5 : 0.8, ease: [0.22, 1, 0.36, 1] }}
         style={{
           position: 'absolute', left: 0, right: 0, top: '57%',
           display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -376,13 +415,17 @@ export default function SplashScreen() {
         </button>
       </motion.div>
 
-      {/* Exit fade to ease the cut into the next screen */}
+      {/* Exit wash — a light bloom (not black) that dissolves seamlessly into
+          the light app screen's fade-in, so there's no dark flash between them */}
       <motion.div
         initial={false}
         animate={{ opacity: leaving ? 1 : 0 }}
-        transition={{ duration: 0.4, ease: 'easeIn' }}
-        style={{ position: 'absolute', inset: 0, background: '#02040C', pointerEvents: 'none' }}
+        transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
+        style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(120% 90% at 50% 44%, #FFFFFF 0%, #EAF0FF 42%, #F0F4FF 100%)',
+        }}
       />
-    </div>
+    </motion.div>
   );
 }
