@@ -23,7 +23,16 @@ import type { Listing, Review } from '@/types';
 // ─── Report Modal ─────────────────────────────────────────────────────────────
 
 function ReportModal({ listingId, onClose }: { listingId: string; onClose: () => void }) {
-  const REASONS = ['Fake listing', 'Wrong category', 'Spam / scam', 'Offensive content', 'Already sold', 'Other'];
+  const { selectedLanguage } = useAppStore();
+  // value = canonical English stored to the DB; key = translated display label.
+  const REASONS: { value: string; key: string }[] = [
+    { value: 'Fake listing', key: 'reportReasonFake' },
+    { value: 'Wrong category', key: 'reportReasonWrongCategory' },
+    { value: 'Spam / scam', key: 'reportReasonSpam' },
+    { value: 'Offensive content', key: 'reportReasonOffensive' },
+    { value: 'Already sold', key: 'reportReasonSold' },
+    { value: 'Other', key: 'reportReasonOther' },
+  ];
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -31,8 +40,8 @@ function ReportModal({ listingId, onClose }: { listingId: string; onClose: () =>
   async function submit() {
     const { data: { session } } = await supabase.auth.getSession();
     const uid = session?.user?.id;
-    if (!uid) { toast.error('Sign in to report.'); return; }
-    if (!reason) { toast.error('Select a reason.'); return; }
+    if (!uid) { toast.error(tr('signInToReport', selectedLanguage)); return; }
+    if (!reason) { toast.error(tr('selectAReason', selectedLanguage)); return; }
     setSubmitting(true);
     try {
       await supabase.from('reports').insert({
@@ -42,9 +51,9 @@ function ReportModal({ listingId, onClose }: { listingId: string; onClose: () =>
         details: details.trim(),
         status: 'pending',
       });
-      toast.success('Report submitted. Thank you!');
+      toast.success(tr('reportSubmittedThanks', selectedLanguage));
       onClose();
-    } catch { toast.error('Failed to submit.'); }
+    } catch { toast.error(tr('failedToSubmit', selectedLanguage)); }
     finally { setSubmitting(false); }
   }
 
@@ -52,22 +61,22 @@ function ReportModal({ listingId, onClose }: { listingId: string; onClose: () =>
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 480, padding: '20px 20px 40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F2B6E' }}>Report Listing</h3>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F2B6E' }}>{tr('reportListing', selectedLanguage)}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="#6B7A99" /></button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
           {REASONS.map((r) => (
-            <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', borderRadius: 12, border: `1.5px solid ${reason === r ? '#2E5BFF' : '#e2e8f0'}`, background: reason === r ? '#EEF3FF' : '#fafafa' }}>
-              <input type="radio" checked={reason === r} onChange={() => setReason(r)} style={{ accentColor: '#2E5BFF' }} />
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{r}</span>
+            <label key={r.value} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', borderRadius: 12, border: `1.5px solid ${reason === r.value ? '#2E5BFF' : '#e2e8f0'}`, background: reason === r.value ? '#EEF3FF' : '#fafafa' }}>
+              <input type="radio" checked={reason === r.value} onChange={() => setReason(r.value)} style={{ accentColor: '#2E5BFF' }} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{tr(r.key, selectedLanguage)}</span>
             </label>
           ))}
         </div>
-        <textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Additional details (optional)" rows={3}
+        <textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder={tr('additionalDetailsOptional', selectedLanguage)} rows={3}
           style={{ width: '100%', borderRadius: 12, border: '1.5px solid #e2e8f0', padding: '10px 14px', fontSize: 14, outline: 'none', marginBottom: 14, resize: 'none', fontFamily: 'inherit' }} />
         <button onClick={submit} disabled={submitting || !reason}
           style={{ width: '100%', height: 50, borderRadius: 25, border: 'none', background: !reason || submitting ? '#9ca3af' : '#ef4444', color: '#fff', fontWeight: 800, fontSize: 15, cursor: !reason || submitting ? 'not-allowed' : 'pointer' }}>
-          {submitting ? 'Submitting…' : 'Submit Report'}
+          {submitting ? tr('submittingEllipsis', selectedLanguage) : tr('submitReport', selectedLanguage)}
         </button>
       </div>
     </div>
@@ -77,6 +86,7 @@ function ReportModal({ listingId, onClose }: { listingId: string; onClose: () =>
 // ─── Review Modal ─────────────────────────────────────────────────────────────
 
 function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sellerUid: string; onClose: () => void }) {
+  const { selectedLanguage } = useAppStore();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -104,9 +114,9 @@ function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sel
   async function submit() {
     const { data: { session } } = await supabase.auth.getSession();
     const u = session?.user;
-    if (!u) { toast.error('Sign in to review.'); return; }
-    if (!hasChatted) { toast.error('Message the seller about this listing before leaving a review.'); return; }
-    if (!comment.trim()) { toast.error('Add a comment.'); return; }
+    if (!u) { toast.error(tr('signInToReview', selectedLanguage)); return; }
+    if (!hasChatted) { toast.error(tr('messageSellerBeforeReview', selectedLanguage)); return; }
+    if (!comment.trim()) { toast.error(tr('addCommentToast', selectedLanguage)); return; }
     setSubmitting(true);
     try {
       await supabase.from('reviews').insert({
@@ -121,9 +131,9 @@ function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sel
         comment: comment.trim(),
         status: 'pending',
       });
-      toast.success('Review submitted for approval!');
+      toast.success(tr('reviewSubmittedTitle', selectedLanguage));
       onClose();
-    } catch { toast.error('Failed to submit review.'); }
+    } catch { toast.error(tr('failedToSubmitReview', selectedLanguage)); }
     finally { setSubmitting(false); }
   }
 
@@ -131,21 +141,21 @@ function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sel
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 480, padding: '20px 20px 40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F2B6E' }}>Share Your Review</h3>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F2B6E' }}>{tr('shareYourReview', selectedLanguage)}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="#6B7A99" /></button>
         </div>
         {checkingChat ? (
-          <div style={{ textAlign: 'center', padding: '32px 0', color: '#6B7A99', fontWeight: 700 }}>Checking…</div>
+          <div style={{ textAlign: 'center', padding: '32px 0', color: '#6B7A99', fontWeight: 700 }}>{tr('checkingEllipsis', selectedLanguage)}</div>
         ) : !hasChatted ? (
           <div style={{ textAlign: 'center', padding: '12px 4px 8px' }}>
             <MessageCircle size={40} color="#FF8F00" style={{ marginBottom: 12 }} />
-            <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 800, color: '#0F2B6E' }}>Contact the seller first</p>
+            <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 800, color: '#0F2B6E' }}>{tr('contactSellerFirst', selectedLanguage)}</p>
             <p style={{ margin: '0 0 20px', fontSize: 13.5, fontWeight: 600, color: '#6B7A99', lineHeight: 1.45 }}>
-              You need to message the seller about this listing before you can leave a review.
+              {tr('contactSellerFirstDesc', selectedLanguage)}
             </p>
             <button onClick={onClose}
               style={{ width: '100%', height: 48, borderRadius: 24, border: 'none', background: '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
-              Got it
+              {tr('gotIt', selectedLanguage)}
             </button>
           </div>
         ) : (
@@ -157,11 +167,11 @@ function ReviewModal({ listingId, sellerUid, onClose }: { listingId: string; sel
                 </button>
               ))}
             </div>
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Write your experience…" rows={4}
+            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={tr('writeYourExperience', selectedLanguage)} rows={4}
               style={{ width: '100%', borderRadius: 12, border: '1.5px solid #e2e8f0', padding: '10px 14px', fontSize: 14, outline: 'none', marginBottom: 14, resize: 'none', fontFamily: 'inherit' }} />
             <button onClick={submit} disabled={submitting}
               style={{ width: '100%', height: 50, borderRadius: 25, border: 'none', background: submitting ? '#9ca3af' : '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: submitting ? 'not-allowed' : 'pointer' }}>
-              {submitting ? 'Submitting…' : 'Submit Review'}
+              {submitting ? tr('submittingEllipsis', selectedLanguage) : tr('submitReview', selectedLanguage)}
             </button>
           </>
         )}
@@ -239,16 +249,16 @@ export default function ListingDetailsPage() {
     // Client-side rate limit: 3 seconds between sends
     const now = Date.now();
     if (now - lastMessageSent.current < 3000) {
-      toast.error('Please wait before sending another message.');
+      toast.error(tr('pleaseWaitBeforeMessage', selectedLanguage));
       return;
     }
     lastMessageSent.current = now;
     const { data: { session } } = await supabase.auth.getSession();
     const fireUser = session?.user;
-    if (!fireUser) { toast.error('Sign in to message the seller'); return; }
+    if (!fireUser) { toast.error(tr('signInToMessageSeller', selectedLanguage)); return; }
     if (!listing) return;
-    if (!listing.ownerUid) { toast.error('Seller chat not available'); return; }
-    if (fireUser.id === listing.ownerUid) { toast.error('This is your own listing'); return; }
+    if (!listing.ownerUid) { toast.error(tr('sellerChatUnavailable', selectedLanguage)); return; }
+    if (fireUser.id === listing.ownerUid) { toast.error(tr('ownListingError', selectedLanguage)); return; }
 
     setStartingChat(true);
     try {
@@ -312,7 +322,7 @@ export default function ListingDetailsPage() {
       router.push(`/chat/${chatId}`);
     } catch (e) {
       console.error('Failed to open chat:', e);
-      toast.error('Failed to open chat. Please try again.');
+      toast.error(tr('failedToOpenChat', selectedLanguage));
     } finally {
       setStartingChat(false);
     }
@@ -329,7 +339,7 @@ export default function ListingDetailsPage() {
     } else if (label) {
       url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(label)}`;
     } else {
-      toast.error('Venue location not available');
+      toast.error(tr('venueLocationUnavailable', selectedLanguage));
       return;
     }
     window.open(url, '_blank');
@@ -341,7 +351,7 @@ export default function ListingDetailsPage() {
     if (navigator.share) {
       navigator.share({ title: listing.title, text, url: `https://syph.app/listing/${listing.id}` }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(`https://syph.app/listing/${listing.id}`).then(() => toast.success('Link copied!'));
+      navigator.clipboard.writeText(`https://syph.app/listing/${listing.id}`).then(() => toast.success(tr('linkCopied', selectedLanguage)));
     }
   }
 
@@ -471,7 +481,7 @@ export default function ListingDetailsPage() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, color: '#fff', fontWeight: 900, fontSize: 15 }}>{tr('tapForDirections', selectedLanguage)}</p>
-              <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.locationText || 'Venue location'}</p>
+              <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.locationText || tr('venueLocation', selectedLanguage)}</p>
             </div>
             <ChevronRight size={16} color="rgba(255,255,255,0.7)" />
           </div>
@@ -486,7 +496,7 @@ export default function ListingDetailsPage() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, color: '#fff', fontWeight: 900, fontSize: 15 }}>{tr('accessSellersShop', selectedLanguage)}</p>
               <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {listing.sellerName ? `${listing.sellerName} • ` : ''}View shop & get directions
+                {listing.sellerName ? `${listing.sellerName} • ` : ''}{tr('viewShopGetDirections', selectedLanguage)}
               </p>
             </div>
             <ChevronRight size={16} color="rgba(255,255,255,0.7)" />
@@ -495,7 +505,7 @@ export default function ListingDetailsPage() {
 
         {/* Specifications */}
         {listing.specifications && Object.keys(listing.specifications).length > 0 && (
-          <SectionCard icon={<List size={20} color="#2E5BFF" />} title="Specifications" marginBottom={14}>
+          <SectionCard icon={<List size={20} color="#2E5BFF" />} title={tr('specifications', selectedLanguage)} marginBottom={14}>
             {Object.entries(listing.specifications).map(([key, val]) => (
               <div key={key} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2E5BFF', flexShrink: 0, marginTop: 5 }} />
@@ -509,27 +519,27 @@ export default function ListingDetailsPage() {
         {/* Description */}
         <SectionCard icon={<FileText size={20} color="#2E5BFF" />} title={tr('description', selectedLanguage)} marginBottom={14}>
           <p style={{ margin: 0, fontWeight: 600, lineHeight: 1.6, color: 'rgba(0,0,0,0.85)', fontSize: 14 }}>
-            {sanitizeText(listing.description) || 'No description added.'}
+            {sanitizeText(listing.description) || tr('noDescriptionAdded', selectedLanguage)}
           </p>
         </SectionCard>
 
         {/* Bio */}
         {listing.bio?.trim() && (
-          <SectionCard icon={<Info size={20} color="#2E5BFF" />} title="About This Item" marginBottom={14}>
+          <SectionCard icon={<Info size={20} color="#2E5BFF" />} title={tr('aboutThisItem', selectedLanguage)} marginBottom={14}>
             <p style={{ margin: 0, fontWeight: 600, lineHeight: 1.6, color: 'rgba(0,0,0,0.85)', fontSize: 14 }}>{sanitizeText(listing.bio)}</p>
           </SectionCard>
         )}
 
         {/* Item Details */}
         <SectionCard icon={<List size={20} color="#2E5BFF" />} title={tr('itemDetails', selectedLanguage)} marginBottom={14}>
-          {listing.mainCategoryId && <DetailRow label="Category" value={listing.mainCategoryId.replace(/_/g, ' ')} />}
-          {listing.subCategoryId && <DetailRow label="Subcategory" value={listing.subCategoryId.replace(/_/g, ' ')} />}
-          {listing.condition && <DetailRow label="Condition" value={listing.condition} />}
-          {listing.units != null && <DetailRow label="Units Available" value={String(listing.units)} />}
-          <DetailRow label="Price Type" value={listing.negotiable ? 'Negotiable' : 'Fixed'} />
-          <DetailRow label="Location" value={listing.locationText || '—'} />
-          {listing.regionOrCity && <DetailRow label="Region/City" value={listing.regionOrCity} />}
-          <DetailRow label="Country" value={listing.country} />
+          {listing.mainCategoryId && <DetailRow label={tr('category', selectedLanguage)} value={listing.mainCategoryId.replace(/_/g, ' ')} />}
+          {listing.subCategoryId && <DetailRow label={tr('subcategoryField', selectedLanguage)} value={listing.subCategoryId.replace(/_/g, ' ')} />}
+          {listing.condition && <DetailRow label={tr('condition', selectedLanguage)} value={listing.condition === 'New' ? tr('new', selectedLanguage) : tr('used', selectedLanguage)} />}
+          {listing.units != null && <DetailRow label={tr('unitsAvailable', selectedLanguage)} value={String(listing.units)} />}
+          <DetailRow label={tr('priceType', selectedLanguage)} value={listing.negotiable ? tr('negotiable', selectedLanguage) : tr('fixed', selectedLanguage)} />
+          <DetailRow label={tr('location', selectedLanguage)} value={listing.locationText || '—'} />
+          {listing.regionOrCity && <DetailRow label={tr('regionCity', selectedLanguage)} value={listing.regionOrCity} />}
+          <DetailRow label={tr('countryField', selectedLanguage)} value={listing.country} />
           {listing.messageAboutGoods && (
             <div style={{ background: '#EEF5FF', borderRadius: 12, border: '1px solid #c7d9f5', padding: 12, marginTop: 10, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 16 }}>📢</span>
@@ -548,12 +558,12 @@ export default function ListingDetailsPage() {
               <p style={{ margin: '0 0 4px', color: 'rgba(255,255,255,0.7)', fontWeight: 900, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' }}>{tr('sellerShop', selectedLanguage)}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: '#fff', fontWeight: 900, fontSize: 18, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {listing.sellerName || 'Seller'}
+                  {listing.sellerName || tr('sellerFallback', selectedLanguage)}
                 </span>
                 {isVerified && <span style={{ fontSize: 16 }}>✅</span>}
               </div>
               <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {listing.locationText || 'Location not published'}
+                {listing.locationText || tr('locationNotPublished', selectedLanguage)}
               </p>
             </div>
           </div>
@@ -562,26 +572,29 @@ export default function ListingDetailsPage() {
               <Store size={16} /> {tr('viewShop', selectedLanguage)}
             </button>
             <button onClick={() => openOrCreateChat()} disabled={startingChat} style={{ flex: 1, background: 'transparent', color: '#fff', border: '1.5px solid rgba(255,255,255,0.45)', borderRadius: 16, padding: '14px', fontWeight: 900, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              {startingChat ? <span style={{ fontSize: 12 }}>Opening…</span> : <><MessageCircle size={16} /> {tr('messageContact', selectedLanguage)}</>}
+              {startingChat ? <span style={{ fontSize: 12 }}>{tr('openingEllipsis', selectedLanguage)}</span> : <><MessageCircle size={16} /> {tr('messageContact', selectedLanguage)}</>}
             </button>
           </div>
         </div>
 
         {/* Chat starter card */}
         <SectionCard icon={<MessageCircle size={20} color="#2E5BFF" />} title={tr('chatWithSeller', selectedLanguage)} marginBottom={14}>
-          <p style={{ margin: '0 0 14px', color: '#6B7A99', fontWeight: 600, lineHeight: 1.4, fontSize: 13 }}>Send a quick message to the seller.</p>
+          <p style={{ margin: '0 0 14px', color: '#6B7A99', fontWeight: 600, lineHeight: 1.4, fontSize: 13 }}>{tr('sendQuickMessage', selectedLanguage)}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-            {['Is this still available?', "What's the best price?", 'Do you deliver?'].map((msg) => (
-              <button key={msg} onClick={() => setMessageText(msg)} style={{ background: '#f0f5ff', border: '1px solid rgba(46,91,255,0.2)', borderRadius: 999, padding: '10px 14px', fontWeight: 800, fontSize: 12.5, color: '#0F2B6E', cursor: 'pointer' }}>
-                {msg}
-              </button>
-            ))}
+            {['quickMsgAvailable', 'quickMsgBestPrice', 'quickMsgDeliver'].map((msgKey) => {
+              const msg = tr(msgKey, selectedLanguage);
+              return (
+                <button key={msgKey} onClick={() => setMessageText(msg)} style={{ background: '#f0f5ff', border: '1px solid rgba(46,91,255,0.2)', borderRadius: 999, padding: '10px 14px', fontWeight: 800, fontSize: 12.5, color: '#0F2B6E', cursor: 'pointer' }}>
+                  {msg}
+                </button>
+              );
+            })}
           </div>
           <textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             disabled={startingChat}
-            placeholder="Write a message here…"
+            placeholder={tr('writeMessageHere', selectedLanguage)}
             rows={3}
             style={{ width: '100%', padding: '14px', borderRadius: 16, border: '1px solid rgba(0,0,0,0.08)', background: '#F7FAFD', fontSize: 14, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box', outline: 'none' }}
           />
@@ -596,7 +609,7 @@ export default function ListingDetailsPage() {
 
         {/* Reviews */}
         {reviews.length > 0 && (
-          <SectionCard icon={<Star size={20} color="#2E5BFF" />} title={`Reviews (${reviews.length})`} marginBottom={14}>
+          <SectionCard icon={<Star size={20} color="#2E5BFF" />} title={`${tr('reviews', selectedLanguage)} (${reviews.length})`} marginBottom={14}>
             {reviews.map((r) => (
               <div key={r.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 12, marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -616,7 +629,7 @@ export default function ListingDetailsPage() {
         {/* Submit review button */}
         <button
           onClick={() => {
-            if (!user?.uid) { toast.error('Sign in to submit a review'); return; }
+            if (!user?.uid) { toast.error(tr('signInToReview', selectedLanguage)); return; }
             setShowReview(true);
           }}
           style={{ width: '100%', padding: '15px', borderRadius: 18, background: '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
@@ -627,7 +640,7 @@ export default function ListingDetailsPage() {
         {/* Report button */}
         <button
           onClick={() => {
-            if (!user?.uid) { toast.error('Sign in to report'); return; }
+            if (!user?.uid) { toast.error(tr('signInToReport', selectedLanguage)); return; }
             setShowReport(true);
           }}
           style={{ width: '100%', padding: '15px', borderRadius: 18, background: '#fff', color: '#ef4444', fontWeight: 900, fontSize: 15, border: '1.5px solid #fca5a5', cursor: 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
@@ -645,7 +658,7 @@ export default function ListingDetailsPage() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {related.map((r) => {
-                const rPrice = r.priceValue != null ? `${r.currencyCode} ${r.priceValue.toLocaleString()}` : r.priceText ?? 'Price not set';
+                const rPrice = r.priceValue != null ? `${r.currencyCode} ${r.priceValue.toLocaleString()}` : r.priceText ?? tr('priceNotSet', selectedLanguage);
                 const rImg = r.imageUrls?.[0] ?? r.imageUrl;
                 return (
                   <div key={r.id} onClick={() => router.push(`/listing/${r.id}`)} className="card-tap card-zoom" style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 3px 6px rgba(0,0,0,0.03)', cursor: 'pointer' }}>
@@ -688,7 +701,7 @@ export default function ListingDetailsPage() {
           <button onClick={() => openOrCreateChat()} disabled={startingChat}
             className={startingChat ? 'btn-tap' : 'btn-tap cta-armed'}
             style={{ flex: 1, height: 50, borderRadius: 25, border: 'none', background: startingChat ? '#9ca3af' : '#2E5BFF', color: '#fff', fontWeight: 800, fontSize: 15, cursor: startingChat ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <MessageCircle size={18} /> {startingChat ? 'Opening…' : tr('messageSeller', selectedLanguage)}
+            <MessageCircle size={18} /> {startingChat ? tr('openingEllipsis', selectedLanguage) : tr('messageSeller', selectedLanguage)}
           </button>
         </div>
       ) : (
