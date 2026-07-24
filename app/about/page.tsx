@@ -104,7 +104,7 @@ export default function AboutPage() {
               <div key={i} className="anim-fade-up about-hero-title" style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.6, lineHeight: 1.12, animationDelay: `${0.15 + i * 0.12}s` }}>{line}</div>
             ))}
             <div className="anim-fade-up" style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, marginTop: 12, maxWidth: 300, animationDelay: '0.55s' }}>
-              Your digital broker — connecting you to the businesses you want, in any country, any region.
+              Your digital broker — connecting you to the businesses and services you want easily and efficiently, in any country, any region.
             </div>
           </div>
         </div>
