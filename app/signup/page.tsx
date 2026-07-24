@@ -44,7 +44,7 @@ export default function SignupPage() {
       displayName: supabaseUser.user_metadata?.full_name ?? supabaseUser.email?.split('@')[0] ?? '',
       photoUrl: supabaseUser.user_metadata?.avatar_url ?? undefined,
     };
-    await createOrUpdateUserProfile(profile);
+    await createOrUpdateUserProfile(profile).catch(() => {}); // profile row is secondary; never block a valid session
     setUser(profile);
     afterAuth();
   };
@@ -143,7 +143,7 @@ export default function SignupPage() {
         country: country || undefined,
         regionOrCity: region || undefined,
       };
-      await createOrUpdateUserProfile(profile);
+      await createOrUpdateUserProfile(profile).catch(() => {}); // profile row is secondary; never block a valid session
       setUser(profile);
       toast.success('Account created successfully!');
       afterAuth();

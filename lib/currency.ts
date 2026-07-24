@@ -48,3 +48,41 @@ export function formatConverted(amount: number, fromCurrency: string, toCurrency
   if (converted >= 1_000) return `${symbol}${(converted / 1_000).toFixed(0)}K`;
   return `${symbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
+
+/**
+ * Canonical listing price renderer — mirrors the Flutter app's
+ * `CurrencyUtils.displayListingPrice`.
+ *
+ * When the buyer's display currency differs from the listing's currency AND a
+ * numeric price exists, we convert and show an "≈" approximation. Otherwise we
+ * fall back to the seller's free-form price text (which may say "Negotiable",
+ * a range, etc.), then to a formatted numeric price, then to a placeholder.
+ *
+ * NOTE: web-created listings store BOTH `price_text` ("UGX 5000") and a numeric
+ * `price`. Historically every renderer returned `price_text` first, so changing
+ * the display currency did nothing. Convert-first fixes that.
+ */
+export function displayListingPrice(opts: {
+  priceText?: string | null;
+  priceValue?: number | null;
+  currencyCode?: string | null;
+  targetCurrency?: string | null;
+  fallback?: string;
+}): string {
+  const { priceText, priceValue, fallback = 'Price not set' } = opts;
+  const currencyCode = opts.currencyCode || 'USD';
+  const targetCurrency = opts.targetCurrency || '';
+
+  if (
+    priceValue != null &&
+    targetCurrency &&
+    targetCurrency !== currencyCode
+  ) {
+    return `≈ ${formatConverted(priceValue, currencyCode, targetCurrency)}`;
+  }
+  if (priceText?.trim()) return priceText.trim();
+  if (priceValue != null) {
+    return `${getCurrencySymbol(currencyCode)}${priceValue.toLocaleString()}`;
+  }
+  return fallback;
+}

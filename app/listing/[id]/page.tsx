@@ -362,14 +362,12 @@ export default function ListingDetailsPage() {
     : listing.imageUrl ? [listing.imageUrl] : [];
 
   let price: string;
-  if (listing.priceText?.trim()) {
+  if (listing.priceValue != null && selectedCurrency && selectedCurrency !== listing.currencyCode) {
+    price = `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+  } else if (listing.priceText?.trim()) {
     price = listing.priceText.trim();
   } else if (listing.priceValue != null) {
-    if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
-      price = `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
-    } else {
-      price = `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
-    }
+    price = `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
   } else {
     price = tr('priceNotSet', selectedLanguage);
   }

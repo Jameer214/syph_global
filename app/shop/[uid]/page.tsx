@@ -99,11 +99,11 @@ function openMaps(location: string, lat: number | null, lng: number | null) {
 
 function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
   function displayPrice(l: Listing): string {
+    if (l.priceValue != null && selectedCurrency && selectedCurrency !== l.currencyCode) {
+      return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
+    }
     if (l.priceText?.trim()) return l.priceText.trim();
     if (l.priceValue != null) {
-      if (selectedCurrency && selectedCurrency !== l.currencyCode) {
-        return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
-      }
       return `${getCurrencySymbol(l.currencyCode)}${l.priceValue.toLocaleString()}`;
     }
     return 'Price not set';
@@ -156,11 +156,11 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
 
 function HappeningCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
   function displayPrice(l: Listing): string {
+    if (l.priceValue != null && selectedCurrency && selectedCurrency !== l.currencyCode) {
+      return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
+    }
     if (l.priceText?.trim()) return l.priceText.trim();
     if (l.priceValue != null) {
-      if (selectedCurrency && selectedCurrency !== l.currencyCode) {
-        return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
-      }
       return `${getCurrencySymbol(l.currencyCode)}${l.priceValue.toLocaleString()}`;
     }
     return '';

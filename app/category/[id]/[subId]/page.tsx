@@ -55,11 +55,11 @@ export default function SubCategoryResultsPage() {
   const { isSaved, toggleSaved, selectedCurrency, selectedLanguage } = useAppStore();
 
   function displayPrice(listing: Listing): string {
+    if (listing.priceValue != null && selectedCurrency && selectedCurrency !== listing.currencyCode) {
+      return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+    }
     if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
-      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
-        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
-      }
       return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
     }
     return 'Price not set';

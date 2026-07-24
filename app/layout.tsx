@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import CookieConsent from '@/components/CookieConsent';
+import AuthSync from '@/components/AuthSync';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.syphglobal.com'),
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <AuthSync />
         <div className="app-shell">
           {children}
         </div>
