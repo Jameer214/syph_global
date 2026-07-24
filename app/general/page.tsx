@@ -8,6 +8,8 @@ import { useAppStore } from '@/store';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
+import DistanceChip from '@/components/DistanceChip';
+import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -22,6 +24,8 @@ function mapListing(row: Record<string, unknown>): Listing {
     country: String(row.country ?? ''),
     regionOrCity: String(row.region ?? ''),
     locationText: String(row.location_text ?? ''),
+    venueLatitude: typeof row.venue_latitude === 'number' ? row.venue_latitude : undefined,
+    venueLongitude: typeof row.venue_longitude === 'number' ? row.venue_longitude : undefined,
     priceText: row.price_text ? String(row.price_text) : undefined,
     priceValue: typeof row.price === 'number' ? row.price : undefined,
     currencyCode: String(row.currency ?? 'USD'),
@@ -58,6 +62,7 @@ export default function GeneralPage() {
     return 'Price not set';
   }
   const [listings, setListings] = useState<Listing[]>([]);
+  const distanceById = useDistances(listings);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -264,6 +269,9 @@ export default function GeneralPage() {
                       <MapPin size={10} />
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</span>
                     </div>
+                  )}
+                  {distanceById.get(item.id) != null && (
+                    <div style={{ marginTop: 4 }}><DistanceChip km={distanceById.get(item.id)} size="xs" /></div>
                   )}
                   {item.rating != null && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 4 }}>

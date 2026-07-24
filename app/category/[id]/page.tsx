@@ -9,6 +9,8 @@ import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { CATEGORIES, getCategoryById } from '@/data/categories';
+import DistanceChip from '@/components/DistanceChip';
+import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -23,6 +25,8 @@ function mapListing(row: Record<string, unknown>): Listing {
     country: String(row.country ?? ''),
     regionOrCity: String(row.region ?? ''),
     locationText: String(row.location_text ?? ''),
+    venueLatitude: typeof row.venue_latitude === 'number' ? row.venue_latitude : undefined,
+    venueLongitude: typeof row.venue_longitude === 'number' ? row.venue_longitude : undefined,
     priceText: row.price_text ? String(row.price_text) : undefined,
     priceValue: typeof row.price === 'number' ? row.price : undefined,
     currencyCode: String(row.currency ?? 'USD'),
@@ -67,6 +71,7 @@ export default function CategoryResultsPage() {
 
   const PAGE_SIZE = 24;
   const [listings, setListings] = useState<Listing[]>([]);
+  const distanceById = useDistances(listings);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -298,7 +303,7 @@ export default function CategoryResultsPage() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {filtered.map((l, i) => (
-                <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} />
+                <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
             {hasMore && (
@@ -410,7 +415,7 @@ export default function CategoryResultsPage() {
   );
 }
 
-function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0 }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string; index?: number }) {
+function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0, distanceKm }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string; index?: number; distanceKm?: number }) {
   const router = useRouter();
   const { selectedLanguage } = useAppStore();
   const img = l.imageUrls?.[0] ?? l.imageUrl;
@@ -441,7 +446,8 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
         </div>
         <p style={{ margin: '4px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13 }}>{price}</p>
         <p style={{ margin: '0 0 6px', fontSize: 12, color: '#6B7A99', fontWeight: 700 }}>{l.regionOrCity}, {l.country}</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+          {distanceKm != null && <DistanceChip km={distanceKm} size="xs" />}
           {l.openNow && <Badge text={tr('openNow', selectedLanguage)} bg="#DFF5E8" fg="#1F7A3D" />}
           {l.rating != null && <Badge text={`★ ${l.rating.toFixed(1)}`} bg="#FFF8E1" fg="#B8860B" />}
         </div>

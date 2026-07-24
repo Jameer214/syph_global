@@ -17,6 +17,8 @@ import { tr, getDir } from '@/lib/i18n';
 import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
 import MenuDrawer from '@/components/MenuDrawer';
+import DistanceChip from '@/components/DistanceChip';
+import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 import { readListingsCache, writeListingsCache, isCacheFresh, HOT_SELLING_TTL_MS } from '@/lib/listingsCache';
 import { mainCategoryForQuery, getCategoryById } from '@/data/categories';
@@ -42,6 +44,8 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
     priceValue: typeof data.price === 'number' ? data.price : undefined,
     currencyCode: String(data.currency ?? 'USD'),
     negotiable: Boolean(data.is_negotiable),
+    venueLatitude: typeof data.venue_latitude === 'number' ? data.venue_latitude : undefined,
+    venueLongitude: typeof data.venue_longitude === 'number' ? data.venue_longitude : undefined,
     mainCategoryId: String(data.category_id ?? ''),
     subCategoryId: data.sub_category_id ? String(data.sub_category_id) : undefined,
     openNow: Boolean(data.open_now),
@@ -252,7 +256,7 @@ function SectionStrip({
   );
 }
 
-function FlashCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
+function FlashCard({ listing, onClick, selectedCurrency, distanceKm }: { listing: Listing; onClick: () => void; selectedCurrency: string; distanceKm?: number }) {
   return (
     <div
       onClick={onClick}
@@ -284,12 +288,15 @@ function FlashCard({ listing, onClick, selectedCurrency }: { listing: Listing; o
         <p style={{ margin: '3px 0 0', fontSize: 12, fontWeight: 800, color: '#2E5BFF' }}>
           {displayPrice(listing, selectedCurrency)}
         </p>
+        {distanceKm != null && (
+          <div style={{ marginTop: 4 }}><DistanceChip km={distanceKm} size="xs" /></div>
+        )}
       </div>
     </div>
   );
 }
 
-function FeaturedCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
+function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm }: { listing: Listing; onClick: () => void; selectedCurrency: string; distanceKm?: number }) {
   return (
     <div
       onClick={onClick}
@@ -333,6 +340,9 @@ function FeaturedCard({ listing, onClick, selectedCurrency }: { listing: Listing
         <p style={{ margin: '4px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
           <MapPin size={10} />{listing.locationText || listing.regionOrCity}
         </p>
+        {distanceKm != null && (
+          <div style={{ marginTop: 5 }}><DistanceChip km={distanceKm} /></div>
+        )}
         <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
           {[
             { icon: <Eye size={10} />, val: listing.viewsCount },
@@ -349,7 +359,7 @@ function FeaturedCard({ listing, onClick, selectedCurrency }: { listing: Listing
   );
 }
 
-function GridCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
+function GridCard({ listing, onClick, selectedCurrency, distanceKm }: { listing: Listing; onClick: () => void; selectedCurrency: string; distanceKm?: number }) {
   return (
     <div
       onClick={onClick}
@@ -385,6 +395,9 @@ function GridCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
         <p style={{ margin: '3px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <MapPin size={10} />{listing.locationText || listing.regionOrCity}
         </p>
+        {distanceKm != null && (
+          <div style={{ marginTop: 5 }}><DistanceChip km={distanceKm} /></div>
+        )}
         <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>
             <Eye size={10} />{listing.viewsCount}
@@ -867,6 +880,18 @@ export default function HomePage() {
 
   const exploreItems = sortedExplore();
 
+  // Distance chips — how far the user is from each visible listing's seller.
+  // railPool covers the Recommended/Just In/Top Rated rails (all derived from
+  // it). Uses Near-Me coords when active, else silent (already-granted) coords.
+  const allShownListings = useMemo(
+    () => [
+      ...flashSales, ...trending, ...happenings, ...sponsored,
+      ...railPool, ...hotSelling, ...exploreItems,
+    ],
+    [flashSales, trending, happenings, sponsored, railPool, hotSelling, exploreItems],
+  );
+  const distanceById = useDistances(allShownListings, userCoords);
+
   function saveSearch(term: string) {
     if (!term.trim()) return;
     const current: string[] = (() => {
@@ -1167,7 +1192,7 @@ export default function HomePage() {
               className="no-scrollbar rail rail-stagger"
             >
               {flashSales.slice(0, 4).map((l) => (
-                <FlashCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                <FlashCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
           </div>
@@ -1190,7 +1215,7 @@ export default function HomePage() {
               className="no-scrollbar rail rail-stagger"
             >
               {trending.slice(0, 10).map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
           </div>
@@ -1213,7 +1238,7 @@ export default function HomePage() {
               className="no-scrollbar rail rail-stagger"
             >
               {hotSelling.map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
           </div>
@@ -1235,7 +1260,7 @@ export default function HomePage() {
               className="no-scrollbar rail rail-stagger"
             >
               {recommended.map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
           </div>
@@ -1258,7 +1283,7 @@ export default function HomePage() {
               className="no-scrollbar rail rail-stagger"
             >
               {justIn.map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
           </div>
@@ -1281,7 +1306,7 @@ export default function HomePage() {
               className="no-scrollbar rail rail-stagger"
             >
               {topRated.map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
           </div>
@@ -1305,7 +1330,7 @@ export default function HomePage() {
               className="no-scrollbar rail rail-stagger"
             >
               {happenings.slice(0, 4).map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
           </div>
@@ -1327,7 +1352,7 @@ export default function HomePage() {
               className="no-scrollbar rail rail-stagger"
             >
               {sponsored.slice(0, 4).map((l) => (
-                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
               ))}
             </div>
           </div>
@@ -1389,7 +1414,7 @@ export default function HomePage() {
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {exploreItems.slice(0, EXPLORE_MAX).map((l) => (
-                  <GridCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} />
+                  <GridCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} />
                 ))}
               </div>
 

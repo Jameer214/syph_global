@@ -9,6 +9,8 @@ import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { getCategoryById } from '@/data/categories';
+import DistanceChip from '@/components/DistanceChip';
+import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -23,6 +25,8 @@ function mapListing(row: Record<string, unknown>): Listing {
     country: String(row.country ?? ''),
     regionOrCity: String(row.region ?? ''),
     locationText: String(row.location_text ?? ''),
+    venueLatitude: typeof row.venue_latitude === 'number' ? row.venue_latitude : undefined,
+    venueLongitude: typeof row.venue_longitude === 'number' ? row.venue_longitude : undefined,
     priceText: row.price_text ? String(row.price_text) : undefined,
     priceValue: typeof row.price === 'number' ? row.price : undefined,
     currencyCode: String(row.currency ?? 'USD'),
@@ -67,6 +71,7 @@ export default function SubCategoryResultsPage() {
 
   const PAGE_SIZE = 24;
   const [listings, setListings] = useState<Listing[]>([]);
+  const distanceById = useDistances(listings);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -219,7 +224,8 @@ export default function SubCategoryResultsPage() {
                     </div>
                     <p style={{ margin: '4px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13 }}>{price}</p>
                     <p style={{ margin: '0 0 6px', fontSize: 12, color: '#6B7A99', fontWeight: 700 }}>{l.regionOrCity}, {l.country}</p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                      {distanceById.get(l.id) != null && <DistanceChip km={distanceById.get(l.id)} size="xs" />}
                       {l.openNow && <span style={{ background: '#DFF5E8', color: '#1F7A3D', borderRadius: 999, padding: '4px 8px', fontSize: 11, fontWeight: 800 }}>{tr('openNow', selectedLanguage)}</span>}
                       {l.rating != null && <span style={{ background: '#FFF8E1', color: '#B8860B', borderRadius: 999, padding: '4px 8px', fontSize: 11, fontWeight: 800 }}>★ {l.rating.toFixed(1)}</span>}
                     </div>

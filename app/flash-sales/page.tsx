@@ -8,6 +8,8 @@ import { useAppStore } from '@/store';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
+import DistanceChip from '@/components/DistanceChip';
+import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -61,7 +63,7 @@ function useCountdown(): string {
   return time;
 }
 
-function FlashSaleCard({ item, selectedCurrency }: { item: Listing; selectedCurrency: string }) {
+function FlashSaleCard({ item, selectedCurrency, distanceKm }: { item: Listing; selectedCurrency: string; distanceKm?: number }) {
   const router = useRouter();
   const countdown = useCountdown();
 
@@ -123,6 +125,9 @@ function FlashSaleCard({ item, selectedCurrency }: { item: Listing; selectedCurr
         {item.locationText && (
           <div style={{ color: '#6B7A99', fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</div>
         )}
+        {distanceKm != null && (
+          <div style={{ marginTop: 4 }}><DistanceChip km={distanceKm} size="xs" /></div>
+        )}
       </div>
 
       {/* Countdown banner */}
@@ -142,6 +147,7 @@ function FlashSaleCard({ item, selectedCurrency }: { item: Listing; selectedCurr
 export default function FlashSalesPage() {
   const { selectedCountry, selectedCurrency, selectedLanguage } = useAppStore();
   const [items, setItems] = useState<Listing[]>([]);
+  const distanceById = useDistances(items);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -207,7 +213,7 @@ export default function FlashSalesPage() {
         {!loading && items.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             {items.map((item) => (
-              <FlashSaleCard key={item.id} item={item} selectedCurrency={selectedCurrency} />
+              <FlashSaleCard key={item.id} item={item} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(item.id)} />
             ))}
           </div>
         )}
