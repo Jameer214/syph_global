@@ -43,9 +43,8 @@ const PINGS = [
   { x: 84, y: 32, d: 2.5 },
 ];
 
-// ── Timeline (ms) — snappy; everything is present at once, no word intros ───
-const EXIT_AT = 3000;
-const ROUTE_AT = 3400;
+// ── Timeline (ms) — show briefly, then cut straight to the next screen ──────
+const ROUTE_AT = 2800;
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -55,27 +54,25 @@ export default function SplashScreen() {
   // transition); only the exit fade animates.
   const [showSlogan] = useState(true);
   const [showCTA] = useState(true);
-  const [leaving, setLeaving] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  // No exit animation — the splash cuts straight to the next screen. Kept so
+  // the (unused) exit branches below stay inert without touching each one.
+  const leaving = false;
 
   const goExplore = () => {
     if (routedRef.current) return;
     routedRef.current = true;
-    setLeaving(true);
-    setTimeout(() => {
-      if (locationSet && selectedCountry) router.replace('/home');
-      else router.replace('/location');
-    }, 350);
+    // Cut straight to the next screen — no exit fade or wash.
+    if (locationSet && selectedCountry) router.replace('/home');
+    else router.replace('/location');
   };
   const goExploreRef = useRef(goExplore);
   goExploreRef.current = goExplore;
 
   useEffect(() => {
     setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    timers.push(setTimeout(() => setLeaving(true), EXIT_AT));
-    timers.push(setTimeout(() => goExploreRef.current(), ROUTE_AT));
-    return () => timers.forEach(clearTimeout);
+    const t = setTimeout(() => goExploreRef.current(), ROUTE_AT);
+    return () => clearTimeout(t);
   }, []);
 
   return (
@@ -334,18 +331,6 @@ export default function SplashScreen() {
         </button>
       </motion.div>
 
-      {/* Exit wash — a soft fade straight to the app's background tone (no
-          bright white bloom), so the handoff to the next screen is gentle and
-          there's no dark flash either. */}
-      <motion.div
-        initial={false}
-        animate={{ opacity: leaving ? 1 : 0 }}
-        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-        style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: '#F0F4FF',
-        }}
-      />
     </motion.div>
   );
 }
