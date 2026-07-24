@@ -30,7 +30,7 @@ export default function CookieConsent() {
       gap: 12, flexWrap: 'wrap',
     }}>
       <p style={{ margin: 0, fontSize: 13, flex: 1, minWidth: 200 }}>
-        We use cookies and Firebase to provide core features, analytics, and personalization.
+        We use cookies and secure cloud services to provide core features, analytics, and personalization.
         By using SYPH you agree to our{' '}
         <Link href="/privacy" style={{ color: '#93C5FD', textDecoration: 'underline' }}>Privacy Policy</Link>
         {' '}and{' '}
