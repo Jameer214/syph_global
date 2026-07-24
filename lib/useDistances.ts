@@ -20,7 +20,9 @@ import { haversineKm, getCoordsIfGranted, type LatLng } from '@/lib/distance';
  *    permission prompt is introduced.
  *  - Nothing existing is modified; sellers are never re-fetched.
  *
- * `listing.ownerUid` maps to `sellers.id` (listings.seller_id).
+ * `listing.ownerUid` = listings.seller_id = the seller's auth user_id
+ * (sellers.user_id), NOT the sellers PK. The lookup matches on user_id with an
+ * id fallback for safety.
  */
 type DistanceInput = {
   id: string;
