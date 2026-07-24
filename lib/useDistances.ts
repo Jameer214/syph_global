@@ -45,11 +45,23 @@ export function useDistances(
   const [sellerCoords, setSellerCoords] = useState<Map<string, LatLng>>(new Map());
   const requested = useRef<Set<string>>(new Set());
 
-  // Silent, prompt-free location on mount.
+  // Silent, prompt-free location on mount, re-read when the tab regains
+  // visibility (user may have moved while away). Battery-safe: the browser
+  // serves its cached fix for up to 5 min (maximumAge in getCoordsIfGranted),
+  // so tab-switching never triggers extra hardware reads.
   useEffect(() => {
     let alive = true;
-    getCoordsIfGranted().then((c) => { if (alive && c) setSilentCoords(c); });
-    return () => { alive = false; };
+    const read = () =>
+      getCoordsIfGranted().then((c) => { if (alive && c) setSilentCoords(c); });
+    read();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') read();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      alive = false;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   const coords = externalCoords ?? silentCoords;
