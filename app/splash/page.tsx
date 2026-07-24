@@ -43,9 +43,7 @@ const PINGS = [
   { x: 84, y: 32, d: 2.5 },
 ];
 
-// ── Timeline (ms) — snappy; no slow morph ──────────────────────────────────
-const SLOGAN_AT = 450;
-const CTA_AT = 950;
+// ── Timeline (ms) — snappy; everything is present at once, no word intros ───
 const EXIT_AT = 3000;
 const ROUTE_AT = 3400;
 
@@ -53,8 +51,10 @@ export default function SplashScreen() {
   const router = useRouter();
   const { selectedCountry, locationSet } = useAppStore();
   const routedRef = useRef(false);
-  const [showSlogan, setShowSlogan] = useState(false);
-  const [showCTA, setShowCTA] = useState(false);
+  // Content is shown from the first frame (initial={false} → no entrance
+  // transition); only the exit fade animates.
+  const [showSlogan] = useState(true);
+  const [showCTA] = useState(true);
   const [leaving, setLeaving] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -71,16 +71,8 @@ export default function SplashScreen() {
   goExploreRef.current = goExplore;
 
   useEffect(() => {
-    const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setReducedMotion(rm);
+    setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const timers: ReturnType<typeof setTimeout>[] = [];
-    if (rm) {
-      setShowSlogan(true);
-      setShowCTA(true);
-    } else {
-      timers.push(setTimeout(() => setShowSlogan(true), SLOGAN_AT));
-      timers.push(setTimeout(() => setShowCTA(true), CTA_AT));
-    }
     timers.push(setTimeout(() => setLeaving(true), EXIT_AT));
     timers.push(setTimeout(() => goExploreRef.current(), ROUTE_AT));
     return () => timers.forEach(clearTimeout);
