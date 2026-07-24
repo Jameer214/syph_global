@@ -54,6 +54,18 @@ const WORD = 'SYPH';
 const OFF_W = 1200, OFF_H = 360, OFF_FONT = 250;
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
+// Live activity pings across the world-map backdrop — %-coords over each
+// continent, staggered so locations keep lighting up around the globe.
+const WORLD_PINGS = [
+  { x: 22, y: 34, d: 0.0 },   // North America
+  { x: 32, y: 70, d: 1.1 },   // South America
+  { x: 48, y: 30, d: 0.5 },   // Europe
+  { x: 51, y: 58, d: 1.7 },   // Africa
+  { x: 62, y: 45, d: 2.3 },   // Middle East / W. Asia
+  { x: 76, y: 36, d: 0.9 },   // E. Asia
+  { x: 84, y: 74, d: 2.8 },   // Australia
+];
+
 // Red location pings scattered over the continents (x/y in % of the plane, d = start delay)
 const PINGS = [
   { x: 30, y: 52, d: 0 },
@@ -373,6 +385,37 @@ export default function SplashScreen() {
         })}
       </motion.svg>
 
+      {/* Live activity pings — locations lighting up across the continents,
+          keeping the whole backdrop alive. Box matches the world-map layer. */}
+      <motion.div
+        initial={false}
+        animate={{ opacity: leaving ? 0 : 1 }}
+        transition={{ duration: leaving ? 0.5 : 1.6, ease: 'easeOut' }}
+        style={{
+          position: 'absolute', left: '50%', top: '41%', width: '134%',
+          aspectRatio: '672 / 315', transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+        }}
+      >
+        {WORLD_PINGS.map((p, i) => (
+          <div key={i} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%` }}>
+            {!reducedMotion && (
+              <span style={{
+                position: 'absolute', left: '50%', top: '50%', width: 26, height: 26,
+                marginLeft: -13, marginTop: -13, borderRadius: '50%',
+                border: '1.4px solid rgba(255,90,80,0.7)',
+                animation: `radarPing 3s ease-out ${p.d}s infinite`,
+              }} />
+            )}
+            <span style={{
+              position: 'absolute', left: '50%', top: '50%', width: 6, height: 6,
+              marginLeft: -3, marginTop: -3, borderRadius: '50%', background: '#FF5A50',
+              boxShadow: '0 0 8px 2px rgba(255,90,80,0.85)',
+              animation: reducedMotion ? 'none' : `pulse 3s ease-in-out ${p.d}s infinite`,
+            }} />
+          </div>
+        ))}
+      </motion.div>
+
       {/* Living-map graticule — latitude/longitude grid + contour "landmasses",
           giving the SYPH intro a cartographic identity (find it · locate it). */}
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }} preserveAspectRatio="none" viewBox="0 0 100 100">
@@ -505,8 +548,18 @@ export default function SplashScreen() {
             {i < 2 && (
               <motion.span
                 initial={false}
-                animate={showSlogan ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.4 }}
-                transition={{ duration: 0.5, delay: 0.12 * i + 0.08, ease: [0.34, 1.56, 0.64, 1] }}
+                animate={
+                  reducedMotion
+                    ? (showSlogan ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.4 })
+                    : showSlogan
+                      ? { opacity: [1, 0.5, 1], scale: [1, 1.3, 1] }
+                      : { opacity: 0, scale: 0.4 }
+                }
+                transition={
+                  reducedMotion || !showSlogan
+                    ? { duration: 0.5, delay: 0.12 * i + 0.08, ease: [0.34, 1.56, 0.64, 1] }
+                    : { duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 0.12 * i }
+                }
                 style={{
                   color: '#FFCD78', fontSize: 'clamp(8px, 2vw, 11px)',
                   textShadow: '0 0 12px rgba(255,200,110,0.9)',
@@ -541,7 +594,32 @@ export default function SplashScreen() {
             boxShadow: '0 14px 38px rgba(46,91,255,0.5)',
           }}
         >
-          Explore SYPH <ArrowRight size={18} />
+          {reducedMotion ? (
+            <span style={{ letterSpacing: 0.5 }}>Explore SYPH</span>
+          ) : (
+            <span aria-label="Explore SYPH" style={{ display: 'inline-flex', letterSpacing: 0.5 }}>
+              {'Explore SYPH'.split('').map((ch, i) => (
+                <motion.span
+                  key={i}
+                  aria-hidden
+                  initial={false}
+                  animate={showCTA && !leaving ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+                  transition={{ duration: 0.45, delay: 0.045 * i, ease: [0.34, 1.56, 0.64, 1] }}
+                  style={{ display: 'inline-block', whiteSpace: 'pre' }}
+                >
+                  {ch}
+                </motion.span>
+              ))}
+            </span>
+          )}
+          <motion.span
+            aria-hidden
+            animate={reducedMotion ? undefined : { x: [0, 5, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ display: 'inline-flex' }}
+          >
+            <ArrowRight size={18} />
+          </motion.span>
         </button>
       </motion.div>
 
