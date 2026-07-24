@@ -334,15 +334,16 @@ export default function SplashScreen() {
         </button>
       </motion.div>
 
-      {/* Exit wash — a light bloom (not black) that dissolves seamlessly into
-          the light app screen's fade-in, so there's no dark flash between them */}
+      {/* Exit wash — a soft fade straight to the app's background tone (no
+          bright white bloom), so the handoff to the next screen is gentle and
+          there's no dark flash either. */}
       <motion.div
         initial={false}
         animate={{ opacity: leaving ? 1 : 0 }}
-        transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
+        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
         style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(120% 90% at 50% 44%, #FFFFFF 0%, #EAF0FF 42%, #F0F4FF 100%)',
+          background: '#F0F4FF',
         }}
       />
     </motion.div>
