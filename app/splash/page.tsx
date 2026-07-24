@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
 import { useAppStore } from '@/store';
 
 /*
@@ -45,6 +45,15 @@ interface Firefly {
 const WORD = 'SYPH';
 const OFF_W = 1200, OFF_H = 360, OFF_FONT = 250;
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+// Red location pings scattered over the continents (x/y in % of the plane, d = start delay)
+const PINGS = [
+  { x: 30, y: 52, d: 0 },
+  { x: 53, y: 38, d: 0.7 },
+  { x: 45, y: 64, d: 1.3 },
+  { x: 71, y: 50, d: 1.9 },
+  { x: 84, y: 32, d: 2.5 },
+];
 
 // Sample the wordmark into node targets from an offscreen canvas
 function sampleWordTargets(width: number, height: number, wordY: number): { pts: { x: number; y: number }[]; scale: number } {
@@ -370,6 +379,60 @@ export default function SplashScreen() {
 
       {/* The living network */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0 }} />
+
+      {/* Tilted map surface — a golden-glowing continent plane in perspective
+          with red location pings popping up on it (locate it · connect). Rises
+          in with the slogan and fades away on the dive-forward exit. */}
+      <motion.div
+        initial={false}
+        animate={leaving ? { opacity: 0, y: 10 } : showSlogan ? { opacity: 1, y: 0 } : { opacity: 0, y: 26 }}
+        transition={{ duration: leaving ? 0.5 : 1.0, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          position: 'absolute', left: '50%', top: '63%', transform: 'translateX(-50%)',
+          width: 'min(600px, 94vw)', height: 300, perspective: 820, pointerEvents: 'none',
+        }}
+      >
+        <div style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', transform: 'rotateX(60deg)' }}>
+          {/* soft ground glow beneath the landmass */}
+          <div style={{
+            position: 'absolute', left: '50%', top: '50%', width: '82%', height: '66%',
+            transform: 'translate(-50%,-50%)', borderRadius: '50%',
+            background: 'radial-gradient(50% 50% at 50% 50%, rgba(255,200,110,0.14) 0%, transparent 72%)',
+            filter: 'blur(8px)',
+          }} />
+          {/* continents — golden glowing outlines */}
+          <svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet" style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            filter: 'drop-shadow(0 0 6px rgba(255,200,110,0.85)) drop-shadow(0 0 18px rgba(255,185,80,0.5))',
+          }}>
+            <path d="M28,64 C18,44 42,30 66,36 C84,22 116,26 128,44 C158,40 182,60 168,84 C176,102 142,108 116,96 C92,110 56,104 46,86 C30,86 24,78 28,64 Z"
+              fill="rgba(255,205,120,0.06)" stroke="#FFCE7A" strokeWidth="1.6" strokeLinejoin="round" />
+            <path d="M150,24 C161,18 179,23 176,36 C172,47 152,47 149,36 C147,30 146,27 150,24 Z"
+              fill="rgba(255,205,120,0.06)" stroke="#FFCE7A" strokeWidth="1.4" strokeLinejoin="round" />
+          </svg>
+          {/* red location pings — flat ripples on the ground, upright pin markers */}
+          {PINGS.map((p, i) => (
+            <div key={i} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, transformStyle: 'preserve-3d' }}>
+              {!reducedMotion && [0, 0.55].map((off, k) => (
+                <span key={k} style={{
+                  position: 'absolute', left: '50%', top: '50%', width: 40, height: 40,
+                  marginLeft: -20, marginTop: -20, borderRadius: '50%',
+                  border: '1.6px solid rgba(255,72,66,0.75)',
+                  animation: `radarPing 2.6s ease-out ${p.d + off}s infinite`,
+                }} />
+              ))}
+              <span style={{
+                position: 'absolute', left: '50%', top: '50%',
+                transform: 'translate(-50%,-100%) rotateX(-60deg)',
+                animation: reducedMotion ? 'none' : `popIn 0.5s ${p.d}s backwards`,
+                filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.45))',
+              }}>
+                <MapPin size={24} fill="#FF3B30" color="#fff" strokeWidth={2.4} />
+              </span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Slogan — large, gradient words with glowing separators */}
       <motion.div
