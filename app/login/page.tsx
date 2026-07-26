@@ -64,11 +64,11 @@ export default function LoginPage() {
         options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
       });
       if (error) {
-        toast.error('Google sign-in failed. Please try again.');
+        toast.error(tr('googleSignInFailed', selectedLanguage));
         setGoogleLoading(false);
       }
     } catch {
-      toast.error('Google sign-in failed. Please try again.');
+      toast.error(tr('googleSignInFailed', selectedLanguage));
       setGoogleLoading(false);
     }
   };
@@ -76,11 +76,11 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      toast.error('Please enter your email and password.');
+      toast.error(tr('enterEmailPassword', selectedLanguage));
       return;
     }
     if (!checkRateLimit(`login:${email.trim()}`, 5, 60000)) {
-      toast.error('Too many login attempts. Please wait a minute and try again.');
+      toast.error(tr('tooManyLoginAttempts', selectedLanguage));
       return;
     }
     setLoading(true);
@@ -88,11 +88,11 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error || !data.user) {
         if (error?.message?.toLowerCase().includes('invalid')) {
-          toast.error('Incorrect email or password.');
+          toast.error(tr('incorrectEmailPassword', selectedLanguage));
         } else if (error?.message?.toLowerCase().includes('too many')) {
-          toast.error('Too many attempts. Please try again later.');
+          toast.error(tr('tooManyAttemptsLater', selectedLanguage));
         } else {
-          toast.error('Login failed. Please try again.');
+          toast.error(tr('loginFailedRetry', selectedLanguage));
         }
         return;
       }
@@ -106,7 +106,7 @@ export default function LoginPage() {
       setUser(profile);
       afterAuth();
     } catch {
-      toast.error('Login failed. Please try again.');
+      toast.error(tr('loginFailedRetry', selectedLanguage));
     } finally {
       setLoading(false);
     }
@@ -115,21 +115,21 @@ export default function LoginPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail.trim()) {
-      toast.error('Please enter your email address.');
+      toast.error(tr('enterYourEmail', selectedLanguage));
       return;
     }
     setResetLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim());
       if (error) {
-        toast.error('Failed to send reset email. Please check the address.');
+        toast.error(tr('failedResetEmail', selectedLanguage));
       } else {
-        toast.success('Password reset email sent! Check your inbox.');
+        toast.success(tr('resetEmailSent', selectedLanguage));
         setShowForgot(false);
         setResetEmail('');
       }
     } catch {
-      toast.error('Failed to send reset email. Please check the address.');
+      toast.error(tr('failedResetEmail', selectedLanguage));
     } finally {
       setResetLoading(false);
     }
@@ -258,9 +258,9 @@ export default function LoginPage() {
 
           <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
             By continuing, you agree to our{' '}
-            <a href="/terms" style={{ color: '#2E5BFF', textDecoration: 'none' }}>Terms</a>
+            <a href="/terms" style={{ color: '#2E5BFF', textDecoration: 'none' }}>{tr('terms', selectedLanguage)}</a>
             {' '}and{' '}
-            <a href="/privacy" style={{ color: '#2E5BFF', textDecoration: 'none' }}>Privacy Policy</a>.
+            <a href="/privacy" style={{ color: '#2E5BFF', textDecoration: 'none' }}>{tr('privacyPolicy', selectedLanguage)}</a>.
           </p>
 
           <div style={{ height: 20 }} />
@@ -289,7 +289,7 @@ export default function LoginPage() {
             onClick={(e) => e.stopPropagation()}
             style={{ background: '#fff', borderRadius: 24, padding: '28px 24px', width: '100%', maxWidth: 420 }}
           >
-            <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 900, color: '#132A66' }}>Reset Password</h2>
+            <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 900, color: '#132A66' }}>{tr('resetPassword', selectedLanguage)}</h2>
             <p style={{ margin: '0 0 20px', color: '#6B7A99', fontSize: 14 }}>
               Enter your email and we&apos;ll send a reset link.
             </p>

@@ -84,11 +84,11 @@ export default function WelcomePage() {
         options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
       });
       if (error) {
-        toast.error('Google sign-in failed. Please try again.');
+        toast.error(tr('googleSignInFailed', selectedLanguage));
         setLoading(false);
       }
     } catch {
-      toast.error('Google sign-in failed. Please try again.');
+      toast.error(tr('googleSignInFailed', selectedLanguage));
       setLoading(false);
     }
   };
@@ -196,7 +196,7 @@ export default function WelcomePage() {
         {/* Divider */}
         <div className="anim-fade-up" style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0', animationDelay: '0.52s' }}>
           <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.14)' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '1px' }}>OR</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '1px' }}>{tr('orWord', selectedLanguage)}</span>
           <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.14)' }} />
         </div>
 
@@ -236,9 +236,9 @@ export default function WelcomePage() {
         {/* Trust trio */}
         <div className="anim-fade-up" style={{ display: 'flex', gap: 8, animationDelay: '0.76s' }}>
           {[
-            { Icon: Lock, text: 'Secure & private' },
-            { Icon: MapPin, text: 'Nearby listings' },
-            { Icon: Zap, text: 'Browse instantly' },
+            { Icon: Lock, text: tr('securePrivate', selectedLanguage) },
+            { Icon: MapPin, text: tr('nearbyListings', selectedLanguage) },
+            { Icon: Zap, text: tr('browseInstantly', selectedLanguage) },
           ].map(({ Icon, text }, i) => (
             <div key={text} className="glass-card" style={{ flex: 1, borderRadius: 16, padding: '12px 8px', textAlign: 'center' }}>
               <div className="bob" style={{ animationDelay: `${i * 0.6}s` }}>
@@ -256,7 +256,7 @@ export default function WelcomePage() {
           By continuing you accept our{' '}
           <Link href="/terms" style={{ color: '#9DB8FF', fontWeight: 800 }}>Terms &amp; Conditions</Link>
           {' '}and acknowledge our{' '}
-          <Link href="/privacy" style={{ color: '#9DB8FF', fontWeight: 800 }}>Privacy Policy</Link>.
+          <Link href="/privacy" style={{ color: '#9DB8FF', fontWeight: 800 }}>{tr('privacyPolicy', selectedLanguage)}</Link>.
         </p>
 
         <div style={{ height: 10 }} />

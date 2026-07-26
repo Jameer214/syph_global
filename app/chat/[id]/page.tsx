@@ -96,7 +96,7 @@ export default function ChatPage() {
 
   async function sendMessage() {
     if (sending || !inputText.trim()) return;
-    if (!currentUid) { toast.error('Please sign in first.'); return; }
+    if (!currentUid) { toast.error(tr('signInFirst', selectedLanguage)); return; }
 
     const text = inputText.trim();
     setInputText('');
@@ -119,7 +119,7 @@ export default function ChatPage() {
         ...(isSeller ? { buyer_unread_count: 1 } : { seller_unread_count: 1 }),
       }).eq('id', threadId);
     } catch (e) {
-      toast.error('Failed to send message. Please try again.');
+      toast.error(tr('failedSendMessage', selectedLanguage));
       setInputText(text); // restore
     } finally {
       setSending(false);

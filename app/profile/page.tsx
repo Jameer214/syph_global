@@ -81,9 +81,9 @@ export default function ProfilePage() {
       await supabase.auth.updateUser({ data: { avatar_url: url } });
       await supabase.from('profiles').upsert({ id: authUser.uid, avatar_url: url });
       setAuthUser((prev) => prev ? { ...prev, photoURL: url } : null);
-      toast.success('Profile photo updated!');
+      toast.success(tr('profilePhotoUpdated', selectedLanguage));
     } catch {
-      toast.error('Failed to upload photo');
+      toast.error(tr('failedUploadPhoto', selectedLanguage));
     } finally {
       setUploadingPhoto(false);
     }
@@ -97,10 +97,10 @@ export default function ProfilePage() {
       await supabase.auth.updateUser({ data: { full_name: safeName } });
       await supabase.from('profiles').upsert({ id: authUser.uid, display_name: safeName });
       setAuthUser((prev) => prev ? { ...prev, displayName: safeName } : null);
-      toast.success('Name updated!');
+      toast.success(tr('nameUpdated', selectedLanguage));
       setShowEditName(false);
     } catch {
-      toast.error('Failed to update name');
+      toast.error(tr('failedUpdateName', selectedLanguage));
     } finally {
       setSavingName(false);
     }
@@ -108,9 +108,9 @@ export default function ProfilePage() {
 
   async function changePassword() {
     setPwError('');
-    if (!currentPw || !newPw || !confirmPw) { setPwError('All fields are required.'); return; }
-    if (newPw.length < 6) { setPwError('New password must be at least 6 characters.'); return; }
-    if (newPw !== confirmPw) { setPwError('Passwords do not match.'); return; }
+    if (!currentPw || !newPw || !confirmPw) { setPwError(tr('allFieldsRequired', selectedLanguage)); return; }
+    if (newPw.length < 6) { setPwError(tr('passwordMin6', selectedLanguage)); return; }
+    if (newPw !== confirmPw) { setPwError(tr('passwordsDoNotMatch', selectedLanguage)); return; }
     setSavingPw(true);
     try {
       // Re-authenticate by signing in again
@@ -118,19 +118,19 @@ export default function ProfilePage() {
         email: authUser?.email ?? '',
         password: currentPw,
       });
-      if (reAuthError) { setPwError('Current password is incorrect.'); setSavingPw(false); return; }
+      if (reAuthError) { setPwError(tr('currentPasswordIncorrect', selectedLanguage)); setSavingPw(false); return; }
       const { error: updateError } = await supabase.auth.updateUser({ password: newPw });
       if (updateError) {
         if (updateError.message?.toLowerCase().includes('weak')) {
-          setPwError('New password is too weak. Use at least 6 characters.');
+          setPwError(tr('passwordTooWeak', selectedLanguage));
         } else {
-          setPwError('Failed to change password. Please try again.');
+          setPwError(tr('passwordChangeFailed', selectedLanguage));
         }
       } else {
         setPwDone(true);
       }
     } catch {
-      setPwError('Failed to change password. Please try again.');
+      setPwError(tr('passwordChangeFailed', selectedLanguage));
     } finally {
       setSavingPw(false);
     }
@@ -176,7 +176,7 @@ export default function ProfilePage() {
             <User size={34} color="#4A5A72" style={{ background: '#fff', borderRadius: '50%', padding: 4 }} />
           </div>
           <div>
-            <div style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>Guest User</div>
+            <div style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>{tr('guestUser', selectedLanguage)}</div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 600 }}>guest@syph.app</div>
           </div>
         </div>
@@ -217,8 +217,8 @@ export default function ProfilePage() {
 
           {/* Locked tiles */}
           {[
-            { icon: <Camera size={22} color="#9AA0B2" />, title: 'Change profile photo' },
-            { icon: <Edit3 size={22} color="#9AA0B2" />, title: 'Change display name' },
+            { icon: <Camera size={22} color="#9AA0B2" />, title: tr('changeProfilePhoto', selectedLanguage) },
+            { icon: <Edit3 size={22} color="#9AA0B2" />, title: tr('changeDisplayName', selectedLanguage) },
           ].map((tile, i) => (
             <div key={i} style={{
               background: '#fff', borderRadius: 18, marginBottom: 8, padding: '12px 16px',
@@ -228,7 +228,7 @@ export default function ProfilePage() {
               <div style={{ background: '#F5F5F5', borderRadius: 12, padding: 8 }}>{tile.icon}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, color: '#1E2B45', fontSize: 15 }}>{tile.title}</div>
-                <div style={{ color: '#9AA0B2', fontSize: 12, marginTop: 2 }}>Sign up to edit</div>
+                <div style={{ color: '#9AA0B2', fontSize: 12, marginTop: 2 }}>{tr('signUpToEdit', selectedLanguage)}</div>
               </div>
               <Lock size={18} color="#9AA0B2" />
             </div>
@@ -244,8 +244,8 @@ export default function ProfilePage() {
               {isDark ? <Moon size={24} color="#B0C4FF" /> : <Sun size={24} color="#1E4DD9" />}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 15, color: '#1E2B45' }}>Dark Mode</div>
-              <div style={{ fontSize: 13, color: '#6F7B8F', marginTop: 3 }}>{isDark ? 'Dark theme is on' : 'Light theme is on'}</div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: '#1E2B45' }}>{tr('darkMode', selectedLanguage)}</div>
+              <div style={{ fontSize: 13, color: '#6F7B8F', marginTop: 3 }}>{isDark ? tr('darkThemeOn', selectedLanguage) : tr('lightThemeOn', selectedLanguage)}</div>
             </div>
             <label style={{ position: 'relative', width: 48, height: 28, cursor: 'pointer' }}>
               <input type="checkbox" checked={isDark} onChange={() => setIsDark(!isDark)} style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }} />
@@ -324,7 +324,7 @@ export default function ProfilePage() {
                 background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
                 color: '#fff', fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
                 borderRadius: 20, padding: '3px 8px',
-              }}>MEMBER</span>
+              }}>{tr('memberBadge', selectedLanguage).toUpperCase()}</span>
             </div>
             <div style={{
               background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '4px 10px',
@@ -364,10 +364,10 @@ export default function ProfilePage() {
 
         {/* Action tiles */}
         {[
-          { icon: <Camera size={24} color="#1E4DD9" />, bg: '#E8F0FF', title: 'Change profile photo', sub: 'Tap to update your profile picture', action: () => fileInputRef.current?.click() },
-          { icon: <Edit3 size={24} color="#2DBE7F" />, bg: '#E8F9F0', title: 'Change display name', sub: displayName, action: () => { setNameInput(displayName); setShowEditName(true); } },
-          { icon: <Lock size={24} color="#E07A2F" />, bg: '#FFF0E8', title: 'Change password', sub: 'Update your account password', action: () => { setCurrentPw(''); setNewPw(''); setConfirmPw(''); setPwError(''); setPwDone(false); setShowChangePw(true); } },
-          { icon: <Store size={24} color="#2E5BFF" />, bg: '#EEF2FF', title: tr('dashboard', selectedLanguage), sub: 'Manage your listings and sales', action: () => router.push('/dashboard') },
+          { icon: <Camera size={24} color="#1E4DD9" />, bg: '#E8F0FF', title: tr('changeProfilePhoto', selectedLanguage), sub: tr('tapToUpdatePhoto', selectedLanguage), action: () => fileInputRef.current?.click() },
+          { icon: <Edit3 size={24} color="#2DBE7F" />, bg: '#E8F9F0', title: tr('changeDisplayName', selectedLanguage), sub: displayName, action: () => { setNameInput(displayName); setShowEditName(true); } },
+          { icon: <Lock size={24} color="#E07A2F" />, bg: '#FFF0E8', title: tr('changePassword', selectedLanguage), sub: tr('updateAccountPassword', selectedLanguage), action: () => { setCurrentPw(''); setNewPw(''); setConfirmPw(''); setPwError(''); setPwDone(false); setShowChangePw(true); } },
+          { icon: <Store size={24} color="#2E5BFF" />, bg: '#EEF2FF', title: tr('dashboard', selectedLanguage), sub: tr('manageListingsSales', selectedLanguage), action: () => router.push('/dashboard') },
         ].map((tile, i) => (
           <div key={i} onClick={tile.action} style={{
             background: '#fff', borderRadius: 18, marginBottom: 8, padding: 16, cursor: 'pointer',
@@ -393,8 +393,8 @@ export default function ProfilePage() {
             {isDark ? <Moon size={24} color="#B0C4FF" /> : <Sun size={24} color="#1E4DD9" />}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 15, color: '#1E2B45' }}>Dark Mode</div>
-            <div style={{ fontSize: 13, color: '#6F7B8F', marginTop: 3 }}>{isDark ? 'Dark theme is on' : 'Light theme is on'}</div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: '#1E2B45' }}>{tr('darkMode', selectedLanguage)}</div>
+            <div style={{ fontSize: 13, color: '#6F7B8F', marginTop: 3 }}>{isDark ? tr('darkThemeOn', selectedLanguage) : tr('lightThemeOn', selectedLanguage)}</div>
           </div>
           <label style={{ position: 'relative', width: 48, height: 28, cursor: 'pointer' }}>
             <input type="checkbox" checked={isDark} onChange={() => setIsDark(!isDark)} style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }} />
@@ -417,9 +417,9 @@ export default function ProfilePage() {
       {showEditName && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: '#fff', borderRadius: 24, padding: 24, width: '100%', maxWidth: 360 }}>
-            <div style={{ fontWeight: 800, fontSize: 18, color: '#1C2C52', marginBottom: 16 }}>Change Display Name</div>
+            <div style={{ fontWeight: 800, fontSize: 18, color: '#1C2C52', marginBottom: 16 }}>{tr('changeDisplayName', selectedLanguage)}</div>
             <input value={nameInput} onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Display name"
+              placeholder={tr('displayName', selectedLanguage)}
               style={{ width: '100%', padding: '12px 16px', border: '1px solid #E0E8F0', borderRadius: 14, fontSize: 15, background: '#F4F7FF', outline: 'none', boxSizing: 'border-box' }} />
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button onClick={() => setShowEditName(false)} style={{ flex: 1, padding: '12px', border: '1px solid #E0E8F0', borderRadius: 14, background: '#fff', color: '#6B7A99', fontWeight: 700, cursor: 'pointer' }}>{tr('cancel', selectedLanguage)}</button>
@@ -435,19 +435,19 @@ export default function ProfilePage() {
       {showChangePw && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: '#fff', borderRadius: 24, padding: 24, width: '100%', maxWidth: 360 }}>
-            <div style={{ fontWeight: 800, fontSize: 18, color: '#1C2C52', marginBottom: 16 }}>Change Password</div>
+            <div style={{ fontWeight: 800, fontSize: 18, color: '#1C2C52', marginBottom: 16 }}>{tr('changePassword', selectedLanguage)}</div>
             {pwDone ? (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
                 <div style={{ fontSize: 48 }}>✓</div>
-                <div style={{ color: '#2DBE7F', fontWeight: 700, marginTop: 12 }}>Password updated successfully!</div>
+                <div style={{ color: '#2DBE7F', fontWeight: 700, marginTop: 12 }}>{tr('passwordUpdatedExcl', selectedLanguage)}</div>
                 <button onClick={() => setShowChangePw(false)} style={{ marginTop: 20, padding: '10px 32px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, fontWeight: 800, cursor: 'pointer' }}>{tr('done', selectedLanguage)}</button>
               </div>
             ) : (
               <>
                 {[
-                  { val: currentPw, set: setCurrentPw, placeholder: 'Current password' },
-                  { val: newPw, set: setNewPw, placeholder: 'New password (min 6 chars)' },
-                  { val: confirmPw, set: setConfirmPw, placeholder: 'Confirm new password' },
+                  { val: currentPw, set: setCurrentPw, placeholder: tr('currentPassword', selectedLanguage) },
+                  { val: newPw, set: setNewPw, placeholder: tr('newPasswordMin6Placeholder', selectedLanguage) },
+                  { val: confirmPw, set: setConfirmPw, placeholder: tr('confirmNewPassword', selectedLanguage) },
                 ].map((f, i) => (
                   <input key={i} type="password" value={f.val} onChange={(e) => f.set(e.target.value)}
                     placeholder={f.placeholder}

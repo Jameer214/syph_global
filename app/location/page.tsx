@@ -6,14 +6,19 @@ import Image from 'next/image';
 import { MapPin, Globe, X, ChevronDown, ChevronRight, LayoutGrid, Menu, Search, SlidersHorizontal, Navigation, MessageCircle, Handshake, Eye, ShoppingCart, BadgeDollarSign, Shield, Zap, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAppStore } from '@/store';
-import { tr, getDir } from '@/lib/i18n';
+import { tr, getDir, trCategory } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import { CATEGORIES as REAL_CATEGORIES } from '@/data/categories';
 import MenuDrawer from '@/components/MenuDrawer';
 import Reveal from '@/components/Reveal';
 
+// Canonical English values stored to the profile — only the display is translated.
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern'];
+const REGION_KEYS: Record<string, string> = {
+  Central: 'regionCentral', Eastern: 'regionEastern', Northern: 'regionNorthern',
+  Western: 'regionWestern', Southern: 'regionSouthern',
+};
 
 // Real category tree — cards/chips route into the category browser
 const CATEGORIES = REAL_CATEGORIES.map(c => ({ id: c.id, emoji: c.icon, name: c.title }));
@@ -92,7 +97,7 @@ export default function LocationPage() {
 
   const detectGPS = (showErrors: boolean) => {
     if (!navigator.geolocation) {
-      if (showErrors) toast.error('Geolocation not supported by this browser.');
+      if (showErrors) toast.error(tr('geoNotSupported', selectedLanguage));
       return;
     }
     if (detectingGPS) return;
@@ -113,17 +118,17 @@ export default function LocationPage() {
             // only when no home is set yet). Browsing later won't move currency.
             if (!homeCountry) setHomeCountry(country);
           } else if (showErrors) {
-            toast.error('Could not determine your country. Please select manually.');
+            toast.error(tr('couldNotDetermineCountry', selectedLanguage));
           }
         } catch {
-          if (showErrors) toast.error('Failed to get location. Please select manually.');
+          if (showErrors) toast.error(tr('failedGetLocation', selectedLanguage));
         } finally {
           setDetectingGPS(false);
         }
       },
       () => {
         setDetectingGPS(false);
-        if (showErrors) toast.error('Location access denied. Please select manually.');
+        if (showErrors) toast.error(tr('locationAccessDenied', selectedLanguage));
       },
       { timeout: 10000 }
     );
@@ -131,7 +136,7 @@ export default function LocationPage() {
 
   const handleContinue = async () => {
     if (!pickedCountry.trim()) {
-      toast.error('Please select a country or use GPS.');
+      toast.error(tr('selectCountryOrGps', selectedLanguage));
       return;
     }
     setSaving(true);
@@ -151,7 +156,7 @@ export default function LocationPage() {
 
       router.replace('/home');
     } catch {
-      toast.error('Failed to save. Please try again.');
+      toast.error(tr('failedToSaveRetry', selectedLanguage));
     } finally {
       setSaving(false);
     }
@@ -174,14 +179,14 @@ export default function LocationPage() {
             animation: 'fadeInUp 0.25s ease forwards',
           }}>
             <div style={{ fontSize: 52, marginBottom: 14 }}>🚀</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#0F2B6E', marginBottom: 10 }}>Releasing Soon!</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#0F2B6E', marginBottom: 10 }}>{tr('releasingSoon', selectedLanguage)}</div>
             <div style={{ fontSize: 14, color: '#6B7A99', fontWeight: 500, lineHeight: 1.65, marginBottom: 22 }}>
-              Welcome to SYPH! The mobile app is on its way — packed with everything you love on the website plus real-time notifications, in-app payments, sponsored listings, flash sales, and more.
+              {tr('releasingSoonBody', selectedLanguage)}
             </div>
             <div style={{ background: 'linear-gradient(135deg, #F0F4FF 0%, #E8EEFF 100%)', borderRadius: 14, padding: '14px 16px', marginBottom: 22, border: '1px solid #D7E5FF' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#2E5BFF', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 4 }}>Stay tuned</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#2E5BFF', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 4 }}>{tr('stayTuned', selectedLanguage)}</div>
               <div style={{ fontSize: 13, color: '#4A5878', fontWeight: 500, lineHeight: 1.5 }}>
-                We&apos;ll notify you the moment SYPH hits the App Store and Google Play. The global marketplace is coming to your pocket.
+                {tr('stayTunedBody', selectedLanguage)}
               </div>
             </div>
             <button
@@ -192,7 +197,7 @@ export default function LocationPage() {
                 border: 'none', borderRadius: 14, color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer',
               }}
             >
-              Got it!
+              {tr('gotItExcl', selectedLanguage)}
             </button>
           </div>
         </div>
@@ -207,7 +212,7 @@ export default function LocationPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 600, letterSpacing: '0.5px' }}>
-              FIND IT. LOCATE IT. CONNECT.
+              {tr('tagline', selectedLanguage).toUpperCase()}
             </p>
             <p style={{ margin: '2px 0 0', color: '#fff', fontSize: 20, fontWeight: 900, letterSpacing: '1px' }}>SYPH</p>
           </div>
@@ -217,7 +222,7 @@ export default function LocationPage() {
               display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none',
             }}>
               <LayoutGrid size={16} color="#fff" />
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>Category</span>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>{tr('category', selectedLanguage)}</span>
             </Link>
             <button onClick={() => setMenuOpen(true)} style={{
               background: 'none', border: 'none', cursor: 'pointer',
@@ -250,7 +255,7 @@ export default function LocationPage() {
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: 700, letterSpacing: '0.3px' }}>
-                GPS DETECTED
+                {tr('gpsDetected', selectedLanguage).toUpperCase()}
               </p>
               <p style={{ margin: '2px 0 0', color: '#fff', fontSize: 15, fontWeight: 900 }}>
                 {COUNTRY_FLAGS[gpsDetectedCountry] ?? '🌍'} {gpsDetectedCountry}
@@ -306,7 +311,7 @@ export default function LocationPage() {
                   router.push('/home');
                 }
               }}
-              placeholder="Search goods & services…"
+              placeholder={tr('searchGoodsServices', selectedLanguage)}
               className="input-anim-dark"
               style={{
                 width: '100%', height: 46, borderRadius: 14,
@@ -345,9 +350,9 @@ export default function LocationPage() {
             <MapPin size={19} color="#fff" />
           </div>
           <div>
-            <div style={{ color: '#1a1a2e', fontWeight: 900, fontSize: 18, lineHeight: 1 }}>Where are you?</div>
+            <div style={{ color: '#1a1a2e', fontWeight: 900, fontSize: 18, lineHeight: 1 }}>{tr('whereAreYou', selectedLanguage)}</div>
             <div style={{ color: '#6B7A99', fontSize: 12.5, marginTop: 3, fontWeight: 500 }}>
-              Choose your country and region of interest
+              {tr('chooseCountryRegion', selectedLanguage)}
             </div>
           </div>
         </div>
@@ -440,7 +445,7 @@ export default function LocationPage() {
                   }}
                 >
                   <option value="">{tr('selectRegion', selectedLanguage)}</option>
-                  {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  {REGIONS.map(r => <option key={r} value={r}>{tr(REGION_KEYS[r], selectedLanguage)}</option>)}
                 </select>
                 <ChevronDown
                   size={16}
@@ -489,7 +494,7 @@ export default function LocationPage() {
 
         {/* Recent Countries */}
         <div className="anim-fade-up" style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2, animationDelay: '0.24s' }}>
-          {tr('allCountries', selectedLanguage)}
+          {tr('recentCountries', selectedLanguage)}
         </div>
         <div className="anim-fade-up" style={{
           background: '#fff', borderRadius: 16, overflow: 'hidden',
@@ -500,8 +505,8 @@ export default function LocationPage() {
             <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 24 }}>🏳️</span>
               <div>
-                <div style={{ fontWeight: 900, fontSize: 14, color: '#1a1a2e' }}>No recent countries yet</div>
-                <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 600, marginTop: 2 }}>Search for a country above</div>
+                <div style={{ fontWeight: 900, fontSize: 14, color: '#1a1a2e' }}>{tr('noRecentCountries', selectedLanguage)}</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 600, marginTop: 2 }}>{tr('searchCountryAbove', selectedLanguage)}</div>
               </div>
             </div>
           ) : (
@@ -527,7 +532,7 @@ export default function LocationPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e' }}>{c}</div>
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', marginTop: 1 }}>
-                      {idx === 0 ? 'Most recently selected' : 'Recently selected'}
+                      {idx === 0 ? tr('mostRecentlySelected', selectedLanguage) : tr('recentlySelected', selectedLanguage)}
                     </div>
                   </div>
                   {isSelected
@@ -555,20 +560,20 @@ export default function LocationPage() {
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.12)', borderRadius: 20, padding: '5px 13px', marginBottom: 16, border: '1px solid rgba(255,255,255,0.18)' }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', animation: 'pulse 2s ease-in-out infinite' }} />
-              <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.9)', letterSpacing: '1.5px' }}>LIVE IN 50+ COUNTRIES</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.9)', letterSpacing: '1.5px' }}>{tr('liveIn50', selectedLanguage).toUpperCase()}</span>
             </div>
             <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1.15, marginBottom: 10 }}>
-              The World&apos;s<br />Marketplace
+              {tr('worldsMarketplace', selectedLanguage)}
             </div>
             <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.72)', fontWeight: 500, lineHeight: 1.65, marginBottom: 20 }}>
-              SYPH is a global broker connecting buyers and sellers across 50+ countries — for every service, every product, every region. No fees. No limits.
+              {tr('worldsMarketplaceDesc', selectedLanguage)}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               {[
-                { value: '50+', label: 'Countries' },
-                { value: '17+', label: 'Categories' },
-                { value: '100%', label: 'Free' },
-                { value: '24/7', label: 'Available' },
+                { value: '50+', label: tr('countriesLabel', selectedLanguage) },
+                { value: '17+', label: tr('categories', selectedLanguage) },
+                { value: '100%', label: tr('freeLabel', selectedLanguage) },
+                { value: '24/7', label: tr('availableLabel', selectedLanguage) },
               ].map((s, i) => (
                 <Reveal key={s.label} delay={0.15 + i * 0.08} className="reveal-pop" style={{ flex: 1 }}>
                   <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '9px 4px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.14)' }}>
@@ -584,7 +589,7 @@ export default function LocationPage() {
 
         {/* Auto-scrolling categories ticker */}
         <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.8px', textTransform: 'uppercase', marginBottom: 9, paddingLeft: 2 }}>All Categories</div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.8px', textTransform: 'uppercase', marginBottom: 9, paddingLeft: 2 }}>{tr('allCategories', selectedLanguage)}</div>
           <div style={{ overflow: 'hidden', position: 'relative' }}>
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 28, background: 'linear-gradient(to right, #F0F4FF, transparent)', zIndex: 2, pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 28, background: 'linear-gradient(to left, #F0F4FF, transparent)', zIndex: 2, pointerEvents: 'none' }} />
@@ -596,7 +601,7 @@ export default function LocationPage() {
                   style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', borderRadius: 20, padding: '6px 12px', border: '1px solid rgba(0,0,0,0.07)', flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.05)', cursor: 'pointer' }}
                 >
                   <span style={{ fontSize: 14 }}>{cat.emoji}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1a2e', whiteSpace: 'nowrap' }}>{cat.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1a2e', whiteSpace: 'nowrap' }}>{trCategory(cat.id, cat.name, selectedLanguage)}</span>
                 </div>
               ))}
             </div>
@@ -611,21 +616,21 @@ export default function LocationPage() {
               <Globe size={20} color="#2E5BFF" />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Global Reach</div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Every Country. Every Region.</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{tr('globalReach', selectedLanguage)}</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>{tr('everyCountryRegion', selectedLanguage)}</div>
             </div>
           </div>
           <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginBottom: 16, lineHeight: 1.55 }}>
-            SYPH operates across all major world regions — wherever you are, we have you covered.
+            {tr('globalReachDesc', selectedLanguage)}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {[
-              { flag: '🌍', region: 'Africa', count: '54 countries' },
-              { flag: '🌍', region: 'Europe', count: '44 countries' },
-              { flag: '🌎', region: 'America', count: '35 countries' },
-              { flag: '🌏', region: 'Asia Pacific', count: '48 countries' },
-              { flag: '🕌', region: 'Middle East', count: '18 countries' },
-              { flag: '🌊', region: 'Oceania', count: '14 countries' },
+              { flag: '🌍', region: tr('continentAfrica', selectedLanguage), count: `54 ${tr('countriesWord', selectedLanguage)}` },
+              { flag: '🌍', region: tr('continentEurope', selectedLanguage), count: `44 ${tr('countriesWord', selectedLanguage)}` },
+              { flag: '🌎', region: tr('continentAmerica', selectedLanguage), count: `35 ${tr('countriesWord', selectedLanguage)}` },
+              { flag: '🌏', region: tr('continentAsiaPacific', selectedLanguage), count: `48 ${tr('countriesWord', selectedLanguage)}` },
+              { flag: '🕌', region: tr('continentMiddleEast', selectedLanguage), count: `18 ${tr('countriesWord', selectedLanguage)}` },
+              { flag: '🌊', region: tr('continentOceania', selectedLanguage), count: `14 ${tr('countriesWord', selectedLanguage)}` },
             ].map((r, i) => (
               <Reveal key={r.region} delay={i * 0.08}>
                 <div className="lift" style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#F8FAFF', borderRadius: 12, padding: '10px 11px', border: '1px solid rgba(46,91,255,0.08)', height: '100%' }}>
@@ -647,15 +652,15 @@ export default function LocationPage() {
         <div style={{ marginBottom: 28 }}>
           <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>How It Works</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Simple. Powerful. Global.</div>
-            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>From discovery to deal — SYPH makes every step effortless.</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>{tr('howItWorksLabel', selectedLanguage)}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>{tr('howItWorksTitle', selectedLanguage)}</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>{tr('howItWorksSubtitle', selectedLanguage)}</div>
           </div>
           </Reveal>
           {([
-            { step: '01', Icon: Search, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: 'Get location specific results', desc: "Browse listings filtered to your exact country or region — see only what's available near you." },
-            { step: '02', Icon: MessageCircle, color: '#6C63FF', bg: 'rgba(108,99,255,0.08)', title: 'Contact your service provider', desc: 'Message sellers directly through the platform. Ask questions and build trust before you commit.' },
-            { step: '03', Icon: Handshake, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Negotiate to a successful deal', desc: "Close the deal on your own terms — negotiate price, arrange pickup or delivery, and buy with confidence." },
+            { step: '01', Icon: Search, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: tr('howStep1Title', selectedLanguage), desc: tr('howStep1Desc', selectedLanguage) },
+            { step: '02', Icon: MessageCircle, color: '#6C63FF', bg: 'rgba(108,99,255,0.08)', title: tr('howStep2Title', selectedLanguage), desc: tr('howStep2Desc', selectedLanguage) },
+            { step: '03', Icon: Handshake, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: tr('howStep3Title', selectedLanguage), desc: tr('howStep3Desc', selectedLanguage) },
           ] as const).map(({ step, Icon, color, bg, title, desc }, idx) => (
             <div key={step}>
               <Reveal delay={idx * 0.1}>
@@ -664,7 +669,7 @@ export default function LocationPage() {
                   <Icon size={20} color={color} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: '0.5px', marginBottom: 4 }}>STEP {step}</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: '0.5px', marginBottom: 4 }}>{tr('stepWord', selectedLanguage).toUpperCase()} {step}</div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4 }}>{title}</div>
                   <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, lineHeight: 1.5 }}>{desc}</div>
                 </div>
@@ -683,9 +688,9 @@ export default function LocationPage() {
         <div style={{ marginBottom: 28 }}>
           <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>Everything on SYPH</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Every Product. Every Service.</div>
-            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>From everyday essentials to rare finds — if it exists, you&apos;ll find it on SYPH.</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>{tr('everythingOnSyph', selectedLanguage)}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>{tr('everyProductService', selectedLanguage)}</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>{tr('everythingDesc', selectedLanguage)}</div>
           </div>
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -701,7 +706,7 @@ export default function LocationPage() {
                   >
                     <span className="lift-emoji">{cat.emoji}</span>
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3 }}>{cat.name}</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.3 }}>{trCategory(cat.id, cat.name, selectedLanguage)}</div>
                 </div>
               </Reveal>
             ))}
@@ -712,9 +717,9 @@ export default function LocationPage() {
         <div style={{ marginBottom: 24 }}>
           <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>Why SYPH</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>Find it. Locate it. Connect.</div>
-            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>Discover products, services, and happenings near you.</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#2E5BFF', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>{tr('whySyph', selectedLanguage)}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', lineHeight: 1.2 }}>{tr('tagline', selectedLanguage)}</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginTop: 6, lineHeight: 1.5 }}>{tr('taglineDesc', selectedLanguage)}</div>
           </div>
           </Reveal>
           {/* For Sellers */}
@@ -722,14 +727,14 @@ export default function LocationPage() {
           <div style={{ background: '#fff', borderRadius: 18, padding: '20px 16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 12 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F0F4FF', borderRadius: 10, padding: '5px 12px', marginBottom: 14 }}>
               <span style={{ fontSize: 15 }}>🏪</span>
-              <span style={{ fontWeight: 800, fontSize: 12, color: '#2E5BFF' }}>For Sellers</span>
+              <span style={{ fontWeight: 800, fontSize: 12, color: '#2E5BFF' }}>{tr('forSellers', selectedLanguage)}</span>
             </div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: '#1a1a2e', marginBottom: 4, lineHeight: 1.3 }}>Grow Globally. Sell Locally.</div>
-            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginBottom: 16, lineHeight: 1.5 }}>Reach buyers across 50+ countries with zero listing fees.</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#1a1a2e', marginBottom: 4, lineHeight: 1.3 }}>{tr('growGloballyTitle', selectedLanguage)}</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginBottom: 16, lineHeight: 1.5 }}>{tr('growGloballySubtitle', selectedLanguage)}</div>
             {([
-              { Icon: Globe, text: 'List products visible across 50+ countries' },
-              { Icon: Eye, text: 'Get maximum visibility with zero listing fees' },
-              { Icon: MapPin, text: 'Location-targeted reach to the right buyers' },
+              { Icon: Globe, text: tr('sellerBullet1', selectedLanguage) },
+              { Icon: Eye, text: tr('sellerBullet2', selectedLanguage) },
+              { Icon: MapPin, text: tr('sellerBullet3', selectedLanguage) },
             ] as const).map(({ Icon, text }) => (
               <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(46,91,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -745,14 +750,14 @@ export default function LocationPage() {
           <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', borderRadius: 18, padding: '20px 16px', boxShadow: '0 4px 20px rgba(30,77,217,0.3)' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: '5px 12px', marginBottom: 14 }}>
               <span style={{ fontSize: 15 }}>🛒</span>
-              <span style={{ fontWeight: 800, fontSize: 12, color: '#fff' }}>For Buyers</span>
+              <span style={{ fontWeight: 800, fontSize: 12, color: '#fff' }}>{tr('forBuyers', selectedLanguage)}</span>
             </div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', marginBottom: 4, lineHeight: 1.3 }}>Shop Smarter. Buy Confidently.</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 500, marginBottom: 16, lineHeight: 1.5 }}>Browse location-filtered listings and connect directly with sellers.</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', marginBottom: 4, lineHeight: 1.3 }}>{tr('shopSmarterTitle', selectedLanguage)}</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 500, marginBottom: 16, lineHeight: 1.5 }}>{tr('shopSmarterSubtitle', selectedLanguage)}</div>
             {([
-              { Icon: Navigation, text: "Find exactly what's available near you" },
-              { Icon: ShoppingCart, text: 'Buy direct from sellers with no middleman fees' },
-              { Icon: BadgeDollarSign, text: 'Negotiate prices and get the best deals' },
+              { Icon: Navigation, text: tr('buyerBullet1', selectedLanguage) },
+              { Icon: ShoppingCart, text: tr('buyerBullet2', selectedLanguage) },
+              { Icon: BadgeDollarSign, text: tr('buyerBullet3', selectedLanguage) },
             ] as const).map(({ Icon, text }) => (
               <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -777,14 +782,14 @@ export default function LocationPage() {
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ fontSize: 40, marginBottom: 10, display: 'inline-block', animation: 'float 4s ease-in-out infinite' }}>🌐</div>
             <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginBottom: 12 }}>
-              Your Global Broker.<br />For Everything.
+              {tr('yourGlobalBroker', selectedLanguage)}
             </div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.72)', fontWeight: 500, lineHeight: 1.65, marginBottom: 20 }}>
-              Whether you&apos;re buying or selling goods, offering services, or searching for something specific — SYPH is your all-in-one global brokerage platform, available in every country, across every category, completely free.
+              {tr('globalBrokerManifesto', selectedLanguage)}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center' }}>
-              {['Real Estate', 'Vehicles', 'Fashion', 'Electronics', 'Services', 'Agriculture', 'Technology', 'Food & Dining', 'Health', 'Education'].map(cat => (
-                <span key={cat} style={{ background: 'rgba(255,255,255,0.11)', color: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 11px', fontSize: 11, fontWeight: 700, border: '1px solid rgba(255,255,255,0.18)' }}>{cat}</span>
+              {CATEGORIES.slice(0, 10).map(cat => (
+                <span key={cat.id} style={{ background: 'rgba(255,255,255,0.11)', color: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 11px', fontSize: 11, fontWeight: 700, border: '1px solid rgba(255,255,255,0.18)' }}>{trCategory(cat.id, cat.name, selectedLanguage)}</span>
               ))}
             </div>
           </div>
@@ -795,14 +800,14 @@ export default function LocationPage() {
         <div style={{ marginBottom: 24 }}>
           <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ fontSize: 18, fontWeight: 900, color: '#1a1a2e' }}>Built on Trust</div>
-            <div style={{ fontSize: 13, color: '#6B7A99', marginTop: 4, fontWeight: 500 }}>Your security and satisfaction are our priority</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#1a1a2e' }}>{tr('builtOnTrust', selectedLanguage)}</div>
+            <div style={{ fontSize: 13, color: '#6B7A99', marginTop: 4, fontWeight: 500 }}>{tr('trustSubtitle', selectedLanguage)}</div>
           </div>
           </Reveal>
           {([
-            { Icon: Shield, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: 'Verified Listings', desc: 'Every listing is reviewed for quality and authenticity before going live on the platform.' },
-            { Icon: Zap, color: '#F39C12', bg: 'rgba(243,156,18,0.1)', title: 'Instant Connections', desc: 'Connect with sellers and buyers in real-time through our built-in messaging platform.' },
-            { Icon: CheckCircle, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: 'Free 2-Month Listing Period', desc: 'List your products and services at no cost for your first 2 months. No commissions. No hidden charges.' },
+            { Icon: Shield, color: '#2E5BFF', bg: 'rgba(46,91,255,0.08)', title: tr('trustVerifiedTitle', selectedLanguage), desc: tr('trustVerifiedDesc', selectedLanguage) },
+            { Icon: Zap, color: '#F39C12', bg: 'rgba(243,156,18,0.1)', title: tr('trustInstantTitle', selectedLanguage), desc: tr('trustInstantDesc', selectedLanguage) },
+            { Icon: CheckCircle, color: '#10B981', bg: 'rgba(16,185,129,0.08)', title: tr('trustFreeTitle', selectedLanguage), desc: tr('trustFreeDesc', selectedLanguage) },
           ] as const).map(({ Icon, color, bg, title, desc }, i) => (
             <Reveal key={title} delay={i * 0.1}>
             <div className="lift" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 10, background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
@@ -830,8 +835,8 @@ export default function LocationPage() {
           <div style={{ position: 'absolute', bottom: -30, left: -30, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div className="bob" style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
-            <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 8, letterSpacing: '0.5px' }}>SYPH — Find it. Locate it. Connect.</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 500, lineHeight: 1.6 }}>The global marketplace for every service, every product, and every region — connecting buyers and sellers worldwide, for free.</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 8, letterSpacing: '0.5px' }}>SYPH — {tr('tagline', selectedLanguage)}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 500, lineHeight: 1.6 }}>{tr('footerGlobalDesc', selectedLanguage)}</div>
           </div>
         </div>
         </Reveal>
@@ -839,7 +844,7 @@ export default function LocationPage() {
         {/* Download badges */}
         <Reveal>
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>Available on</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>{tr('availableOn', selectedLanguage)}</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
             <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} onClick={() => setShowAppModal(true)} className="btn-tap" style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
             <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} onClick={() => setShowAppModal(true)} className="btn-tap" style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />

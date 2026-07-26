@@ -140,11 +140,11 @@ export default function GeneralPage() {
     : listings;
 
   const sortLabels: Record<SortMode, string> = {
-    random: 'Random',
-    newest: 'Newest',
-    price_asc: 'Price: Low → High',
-    price_desc: 'Price: High → Low',
-    rating: 'Top Rated',
+    random: tr('sortRandom', selectedLanguage),
+    newest: tr('newest', selectedLanguage),
+    price_asc: tr('priceLowHigh', selectedLanguage),
+    price_desc: tr('priceHighLow', selectedLanguage),
+    rating: tr('topRated', selectedLanguage),
   };
 
   return (
@@ -236,7 +236,7 @@ export default function GeneralPage() {
               {searchQuery ? tr('noResults', selectedLanguage) : tr('noListingsYet', selectedLanguage)}
             </div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6 }}>
-              {searchQuery ? `No listings match "${searchQuery}"` : 'Listings will appear here once approved.'}
+              {searchQuery ? tr('noListingsMatchSearch', selectedLanguage) : tr('listingsWillAppearApproved', selectedLanguage)}
             </div>
           </div>
         )}
@@ -258,7 +258,7 @@ export default function GeneralPage() {
                     </div>
                   )}
                   {item.isSponsored && (
-                    <span style={{ position: 'absolute', top: 6, left: 6, background: '#FF8C00', color: '#fff', fontSize: 8, fontWeight: 900, borderRadius: 10, padding: '2px 7px', letterSpacing: 0.3 }}>FEATURED</span>
+                    <span style={{ position: 'absolute', top: 6, left: 6, background: '#FF8C00', color: '#fff', fontSize: 8, fontWeight: 900, borderRadius: 10, padding: '2px 7px', letterSpacing: 0.3 }}>{tr('featured', selectedLanguage).toUpperCase()}</span>
                   )}
                 </div>
                 <div style={{ padding: '8px 10px 10px' }}>

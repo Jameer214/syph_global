@@ -89,7 +89,7 @@ export default function SavedPage() {
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 24, textAlign: 'center' }}>
             <Bookmark size={40} color="#9ca3af" />
             <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('signInToViewSaved', selectedLanguage)}</p>
-            <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>Your saved listings will be synced across devices when you sign in.</p>
+            <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>{tr('savedSyncedDesc', selectedLanguage)}</p>
             <button onClick={() => router.push('/login')} style={{ marginTop: 16, padding: '12px 24px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, cursor: 'pointer' }}>{tr('signIn', selectedLanguage)}</button>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function SavedPage() {
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', border: '1px solid #e2e8f0' }}>
             <Bookmark size={40} color="#9ca3af" />
             <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('noSavedItems', selectedLanguage)}</p>
-            <p style={{ margin: '0 0 16px', color: '#6B7A99', fontSize: 13 }}>Tap the bookmark icon on any listing to save it here.</p>
+            <p style={{ margin: '0 0 16px', color: '#6B7A99', fontSize: 13 }}>{tr('tapBookmarkDesc', selectedLanguage)}</p>
             <button onClick={() => router.push('/home')} style={{ padding: '12px 24px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, cursor: 'pointer' }}>{tr('browseListings', selectedLanguage)}</button>
           </div>
         ) : (

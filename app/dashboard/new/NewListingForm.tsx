@@ -11,7 +11,7 @@ import type { SellerProfile } from '@/types';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
 import { useAppStore } from '@/store';
-import { translate as tr } from '@/lib/i18n';
+import { translate as tr, trCategory } from '@/lib/i18n';
 
 const CURRENCIES = ['USD', 'UGX', 'KES', 'TZS', 'RWF', 'ETB', 'GHS', 'NGN', 'ZAR'];
 // Canonical English values stored to DB — only the display is translated.
@@ -291,7 +291,7 @@ export default function NewListingForm() {
           <div style={{ position: 'relative' }}>
             <select value={selectedMainId} onChange={(e) => { setSelectedMainId(e.target.value); setSelectedSubId(''); }} style={{ ...inputStyle, appearance: 'none' }}>
               <option value="">{tr('selectCategory', lang)}...</option>
-              {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{trCategory(c.id, c.title, lang)}</option>)}
             </select>
             <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           </div>

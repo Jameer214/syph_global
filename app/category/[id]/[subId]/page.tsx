@@ -6,7 +6,7 @@ import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
-import { tr, getDir } from '@/lib/i18n';
+import { tr, getDir, trCategory } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { getCategoryById } from '@/data/categories';
 import DistanceChip from '@/components/DistanceChip';
@@ -91,7 +91,7 @@ export default function SubCategoryResultsPage() {
 
   const mainCat = getCategoryById(mainId);
   const subCat = mainCat?.children.find((c) => c.id === subId);
-  const title = subCat?.title ?? mainCat?.title ?? 'Results';
+  const title = subCat?.title ?? (mainCat ? trCategory(mainCat.id, mainCat.title, selectedLanguage) : tr('resultsWord', selectedLanguage));
 
   // Keyset-paginated (created_at cursor) — an unbounded query here would
   // download the entire subcategory as inventory grows.
@@ -182,8 +182,8 @@ export default function SubCategoryResultsPage() {
           <button onClick={() => setOpenNow((v) => !v)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 20, background: openNow ? '#2E5BFF' : '#fff', border: `1px solid ${openNow ? '#2E5BFF' : '#e2e8f0'}`, color: openNow ? '#fff' : '#0F2B6E', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
             <Clock size={14} /> {tr('openNow', selectedLanguage)}
           </button>
-          <button onClick={() => { toast('Location sorting coming soon'); }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 20, background: '#fff', border: '1px solid #e2e8f0', color: '#0F2B6E', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-            <Navigation size={14} /> Near Me
+          <button onClick={() => { toast(tr('locationSortingComingSoon', selectedLanguage)); }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 20, background: '#fff', border: '1px solid #e2e8f0', color: '#0F2B6E', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+            <Navigation size={14} /> {tr('featNearMeTitle', selectedLanguage)}
           </button>
         </div>
 
@@ -204,7 +204,7 @@ export default function SubCategoryResultsPage() {
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', color: '#6B7A99' }}>
             <div style={{ fontSize: 40 }}>🔍</div>
             <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('noResults', selectedLanguage)}</p>
-            <p style={{ margin: 0, fontSize: 13 }}>Try changing filters or check back later.</p>
+            <p style={{ margin: 0, fontSize: 13 }}>{tr('tryChangingFilters', selectedLanguage)}</p>
           </div>
         ) : (
           <>
@@ -220,7 +220,7 @@ export default function SubCategoryResultsPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                       <p style={{ margin: 0, fontWeight: 900, fontSize: 14, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#0f172a' }}>{l.title}</p>
-                      {l.isSponsored && <span style={{ background: '#2E5BFF', color: '#fff', borderRadius: 999, padding: '3px 7px', fontSize: 10, fontWeight: 900, flexShrink: 0 }}>Ad</span>}
+                      {l.isSponsored && <span style={{ background: '#2E5BFF', color: '#fff', borderRadius: 999, padding: '3px 7px', fontSize: 10, fontWeight: 900, flexShrink: 0 }}>{tr('adBadge', selectedLanguage)}</span>}
                     </div>
                     <p style={{ margin: '4px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13 }}>{price}</p>
                     <p style={{ margin: '0 0 6px', fontSize: 12, color: '#6B7A99', fontWeight: 700 }}>{l.regionOrCity}, {l.country}</p>
@@ -261,9 +261,9 @@ export default function SubCategoryResultsPage() {
           <div onClick={() => setShowSortSheet(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100 }} />
           <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: '#fff', borderRadius: '22px 22px 0 0', padding: '20px 20px 32px', zIndex: 101 }}>
             <div style={{ width: 36, height: 4, background: '#e2e8f0', borderRadius: 2, margin: '0 auto 16px' }} />
-            <p style={{ fontWeight: 900, fontSize: 16, margin: '0 0 10px' }}>Sort By</p>
+            <p style={{ fontWeight: 900, fontSize: 16, margin: '0 0 10px' }}>{tr('sortBy', selectedLanguage)}</p>
             {(['recommended', 'priceLowHigh', 'priceHighLow', 'ratingHighLow'] as SortBy[]).map((val) => {
-              const labels: Record<SortBy, string> = { recommended: 'Recommended', priceLowHigh: 'Price: Low to High', priceHighLow: 'Price: High to Low', ratingHighLow: 'Rating: High to Low' };
+              const labels: Record<SortBy, string> = { recommended: tr('recommended', selectedLanguage), priceLowHigh: tr('priceLowHigh', selectedLanguage), priceHighLow: tr('priceHighLow', selectedLanguage), ratingHighLow: tr('ratingHighLow', selectedLanguage) };
               return (
                 <button key={val} onClick={() => { setSortBy(val); setShowSortSheet(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: 15, fontWeight: 700, color: sortBy === val ? '#2E5BFF' : '#0f172a' }}>
                   <span style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${sortBy === val ? '#2E5BFF' : '#cbd5e1'}`, background: sortBy === val ? '#2E5BFF' : 'transparent', display: 'inline-flex', flexShrink: 0 }} />
@@ -280,17 +280,17 @@ export default function SubCategoryResultsPage() {
           <div onClick={() => setShowFilterSheet(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100 }} />
           <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: '#fff', borderRadius: '22px 22px 0 0', padding: '20px 20px 32px', zIndex: 101, maxHeight: '80vh', overflowY: 'auto' }}>
             <div style={{ width: 36, height: 4, background: '#e2e8f0', borderRadius: 2, margin: '0 auto 16px' }} />
-            <p style={{ fontWeight: 900, fontSize: 16, margin: '0 0 16px', textAlign: 'center' }}>Filters</p>
-            <p style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99', margin: '0 0 8px' }}>Price Range</p>
+            <p style={{ fontWeight: 900, fontSize: 16, margin: '0 0 16px', textAlign: 'center' }}>{tr('filters', selectedLanguage)}</p>
+            <p style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99', margin: '0 0 8px' }}>{tr('priceRange', selectedLanguage)}</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <input value={tempMinPrice} onChange={(e) => setTempMinPrice(e.target.value)} type="number" placeholder="Min" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }} />
+              <input value={tempMinPrice} onChange={(e) => setTempMinPrice(e.target.value)} type="number" placeholder={tr('minLabel', selectedLanguage)} style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }} />
               <span style={{ fontWeight: 900, fontSize: 18 }}>–</span>
-              <input value={tempMaxPrice} onChange={(e) => setTempMaxPrice(e.target.value)} type="number" placeholder="Max" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }} />
+              <input value={tempMaxPrice} onChange={(e) => setTempMaxPrice(e.target.value)} type="number" placeholder={tr('maxLabel', selectedLanguage)} style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <span style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99' }}>Rating</span>
+              <span style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99' }}>{tr('ratingFilter', selectedLanguage)}</span>
               <select value={tempRating} onChange={(e) => setTempRating(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, fontWeight: 700 }}>
-                <option value="Any">Any</option><option value="2+">2+</option><option value="3+">3+</option><option value="4+">4+</option>
+                <option value="Any">{tr('any', selectedLanguage)}</option><option value="2+">2+</option><option value="3+">3+</option><option value="4+">4+</option>
               </select>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9', marginBottom: 16 }}>
@@ -300,8 +300,8 @@ export default function SubCategoryResultsPage() {
               </button>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => { setTempMinPrice(''); setTempMaxPrice(''); setTempRating('Any'); setTempOpenNow(false); setTempCondition(''); }} style={{ padding: '14px 20px', borderRadius: 14, border: '1.5px solid #e2e8f0', background: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>Reset</button>
-              <button onClick={() => { setMinPrice(tempMinPrice); setMaxPrice(tempMaxPrice); setRatingFilter(tempRating); setOpenNow(tempOpenNow); setConditionFilter(tempCondition); setShowFilterSheet(false); }} style={{ flex: 1, padding: '14px 20px', borderRadius: 14, background: '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer' }}>Done</button>
+              <button onClick={() => { setTempMinPrice(''); setTempMaxPrice(''); setTempRating('Any'); setTempOpenNow(false); setTempCondition(''); }} style={{ padding: '14px 20px', borderRadius: 14, border: '1.5px solid #e2e8f0', background: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>{tr('resetLabel', selectedLanguage)}</button>
+              <button onClick={() => { setMinPrice(tempMinPrice); setMaxPrice(tempMaxPrice); setRatingFilter(tempRating); setOpenNow(tempOpenNow); setConditionFilter(tempCondition); setShowFilterSheet(false); }} style={{ flex: 1, padding: '14px 20px', borderRadius: 14, background: '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer' }}>{tr('done', selectedLanguage)}</button>
             </div>
           </div>
         </>

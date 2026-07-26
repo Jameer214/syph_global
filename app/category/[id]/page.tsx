@@ -6,7 +6,7 @@ import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
-import { tr, getDir } from '@/lib/i18n';
+import { tr, getDir, trCategory } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { CATEGORIES, getCategoryById } from '@/data/categories';
 import DistanceChip from '@/components/DistanceChip';
@@ -97,7 +97,7 @@ export default function CategoryResultsPage() {
   const [tempSort, setTempSort] = useState<SortBy>('recommended');
 
   const mainCat = getCategoryById(mainId);
-  const title = mainCat?.title ?? 'Results';
+  const title = mainCat ? trCategory(mainCat.id, mainCat.title, selectedLanguage) : tr('resultsWord', selectedLanguage);
 
   // Keyset-paginated (created_at cursor) — an unbounded query here would
   // download the entire category as inventory grows.
@@ -239,7 +239,7 @@ export default function CategoryResultsPage() {
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           {[
             { label: tr('openNow', selectedLanguage), icon: <Clock size={14} />, active: openNow, toggle: () => setOpenNow((v) => !v) },
-            { label: 'Near Me', icon: <Navigation size={14} />, active: nearMe, toggle: () => { setNearMe((v) => !v); if (!nearMe) toast('Location sorting coming soon'); } },
+            { label: tr('featNearMeTitle', selectedLanguage), icon: <Navigation size={14} />, active: nearMe, toggle: () => { setNearMe((v) => !v); if (!nearMe) toast(tr('locationSortingComingSoon', selectedLanguage)); } },
           ].map((chip) => (
             <button key={chip.label} onClick={chip.toggle} style={{
               display: 'flex', alignItems: 'center', gap: 5,
@@ -297,7 +297,7 @@ export default function CategoryResultsPage() {
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', color: '#6B7A99' }}>
             <div style={{ fontSize: 40 }}>🔍</div>
             <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('noResults', selectedLanguage)}</p>
-            <p style={{ margin: 0, fontSize: 13 }}>Try changing filters or check back later.</p>
+            <p style={{ margin: 0, fontSize: 13 }}>{tr('tryChangingFilters', selectedLanguage)}</p>
           </div>
         ) : (
           <>
@@ -328,12 +328,12 @@ export default function CategoryResultsPage() {
       {/* Sort bottom sheet */}
       {showSortSheet && (
         <BottomSheet onClose={() => setShowSortSheet(false)}>
-          <p style={{ fontWeight: 900, fontSize: 16, margin: '0 0 10px' }}>Sort By</p>
+          <p style={{ fontWeight: 900, fontSize: 16, margin: '0 0 10px' }}>{tr('sortBy', selectedLanguage)}</p>
           {([
-            ['recommended', 'Recommended'],
-            ['priceLowHigh', 'Price: Low to High'],
-            ['priceHighLow', 'Price: High to Low'],
-            ['ratingHighLow', 'Rating: High to Low'],
+            ['recommended', tr('recommended', selectedLanguage)],
+            ['priceLowHigh', tr('priceLowHigh', selectedLanguage)],
+            ['priceHighLow', tr('priceHighLow', selectedLanguage)],
+            ['ratingHighLow', tr('ratingHighLow', selectedLanguage)],
           ] as [SortBy, string][]).map(([val, label]) => (
             <button key={val} onClick={() => { setSortBy(val); setShowSortSheet(false); }} style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 12,
@@ -355,21 +355,21 @@ export default function CategoryResultsPage() {
       {/* Filter bottom sheet */}
       {showFilterSheet && (
         <BottomSheet onClose={() => setShowFilterSheet(false)}>
-          <p style={{ fontWeight: 900, fontSize: 16, margin: '0 0 16px', textAlign: 'center' }}>Filters</p>
+          <p style={{ fontWeight: 900, fontSize: 16, margin: '0 0 16px', textAlign: 'center' }}>{tr('filters', selectedLanguage)}</p>
 
           {/* Price range */}
-          <p style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99', margin: '0 0 8px' }}>Price Range</p>
+          <p style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99', margin: '0 0 8px' }}>{tr('priceRange', selectedLanguage)}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <input value={tempMinPrice} onChange={(e) => setTempMinPrice(e.target.value)} type="number" placeholder="Min" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }} />
+            <input value={tempMinPrice} onChange={(e) => setTempMinPrice(e.target.value)} type="number" placeholder={tr('minLabel', selectedLanguage)} style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }} />
             <span style={{ fontWeight: 900, fontSize: 18 }}>–</span>
-            <input value={tempMaxPrice} onChange={(e) => setTempMaxPrice(e.target.value)} type="number" placeholder="Max" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }} />
+            <input value={tempMaxPrice} onChange={(e) => setTempMaxPrice(e.target.value)} type="number" placeholder={tr('maxLabel', selectedLanguage)} style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 14 }} />
           </div>
 
           {/* Rating */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99' }}>Rating</span>
+            <span style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99' }}>{tr('ratingFilter', selectedLanguage)}</span>
             <select value={tempRating} onChange={(e) => setTempRating(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, fontWeight: 700 }}>
-              <option value="Any">Any</option>
+              <option value="Any">{tr('any', selectedLanguage)}</option>
               <option value="2+">2+</option>
               <option value="3+">3+</option>
               <option value="4+">4+</option>
@@ -378,11 +378,11 @@ export default function CategoryResultsPage() {
 
           {/* Condition */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99' }}>Condition</span>
+            <span style={{ fontWeight: 800, fontSize: 13, color: '#6B7A99' }}>{tr('condition', selectedLanguage)}</span>
             <select value={tempCondition} onChange={(e) => setTempCondition(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, fontWeight: 700 }}>
-              <option value="">Any</option>
-              <option value="New">New</option>
-              <option value="Used">Used</option>
+              <option value="">{tr('any', selectedLanguage)}</option>
+              <option value="New">{tr('new', selectedLanguage)}</option>
+              <option value="Used">{tr('used', selectedLanguage)}</option>
             </select>
           </div>
 
@@ -390,7 +390,7 @@ export default function CategoryResultsPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
             <div>
               <p style={{ margin: 0, fontWeight: 900, fontSize: 14 }}>{tr('openNow', selectedLanguage)}</p>
-              <p style={{ margin: 0, fontSize: 12, color: '#6B7A99', fontWeight: 600 }}>Show only currently open listings</p>
+              <p style={{ margin: 0, fontSize: 12, color: '#6B7A99', fontWeight: 600 }}>{tr('showOnlyOpen', selectedLanguage)}</p>
             </div>
             <Toggle value={tempOpenNow} onChange={setTempOpenNow} />
           </div>
@@ -398,16 +398,16 @@ export default function CategoryResultsPage() {
           {/* Near Me toggle */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', marginBottom: 16 }}>
             <div>
-              <p style={{ margin: 0, fontWeight: 900, fontSize: 14 }}>Near Me</p>
-              <p style={{ margin: 0, fontSize: 12, color: '#6B7A99', fontWeight: 600 }}>Sort by distance from you</p>
+              <p style={{ margin: 0, fontWeight: 900, fontSize: 14 }}>{tr('featNearMeTitle', selectedLanguage)}</p>
+              <p style={{ margin: 0, fontSize: 12, color: '#6B7A99', fontWeight: 600 }}>{tr('sortByDistance', selectedLanguage)}</p>
             </div>
             <Toggle value={tempNearMe} onChange={setTempNearMe} />
           </div>
 
           {/* Buttons */}
           <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={resetFilters} style={{ padding: '14px 20px', borderRadius: 14, border: '1.5px solid #e2e8f0', background: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>Reset</button>
-            <button onClick={applyFilters} style={{ flex: 1, padding: '14px 20px', borderRadius: 14, background: '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer' }}>Done</button>
+            <button onClick={resetFilters} style={{ padding: '14px 20px', borderRadius: 14, border: '1.5px solid #e2e8f0', background: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>{tr('resetLabel', selectedLanguage)}</button>
+            <button onClick={applyFilters} style={{ flex: 1, padding: '14px 20px', borderRadius: 14, background: '#2E5BFF', color: '#fff', fontWeight: 900, fontSize: 15, border: 'none', cursor: 'pointer' }}>{tr('done', selectedLanguage)}</button>
           </div>
         </BottomSheet>
       )}
@@ -441,7 +441,7 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
           <p style={{ margin: 0, fontWeight: 900, fontSize: 14, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#0f172a' }}>{l.title}</p>
           {l.isSponsored && (
-            <span style={{ background: '#2E5BFF', color: '#fff', borderRadius: 999, padding: '3px 7px', fontSize: 10, fontWeight: 900, flexShrink: 0 }}>Ad</span>
+            <span style={{ background: '#2E5BFF', color: '#fff', borderRadius: 999, padding: '3px 7px', fontSize: 10, fontWeight: 900, flexShrink: 0 }}>{tr('adBadge', selectedLanguage)}</span>
           )}
         </div>
         <p style={{ margin: '4px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13 }}>{price}</p>

@@ -64,6 +64,7 @@ function useCountdown(): string {
 }
 
 function FlashSaleCard({ item, selectedCurrency, distanceKm }: { item: Listing; selectedCurrency: string; distanceKm?: number }) {
+  const { selectedLanguage } = useAppStore();
   const router = useRouter();
   const countdown = useCountdown();
 
@@ -112,7 +113,7 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm }: { item: Listing; 
           position: 'absolute', top: 8, left: 8,
           background: '#D32F2F', color: '#fff', fontSize: 9, fontWeight: 900,
           borderRadius: 20, padding: '3px 8px', letterSpacing: 0.5,
-        }}>FLASH</div>
+        }}>{tr('flashWord', selectedLanguage).toUpperCase()}</div>
       </div>
 
       {/* Body */}
@@ -205,7 +206,7 @@ export default function FlashSalesPage() {
             <Zap size={42} color="#6B7A99" />
             <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12, color: '#1E2B45' }}>{tr('noListingsYet', selectedLanguage)}</div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
-              {selectedCountry ? `No flash sales in ${selectedCountry} right now.` : 'Flash sales will appear here when available.'}
+              {selectedCountry ? tr('noFlashSalesHere', selectedLanguage) : tr('flashSalesWillAppear', selectedLanguage)}
             </div>
           </div>
         )}

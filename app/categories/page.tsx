@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, LayoutGrid } from 'lucide-react';
 import { CATEGORIES } from '@/data/categories';
 import { useAppStore } from '@/store';
-import { tr, getDir } from '@/lib/i18n';
+import { tr, getDir, trCategory } from '@/lib/i18n';
 
 // ── Category color map (emoji-based fallback icons per category) ──────────────
 const CATEGORY_COLORS: Record<string, string> = {
@@ -162,7 +162,7 @@ function CategoriesBrowser() {
                   fontWeight: isSelected ? 800 : 600,
                   color: isSelected ? '#2E5BFF' : '#4D5968',
                 }}>
-                  {cat.title}
+                  {trCategory(cat.id, cat.title, selectedLanguage)}
                 </span>
               </button>
             );
@@ -174,7 +174,7 @@ function CategoriesBrowser() {
           <div key={selectedMain.id} style={{ padding: '12px 12px 16px' }}>
             {/* Category title + description */}
             <p className="anim-fade-up" style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', lineHeight: 1.1, margin: 0, animationDuration: '0.3s' }}>
-              {selectedMain.title}
+              {trCategory(selectedMain.id, selectedMain.title, selectedLanguage)}
             </p>
             {selectedMain.description && (
               <p className="anim-fade-up" style={{ fontSize: 12.4, color: '#6B7A99', fontWeight: 600, lineHeight: 1.24, margin: '6px 0 0', animationDuration: '0.3s', animationDelay: '0.04s' }}>
@@ -209,7 +209,7 @@ function CategoriesBrowser() {
                   <LayoutGrid size={26} color={mainColor} />
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 800, color: mainColor, lineHeight: 1.15, textAlign: 'center', maxWidth: 82 }}>
-                  View all
+                  {tr('viewAll', selectedLanguage)}
                 </span>
               </button>
 

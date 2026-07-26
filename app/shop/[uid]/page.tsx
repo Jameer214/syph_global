@@ -29,7 +29,6 @@ interface ShopData {
   isVerified: boolean;
 }
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function parseShopData(d: Record<string, unknown>): ShopData {
   return {
@@ -66,19 +65,21 @@ function isOpen(shop: ShopData): boolean {
   return closeM > openM ? nowM >= openM && nowM < closeM : nowM >= openM || nowM < closeM;
 }
 
-function hoursLabel(shop: ShopData): string {
-  if (shop.open24Hours) return 'Open 24 hours';
+const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'];
+
+function hoursLabel(shop: ShopData, lang: string): string {
+  if (shop.open24Hours) return tr('open24HoursLabel', lang);
   const open = shop.openingTime.trim();
   const close = shop.closingTime.trim();
   if (open && close) return `${open} - ${close}`;
-  if (open) return `Opens at ${open}`;
-  if (close) return `Closes at ${close}`;
-  return 'Hours not set';
+  if (open) return `${tr('opensAt', lang)} ${open}`;
+  if (close) return `${tr('closesAt', lang)} ${close}`;
+  return tr('hoursNotSet', lang);
 }
 
-function daysLabel(days: number[]): string {
-  if (!days.length) return 'All week';
-  return [...days].sort().map((i) => DAY_LABELS[Math.min(i, 6)]).join(' · ');
+function daysLabel(days: number[], lang: string): string {
+  if (!days.length) return tr('allWeek', lang);
+  return [...days].sort().map((i) => tr(DAY_KEYS[Math.min(i, 6)], lang)).join(' · ');
 }
 
 function locationLabel(shop: ShopData, listings: Listing[]): string {
@@ -100,6 +101,7 @@ function openMaps(location: string, lat: number | null, lng: number | null) {
 // ── Item card ──────────────────────────────────────────────────────────────────
 
 function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
+  const { selectedLanguage } = useAppStore();
   function displayPrice(l: Listing): string {
     if (l.priceValue != null && selectedCurrency && selectedCurrency !== l.currencyCode) {
       return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
@@ -136,10 +138,10 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
           </div>
         )}
         {listing.isSponsored && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: '#2F6BFF', borderRadius: 8, padding: '3px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>Sponsored</div>
+          <div style={{ position: 'absolute', top: 8, left: 8, background: '#2F6BFF', borderRadius: 8, padding: '3px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>{tr('sponsored', selectedLanguage)}</div>
         )}
         {listing.isFlashSale && (
-          <div style={{ position: 'absolute', top: 8, right: 8, background: '#E53935', borderRadius: 8, padding: '3px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>Flash</div>
+          <div style={{ position: 'absolute', top: 8, right: 8, background: '#E53935', borderRadius: 8, padding: '3px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>{tr('flashWord', selectedLanguage)}</div>
         )}
       </div>
       <div style={{ padding: '10px 12px' }}>
@@ -367,14 +369,14 @@ export default function SellerShopPage() {
                 {/* Badges */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                   <span style={{ background: 'rgba(255,255,255,0.20)', borderRadius: 999, padding: '5px 10px', fontSize: 11, fontWeight: 900, color: '#fff' }}>
-                    {shop?.isServiceProvider ? 'Service Provider' : 'Seller'}
+                    {shop?.isServiceProvider ? tr('serviceProvider', selectedLanguage) : tr('seller', selectedLanguage)}
                   </span>
                   {shop?.open24Hours && (
-                    <span style={{ background: 'rgba(0,193,118,0.90)', borderRadius: 999, padding: '5px 10px', fontSize: 11, fontWeight: 900, color: '#fff' }}>Open 24/7</span>
+                    <span style={{ background: 'rgba(0,193,118,0.90)', borderRadius: 999, padding: '5px 10px', fontSize: 11, fontWeight: 900, color: '#fff' }}>{tr('open247', selectedLanguage)}</span>
                   )}
                   {!shop?.open24Hours && hasHours && (
                     <span style={{ background: sellerIsOpen ? 'rgba(0,193,118,0.90)' : 'rgba(229,57,53,0.85)', borderRadius: 999, padding: '5px 10px', fontSize: 11, fontWeight: 900, color: '#fff' }}>
-                      {sellerIsOpen ? tr('openNow', selectedLanguage) : 'Closed'}
+                      {sellerIsOpen ? tr('openNow', selectedLanguage) : tr('closed', selectedLanguage)}
                     </span>
                   )}
                 </div>
@@ -403,11 +405,11 @@ export default function SellerShopPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Clock size={13} color="rgba(255,255,255,0.6)" />
-                  <span style={{ color: 'rgba(255,255,255,0.70)', fontWeight: 700, fontSize: 13 }}>{hoursLabel(shop)}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.70)', fontWeight: 700, fontSize: 13 }}>{hoursLabel(shop, selectedLanguage)}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Calendar size={12} color="rgba(255,255,255,0.6)" />
-                  <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: 600, fontSize: 12 }}>{daysLabel(shop.workingDays)}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: 600, fontSize: 12 }}>{daysLabel(shop.workingDays, selectedLanguage)}</span>
                 </div>
               </div>
             )}
@@ -504,10 +506,10 @@ export default function SellerShopPage() {
                   `${sanitizeText(sellerName)} is active on SYPH with ${items.length} item(s), ${happenings.length} happening(s), and ${flashSales.length} flash sale(s) currently visible to users.`}
               </p>
               {[
-                { icon: <Phone size={17} />, label: tr('contactSeller', selectedLanguage), value: shop?.contact || 'Not published' },
-                { icon: <Clock size={17} />, label: 'Business hours', value: shop ? hoursLabel(shop) : 'Not set' },
-                { icon: <Calendar size={17} />, label: 'Working days', value: daysLabel(shop?.workingDays ?? []) },
-                { icon: <Package size={17} />, label: 'Type', value: shop?.isServiceProvider ? 'Service Provider' : 'Seller' },
+                { icon: <Phone size={17} />, label: tr('contactSeller', selectedLanguage), value: shop?.contact || tr('notPublished', selectedLanguage) },
+                { icon: <Clock size={17} />, label: tr('businessHours', selectedLanguage), value: shop ? hoursLabel(shop, selectedLanguage) : tr('notSet', selectedLanguage) },
+                { icon: <Calendar size={17} />, label: tr('workingDaysLabel', selectedLanguage), value: daysLabel(shop?.workingDays ?? [], selectedLanguage) },
+                { icon: <Package size={17} />, label: tr('typeWord', selectedLanguage), value: shop?.isServiceProvider ? tr('serviceProvider', selectedLanguage) : tr('seller', selectedLanguage) },
               ].map(({ icon, label, value }) => (
                 <div key={label} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
                   <div style={{ color: '#2F6BFF', marginTop: 1, flexShrink: 0 }}>{icon}</div>
@@ -526,7 +528,7 @@ export default function SellerShopPage() {
                 <span style={{ fontWeight: 900, fontSize: 16, color: '#1D3D8F' }}>{tr('location', selectedLanguage)}</span>
               </div>
               <p style={{ fontWeight: 600, fontSize: 14, color: loc ? 'rgba(0,0,0,0.8)' : '#9AA0B2', lineHeight: 1.45, margin: 0, marginBottom: loc ? 14 : 0 }}>
-                {loc || 'Location not published'}
+                {loc || tr('locationNotPublished', selectedLanguage)}
               </p>
               {shop?.lat && shop?.lng && (
                 <p style={{ fontWeight: 700, fontSize: 12, color: '#9AA0B2', margin: '4px 0 14px' }}>

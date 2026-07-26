@@ -13,7 +13,7 @@ import { sanitizeText } from '@/lib/sanitize';
 import { useAppStore } from '@/store';
 import { supabase } from '@/lib/supabase';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
-import { tr, getDir } from '@/lib/i18n';
+import { tr, getDir, trCategory } from '@/lib/i18n';
 import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
 import MenuDrawer from '@/components/MenuDrawer';
@@ -257,6 +257,7 @@ function SectionStrip({
 }
 
 function FlashCard({ listing, onClick, selectedCurrency, distanceKm }: { listing: Listing; onClick: () => void; selectedCurrency: string; distanceKm?: number }) {
+  const { selectedLanguage } = useAppStore();
   return (
     <div
       onClick={onClick}
@@ -279,7 +280,7 @@ function FlashCard({ listing, onClick, selectedCurrency, distanceKm }: { listing
           position: 'absolute', top: 6, left: 6,
           background: '#E53935', color: '#fff', fontSize: 8, fontWeight: 900,
           padding: '2px 6px', borderRadius: 8,
-        }}>FLASH</span>
+        }}>{tr('flashWord', selectedLanguage).toUpperCase()}</span>
       </div>
       <div style={{ padding: '6px 8px 8px' }}>
         <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -297,6 +298,7 @@ function FlashCard({ listing, onClick, selectedCurrency, distanceKm }: { listing
 }
 
 function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm }: { listing: Listing; onClick: () => void; selectedCurrency: string; distanceKm?: number }) {
+  const { selectedLanguage } = useAppStore();
   return (
     <div
       onClick={onClick}
@@ -320,14 +322,14 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm }: { list
             position: 'absolute', top: 8, left: 8,
             background: '#2E5BFF', color: '#fff', fontSize: 9, fontWeight: 800,
             padding: '2px 7px', borderRadius: 8,
-          }}>Ad</span>
+          }}>{tr('adBadge', selectedLanguage)}</span>
         )}
         {listing.openNow && (
           <span style={{
             position: 'absolute', top: 8, right: 8,
             background: '#1F7A3D', color: '#fff', fontSize: 9, fontWeight: 800,
             padding: '2px 7px', borderRadius: 8,
-          }}>Open Now</span>
+          }}>{tr('openNowFilter', selectedLanguage)}</span>
         )}
       </div>
       <div style={{ padding: '10px 10px 12px' }}>
@@ -360,6 +362,7 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm }: { list
 }
 
 function GridCard({ listing, onClick, selectedCurrency, distanceKm }: { listing: Listing; onClick: () => void; selectedCurrency: string; distanceKm?: number }) {
+  const { selectedLanguage } = useAppStore();
   return (
     <div
       onClick={onClick}
@@ -382,7 +385,7 @@ function GridCard({ listing, onClick, selectedCurrency, distanceKm }: { listing:
             position: 'absolute', bottom: 6, left: 6,
             background: '#1F7A3D', color: '#fff', fontSize: 9, fontWeight: 800,
             padding: '2px 7px', borderRadius: 8,
-          }}>Open Now</span>
+          }}>{tr('openNowFilter', selectedLanguage)}</span>
         )}
       </div>
       <div style={{ padding: '8px 10px 10px' }}>
@@ -661,7 +664,8 @@ export default function HomePage() {
   // electronics), pool cached 3 days, a different daily slice shown within them.
   const HOT_DEFAULT_CATEGORY = 'electronics';
   const hotCatId = lastSearchCat || HOT_DEFAULT_CATEGORY;
-  const hotCatTitle = getCategoryById(hotCatId)?.title ?? '';
+  const hotCat = getCategoryById(hotCatId);
+  const hotCatTitle = hotCat ? trCategory(hotCat.id, hotCat.title, selectedLanguage) : '';
   const [hotSellingPool, setHotSellingPool] = useState<Listing[]>([]);
   useEffect(() => {
     if (!selectedCountry) { setHotSellingPool([]); return; }
@@ -921,7 +925,7 @@ export default function HomePage() {
 
   const handleNearMe = useCallback(async () => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation not supported.');
+      toast.error(tr('geoNotSupportedShort', selectedLanguage));
       return;
     }
     setNearMeLoading(true);
@@ -930,9 +934,9 @@ export default function HomePage() {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
       setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      toast.success('Showing listings nearest to you.');
+      toast.success(tr('showingNearestListings', selectedLanguage));
     } catch {
-      toast.error('Location access denied.');
+      toast.error(tr('locationAccessDeniedShort', selectedLanguage));
     } finally {
       setNearMeLoading(false);
     }
@@ -1204,7 +1208,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#E65100', '#FF6D00']}
               icon={<TrendingUp size={16} />}
-              title={selectedCountry ? `Trending in ${selectedCountry}` : tr('trendingNearYou', selectedLanguage)}
+              title={selectedCountry ? `${tr('trendingIn', selectedLanguage)} ${selectedCountry}` : tr('trendingNearYou', selectedLanguage)}
               subtitle={tr('hotNow', selectedLanguage)}
             />
             <div style={{
@@ -1227,7 +1231,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#AD1457', '#D81B60']}
               icon={<ShoppingBag size={16} />}
-              title={hotCatTitle ? `Hot Selling ${hotCatTitle}` : 'Hot Selling'}
+              title={hotCatTitle ? `${tr('hotSelling', selectedLanguage)} ${hotCatTitle}` : tr('hotSelling', selectedLanguage)}
               subtitle={tr('hotNow', selectedLanguage)}
             />
             <div style={{
@@ -1272,7 +1276,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#00695C', '#00897B']}
               icon={<Sparkles size={16} />}
-              title="Just In"
+              title={tr('justIn', selectedLanguage)}
               subtitle={tr('newest', selectedLanguage)}
             />
             <div style={{
@@ -1295,7 +1299,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#B8860B', '#F6A609']}
               icon={<Award size={16} />}
-              title="Top Rated"
+              title={tr('topRated', selectedLanguage)}
               subtitle="4.5★+"
             />
             <div style={{

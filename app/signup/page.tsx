@@ -68,11 +68,11 @@ export default function SignupPage() {
         options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
       });
       if (error) {
-        toast.error('Google sign-in failed. Please try again.');
+        toast.error(tr('googleSignInFailed', selectedLanguage));
         setGoogleLoading(false);
       }
     } catch {
-      toast.error('Google sign-in failed. Please try again.');
+      toast.error(tr('googleSignInFailed', selectedLanguage));
       setGoogleLoading(false);
     }
   };
@@ -94,12 +94,12 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim()) return toast.error('Please enter your full name.');
-    if (!email.trim()) return toast.error('Please enter your email.');
-    if (password.length < 6) return toast.error('Password must be at least 6 characters.');
-    if (!country) return toast.error('Please select your country.');
+    if (!fullName.trim()) return toast.error(tr('enterFullName', selectedLanguage));
+    if (!email.trim()) return toast.error(tr('enterYourEmailShort', selectedLanguage));
+    if (password.length < 6) return toast.error(tr('passwordMin6', selectedLanguage));
+    if (!country) return toast.error(tr('selectYourCountry', selectedLanguage));
     if (!checkRateLimit(`signup:${email.trim()}`, 3, 300000)) {
-      toast.error('Too many signup attempts. Please wait a few minutes and try again.');
+      toast.error(tr('tooManySignupAttempts', selectedLanguage));
       return;
     }
 
@@ -112,18 +112,18 @@ export default function SignupPage() {
       });
       if (error) {
         if (error.message?.toLowerCase().includes('already registered') || error.message?.toLowerCase().includes('already in use')) {
-          toast.error('This email is already registered. Try logging in.');
+          toast.error(tr('emailAlreadyRegistered', selectedLanguage));
         } else if (error.message?.toLowerCase().includes('invalid')) {
-          toast.error('Invalid email address.');
+          toast.error(tr('invalidEmail', selectedLanguage));
         } else if (error.message?.toLowerCase().includes('password')) {
-          toast.error('Password is too weak.');
+          toast.error(tr('passwordTooWeak', selectedLanguage));
         } else {
-          toast.error('Sign up failed. Please try again.');
+          toast.error(tr('signUpFailedRetry', selectedLanguage));
         }
         return;
       }
       if (!data.user) {
-        toast.error('Sign up failed. Please try again.');
+        toast.error(tr('signUpFailedRetry', selectedLanguage));
         return;
       }
       // Email confirmation enabled — session is null until the link is clicked.
@@ -145,10 +145,10 @@ export default function SignupPage() {
       };
       await createOrUpdateUserProfile(profile).catch(() => {}); // profile row is secondary; never block a valid session
       setUser(profile);
-      toast.success('Account created successfully!');
+      toast.success(tr('accountCreated', selectedLanguage));
       afterAuth();
     } catch {
-      toast.error('Sign up failed. Please try again.');
+      toast.error(tr('signUpFailedRetry', selectedLanguage));
     } finally {
       setLoading(false);
     }
@@ -272,7 +272,7 @@ export default function SignupPage() {
                   setShowCountryDropdown(true);
                 }}
                 onFocus={() => setShowCountryDropdown(true)}
-                placeholder="Select country"
+                placeholder={tr('selectCountry', selectedLanguage)}
                 style={{ ...inputStyle, paddingLeft: 16 }}
               />
               {showCountryDropdown && filteredCountries.length > 0 && (
@@ -318,7 +318,7 @@ export default function SignupPage() {
                   appearance: 'none', cursor: 'pointer',
                 }}
               >
-                <option value="">Select region (optional)</option>
+                <option value="">{tr('selectRegionOptional', selectedLanguage)}</option>
                 {REGIONS.map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}
@@ -342,9 +342,9 @@ export default function SignupPage() {
 
           <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
             By continuing, you agree to our{' '}
-            <a href="/terms" style={{ color: '#2E5BFF', textDecoration: 'none' }}>Terms</a>
+            <a href="/terms" style={{ color: '#2E5BFF', textDecoration: 'none' }}>{tr('terms', selectedLanguage)}</a>
             {' '}and{' '}
-            <a href="/privacy" style={{ color: '#2E5BFF', textDecoration: 'none' }}>Privacy Policy</a>.
+            <a href="/privacy" style={{ color: '#2E5BFF', textDecoration: 'none' }}>{tr('privacyPolicy', selectedLanguage)}</a>.
           </p>
 
           <div style={{ height: 20 }} />

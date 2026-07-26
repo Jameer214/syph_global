@@ -95,7 +95,7 @@ export default function HappeningsPage() {
           <span style={{ color: '#fff', fontWeight: 900, fontSize: 22 }}>{tr('happeningsNearYou', selectedLanguage)}</span>
         </div>
         <div style={{ color: 'rgba(255,255,255,0.80)', fontSize: 13, fontWeight: 600 }}>
-          Events, launches &amp; pop-ups near you
+          {tr('happeningsSubtitle', selectedLanguage)}
         </div>
         {selectedCountry && (
           <div style={{ marginTop: 8, background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '4px 12px', display: 'inline-block' }}>
@@ -117,7 +117,7 @@ export default function HappeningsPage() {
             <Calendar size={42} color="#6B7A99" />
             <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12, color: '#1E2B45' }}>{tr('noListingsYet', selectedLanguage)}</div>
             <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
-              {selectedCountry ? `No happenings in ${selectedCountry} right now.` : 'Approved happenings will appear here.'}
+              {selectedCountry ? tr('noHappeningsHere', selectedLanguage) : tr('approvedHappeningsHint', selectedLanguage)}
             </div>
           </div>
         )}
@@ -151,7 +151,7 @@ export default function HappeningsPage() {
                 letterSpacing: 0.5,
               }}>
                 <Zap size={10} fill="#fff" />
-                HAPPENING
+                {tr('happeningWord', selectedLanguage).toUpperCase()}
               </div>
               {/* Save button */}
               <button
@@ -183,7 +183,7 @@ export default function HappeningsPage() {
                 <div style={{ marginBottom: 6 }}><DistanceChip km={distanceById.get(item.id)} size="xs" /></div>
               )}
               {item.sellerName && (
-                <div style={{ color: '#4A5878', fontSize: 12, fontWeight: 600 }}>by {item.sellerName}</div>
+                <div style={{ color: '#4A5878', fontSize: 12, fontWeight: 600 }}>{tr('byWord', selectedLanguage)} {item.sellerName}</div>
               )}
             </div>
           </div>

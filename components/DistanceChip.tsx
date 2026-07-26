@@ -1,5 +1,7 @@
 import { MapPin } from 'lucide-react';
 import { distanceLabel } from '@/lib/distance';
+import { useAppStore } from '@/store';
+import { tr } from '@/lib/i18n';
 
 /**
  * Small "📍 2.3 km away" chip shown on listing cards when we know how far the
@@ -13,7 +15,8 @@ export default function DistanceChip({
   km: number | null | undefined;
   size?: 'sm' | 'xs';
 }) {
-  const label = distanceLabel(km);
+  const { selectedLanguage } = useAppStore();
+  const label = distanceLabel(km, tr('awayWord', selectedLanguage));
   if (!label) return null;
   const fs = size === 'xs' ? 9.5 : 11;
   return (

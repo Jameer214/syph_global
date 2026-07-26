@@ -174,7 +174,7 @@ export default function NotificationsPage() {
           <div style={{ background: '#fff', borderRadius: 22, padding: 24, textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <Bell size={42} color="#6B7A99" />
             <div style={{ fontWeight: 900, fontSize: 16, marginTop: 12 }}>{tr('signInForNotifications', selectedLanguage)}</div>
-            <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6 }}>Notifications are only available to registered users.</div>
+            <div style={{ color: '#6B7A99', fontSize: 13, marginTop: 6 }}>{tr('notifRegisteredOnly', selectedLanguage)}</div>
             <button onClick={() => router.push('/login')} style={{
               marginTop: 16, background: '#2E5BFF', color: '#fff', border: 'none',
               borderRadius: 14, padding: '12px 28px', fontWeight: 800, cursor: 'pointer', fontSize: 15,
@@ -219,7 +219,7 @@ export default function NotificationsPage() {
                       <Shield size={22} color={isRead ? '#7A5AF8' : '#fff'} />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ color: isRead ? '#7A5AF8' : '#fff', fontWeight: 900, fontSize: 12, letterSpacing: 0.5 }}>SYPH Admin</div>
+                      <div style={{ color: isRead ? '#7A5AF8' : '#fff', fontWeight: 900, fontSize: 12, letterSpacing: 0.5 }}>{tr('syphAdmin', selectedLanguage)}</div>
                       <div style={{ color: isRead ? '#182033' : '#fff', fontWeight: 900, fontSize: 14.5 }}>{n.title}</div>
                     </div>
                     {!isRead && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff', flexShrink: 0, marginTop: 4 }} />}
@@ -235,7 +235,7 @@ export default function NotificationsPage() {
                       <span style={{
                         background: 'rgba(255,255,255,0.18)', color: '#fff',
                         fontWeight: 800, fontSize: 11, borderRadius: 999, padding: '5px 10px',
-                      }}>Tap to read</span>
+                      }}>{tr('tapToRead', selectedLanguage)}</span>
                     ) : (
                       <span style={{
                         background: 'rgba(122,90,248,0.10)', color: '#7A5AF8',

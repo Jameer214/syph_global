@@ -19,11 +19,11 @@ export function haversineKm(a: LatLng, b: LatLng): number {
 }
 
 /** Human label: "350 m away" under 1 km, else "2.3 km away" / "12 km away". */
-export function distanceLabel(km: number | null | undefined): string {
+export function distanceLabel(km: number | null | undefined, away = 'away'): string {
   if (km == null || !isFinite(km) || km < 0) return '';
-  if (km < 1) return `${Math.max(1, Math.round(km * 1000))} m away`;
-  if (km < 10) return `${km.toFixed(1)} km away`;
-  return `${Math.round(km)} km away`;
+  if (km < 1) return `${Math.max(1, Math.round(km * 1000))} m ${away}`;
+  if (km < 10) return `${km.toFixed(1)} km ${away}`;
+  return `${Math.round(km)} km ${away}`;
 }
 
 /**

@@ -72,9 +72,9 @@ export default function MessagesPage() {
     try {
       // Just remove from local state; no hidden_for field in Supabase schema
       setThreads((prev) => prev.filter((t) => t.id !== threadId));
-      toast.success('Conversation removed');
+      toast.success(tr('conversationRemoved', selectedLanguage));
     } catch {
-      toast.error('Failed to delete conversation');
+      toast.error(tr('failedDeleteConversation', selectedLanguage));
     } finally {
       setDeletingId(null);
       setConfirmDelete(null);
@@ -91,7 +91,7 @@ export default function MessagesPage() {
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 24, textAlign: 'center' }}>
             <MessageCircle size={40} color="#9ca3af" />
             <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('signInToViewMessages', selectedLanguage)}</p>
-            <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>You need to be signed in to access your messages.</p>
+            <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>{tr('signInToAccessMessages', selectedLanguage)}</p>
             <button onClick={() => router.push('/login')} style={{ marginTop: 16, padding: '12px 24px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, cursor: 'pointer' }}>{tr('signIn', selectedLanguage)}</button>
           </div>
         </div>
@@ -115,8 +115,8 @@ export default function MessagesPage() {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontWeight: 900, fontSize: 14.5, color: '#0f172a' }}>{tr('syphSupport', selectedLanguage)}</p>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#2E5BFF', fontWeight: 700 }}>Admin team</p>
-            <p style={{ margin: '2px 0 0', fontSize: 13, color: '#6B7A99', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Chat with us</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#2E5BFF', fontWeight: 700 }}>{tr('adminTeam', selectedLanguage)}</p>
+            <p style={{ margin: '2px 0 0', fontSize: 13, color: '#6B7A99', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tr('chatWithUs', selectedLanguage)}</p>
           </div>
         </div>
 
@@ -137,7 +137,7 @@ export default function MessagesPage() {
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, textAlign: 'center', border: '1px solid #e2e8f0' }}>
             <MessageCircle size={40} color="#9ca3af" />
             <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('noMessagesYet', selectedLanguage)}</p>
-            <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>Start a chat from a listing page.</p>
+            <p style={{ margin: 0, color: '#6B7A99', fontSize: 13 }}>{tr('startChatFromListing', selectedLanguage)}</p>
           </div>
         ) : (
           threads.map((thread, ti) => {
@@ -208,7 +208,7 @@ export default function MessagesPage() {
           <div onClick={() => setConfirmDelete(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#fff', borderRadius: 20, padding: 24, zIndex: 201, width: 300, maxWidth: '90vw' }}>
             <p style={{ fontWeight: 900, fontSize: 17, margin: '0 0 8px', color: '#0f172a' }}>{tr('deleteConversation', selectedLanguage)}</p>
-            <p style={{ margin: '0 0 20px', color: '#6B7A99', fontSize: 14 }}>This will remove the conversation from your messages.</p>
+            <p style={{ margin: '0 0 20px', color: '#6B7A99', fontSize: 14 }}>{tr('removeConversationDesc', selectedLanguage)}</p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', fontWeight: 800, cursor: 'pointer' }}>{tr('cancel', selectedLanguage)}</button>
               <button onClick={() => hideThread(confirmDelete)} disabled={!!deletingId} style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 900, cursor: 'pointer' }}>{tr('done', selectedLanguage)}</button>
