@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   X, LayoutGrid, DollarSign, Languages, User, Store,
   Bookmark, MessageCircle, Bell, FileText, HeadphonesIcon,
-  Info, LogOut, ChevronRight, Check, Search,
+  Info, LogOut, ChevronRight, Check, Search, Users,
 } from 'lucide-react';
 import { sanitizeText } from '@/lib/sanitize';
 import toast from 'react-hot-toast';
@@ -459,6 +459,26 @@ export default function MenuDrawer({ open, onClose }: Props) {
           <Item icon={Bookmark} label={tr('savedItems', selectedLanguage)} onClick={() => requireAuth('/saved')} />
           <Item icon={MessageCircle} label={tr('messages', selectedLanguage)} onClick={() => requireAuth('/messages')} />
           <Item icon={Bell} label={tr('notificationsLabel', selectedLanguage)} onClick={() => requireAuth('/notifications')} />
+
+          {/* Socials — stylish gradient entry point (follow buttons + community polls) */}
+          <button
+            onClick={() => nav('/socials')}
+            style={{
+              width: 'calc(100% - 16px)', margin: '10px 8px 2px', display: 'flex', alignItems: 'center', gap: 14,
+              padding: '15px 16px', borderRadius: 18, border: 'none', cursor: 'pointer', textAlign: 'left',
+              background: 'linear-gradient(90deg, #833AB4 0%, #FD1D1D 50%, #FCB045 100%)',
+              boxShadow: '0 6px 14px rgba(253,29,29,0.28)',
+            }}
+          >
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Users size={22} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: '#fff', fontWeight: 900, fontSize: 15, letterSpacing: 0.8 }}>{tr('socials', selectedLanguage).toUpperCase()}</div>
+              <div style={{ color: '#fff', fontWeight: 600, fontSize: 11.5, marginTop: 2, opacity: 0.95 }}>{tr('socialsSubtitle', selectedLanguage)}</div>
+            </div>
+            <ChevronRight size={18} color="#fff" />
+          </button>
 
           <Section label={tr('moreSection', selectedLanguage)} />
           <Item icon={FileText} label={tr('termsConditions', selectedLanguage)} onClick={() => nav('/terms')} />
