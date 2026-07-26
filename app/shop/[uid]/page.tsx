@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { isPast } from '@/lib/promo';
 import DistanceChip from '@/components/DistanceChip';
 import ZigzagEdge from '@/components/ZigzagEdge';
 import { useDistances } from '@/lib/useDistances';
@@ -290,9 +291,9 @@ export default function SellerShopPage() {
             rating: typeof r.rating === 'number' ? r.rating : undefined,
             condition: r.condition ? String(r.condition) : undefined,
             openNow: false,
-            isSponsored: Boolean(r.is_sponsored),
+            isSponsored: Boolean(r.is_sponsored) && !isPast(r.sponsored_until),
             isHappening: false,
-            isFlashSale: Boolean(r.is_flash_sale),
+            isFlashSale: Boolean(r.is_flash_sale) && !isPast(r.flash_sale_until),
             isTrial: false,
             status: String(r.status ?? 'active'),
             viewsCount: typeof r.view_count === 'number' ? r.view_count : 0,

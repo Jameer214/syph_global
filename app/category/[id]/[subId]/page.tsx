@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { tr, getDir, trCategory } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { isPast } from '@/lib/promo';
 import { getCategoryById } from '@/data/categories';
 import DistanceChip from '@/components/DistanceChip';
 import { useDistances } from '@/lib/useDistances';
@@ -34,9 +35,9 @@ function mapListing(row: Record<string, unknown>): Listing {
     mainCategoryId: String(row.category_id ?? ''),
     subCategoryId: row.sub_category_id ? String(row.sub_category_id) : undefined,
     openNow: false,
-    isSponsored: Boolean(row.is_sponsored),
+    isSponsored: Boolean(row.is_sponsored) && !isPast(row.sponsored_until),
     isHappening: false,
-    isFlashSale: Boolean(row.is_flash_sale),
+    isFlashSale: Boolean(row.is_flash_sale) && !isPast(row.flash_sale_until),
     isTrial: false,
     status: String(row.status ?? 'pending'),
     viewsCount: typeof row.view_count === 'number' ? row.view_count : 0,

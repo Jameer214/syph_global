@@ -22,16 +22,10 @@ import ZigzagEdge from '@/components/ZigzagEdge';
 import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 import { readListingsCache, writeListingsCache, isCacheFresh, HOT_SELLING_TTL_MS } from '@/lib/listingsCache';
+import { isPast, isEventExpired, startOfTodayISO } from '@/lib/promo';
 import { mainCategoryForQuery, getCategoryById } from '@/data/categories';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-/** True when a `*_until` timestamp exists and is already in the past. */
-function isPast(raw: unknown): boolean {
-  if (raw == null) return false;
-  const t = new Date(String(raw)).getTime();
-  return isFinite(t) && t <= Date.now();
-}
 
 function mapListing(data: Record<string, unknown>, id: string): Listing {
   const imgs = Array.isArray(data.listing_images) ? (data.listing_images as { url: string; sort_order?: number }[]) : [];
@@ -61,7 +55,7 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
     // counting as sponsored / flash once its `*_until` timestamp has passed
     // (mirrors the Flutter listing mapper so web and app agree).
     isSponsored: Boolean(data.is_sponsored) && !isPast(data.sponsored_until),
-    isHappening: Boolean(data.is_happening),
+    isHappening: Boolean(data.is_happening) && !isEventExpired(data.event_date),
     isFlashSale: Boolean(data.is_flash_sale) && !isPast(data.flash_sale_until),
     isTrial: Boolean(data.is_trial),
     status: status === 'active' ? 'approved' : status,
@@ -150,12 +144,6 @@ function hotSellingDailySlice(pool: Listing[], take = 10): Listing[] {
 const feedCache = new Map<string, { at: number; data: Listing[] }>();
 const FEED_TTL_MS = 60_000;
 
-// Until a feed's cache holds at least this many listings the catalogue is still
-// filling up, so we always revalidate on load — new listings surface right away
-// instead of being hidden behind a still-fresh 24h cache. Past it, the standard
-// 24h stale-while-revalidate takes over and network reads drop back down.
-const FEED_MATURITY_THRESHOLD = 42;
-
 function useListings(opts: {
   isFlashSale?: boolean;
   isHappening?: boolean;
@@ -203,6 +191,10 @@ function useListings(opts: {
       if (isSponsored === true) {
         q = q.or(`sponsored_until.is.null,sponsored_until.gt.${new Date().toISOString()}`);
       }
+      // Drop happenings whose event day has already passed (null = no date set).
+      if (isHappening === true) {
+        q = q.or(`event_date.is.null,event_date.gte.${startOfTodayISO()}`);
+      }
       if (country) q = q.eq('country', country);
       const { data } = await q;
       const items = (data ?? []).map(r => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
@@ -211,13 +203,13 @@ function useListings(opts: {
       if (!cancelled) setListings(items);
     };
 
-    // 3. Stale-while-revalidate, catalogue-size aware: while the catalogue is
-    //    still small always revalidate so new listings appear; once a feed has
-    //    matured (>= 42 cached) only refetch when the cache is missing or >24h.
-    const mature = (persisted?.items.length ?? 0) >= FEED_MATURITY_THRESHOLD;
-    if (!mature || !isCacheFresh(persisted)) {
-      fetchListings();
-    }
+    // 3. Stale-while-revalidate: the persisted cache above paints instantly for
+    //    a snappy load, but we ALWAYS refetch in the background so removals stay
+    //    honest — a deleted listing, an ended flash sale / sponsorship, or an
+    //    expired happening drops on the very next load instead of lingering for
+    //    up to 24h. The 60s in-session `feedCache` (early return above) still
+    //    dedups rapid navigation, so this doesn't hammer the backend.
+    fetchListings();
     return () => { cancelled = true; };
   }, [isFlashSale, isHappening, isSponsored, orderColumn, count, country]);
 

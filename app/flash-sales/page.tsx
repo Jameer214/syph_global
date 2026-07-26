@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { isPast } from '@/lib/promo';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
@@ -31,9 +32,9 @@ function mapListing(row: Record<string, unknown>): Listing {
     negotiable: Boolean(row.is_negotiable),
     mainCategoryId: String(row.category_id ?? ''),
     openNow: false,
-    isSponsored: Boolean(row.is_sponsored),
+    isSponsored: Boolean(row.is_sponsored) && !isPast(row.sponsored_until),
     isHappening: false,
-    isFlashSale: Boolean(row.is_flash_sale),
+    isFlashSale: Boolean(row.is_flash_sale) && !isPast(row.flash_sale_until),
     isTrial: false,
     status: String(row.status ?? 'pending'),
     viewsCount: typeof row.view_count === 'number' ? row.view_count : 0,
