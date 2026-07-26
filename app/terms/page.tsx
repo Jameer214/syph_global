@@ -1,6 +1,8 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Gavel, Info, Shield } from 'lucide-react';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
 const SECTIONS = [
   {
@@ -115,6 +117,7 @@ const SECTIONS = [
 
 export default function TermsPage() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 40 }}>
@@ -123,7 +126,7 @@ export default function TermsPage() {
         <button onClick={() => router.back()} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}>
           <ArrowLeft size={20} color="#fff" />
         </button>
-        <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>Terms & Conditions</div>
+        <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('termsConditions', lang)}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -132,9 +135,9 @@ export default function TermsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <Gavel size={40} color="#fff" />
             <div>
-              <div style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>Terms & Conditions</div>
+              <div style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>{tr('termsConditions', lang)}</div>
               <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>
-                By using SYPH, you agree to these terms. Please read them carefully.
+                {tr('termsAgreeNotice', lang)}
               </div>
             </div>
           </div>
@@ -143,12 +146,12 @@ export default function TermsPage() {
         <div style={{ background: '#fff', borderRadius: 16, padding: 14, marginBottom: 12, border: '1px solid #E0E8F0', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <Info size={18} color="#2E5BFF" style={{ flexShrink: 0, marginTop: 1 }} />
           <div style={{ color: '#4A5878', fontWeight: 600, fontSize: 13, lineHeight: 1.4 }}>
-            SYPH mainly helps connect consumers to sellers, producers, and service providers. Transactions and agreements between users remain primarily their responsibility.
+            {tr('termsConnectorNote', lang)}
           </div>
         </div>
 
         <button onClick={() => router.push('/privacy')} style={{ width: '100%', padding: '13px 0', borderRadius: 14, border: '1.5px solid #2E5BFF', background: '#fff', color: '#2E5BFF', fontWeight: 800, fontSize: 14, cursor: 'pointer', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <Shield size={16} /> View Privacy Policy
+          <Shield size={16} /> {tr('viewPrivacyPolicy', lang)}
         </button>
 
         {/* Sections */}
@@ -166,14 +169,14 @@ export default function TermsPage() {
         <div style={{ background: '#F0F4FF', borderRadius: 16, padding: 16, border: '1px solid #E0E8F0', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <Shield size={20} color="#2E5BFF" style={{ flexShrink: 0, marginTop: 1 }} />
           <div>
-            <div style={{ fontWeight: 900, color: '#0F2B6E', fontSize: 14, marginBottom: 6 }}>Important Note</div>
+            <div style={{ fontWeight: 900, color: '#0F2B6E', fontSize: 14, marginBottom: 6 }}>{tr('importantNote', lang)}</div>
             <div style={{ color: '#4A5878', fontWeight: 500, fontSize: 13, lineHeight: 1.45 }}>
               SYPH may review complaints, moderate listings, and restrict misuse, but this does not make SYPH the direct seller, producer, service provider, or automatic liable party in disputes between users unless required by law.
             </div>
           </div>
         </div>
 
-        <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13 }}>Last updated: July 18, 2026</div>
+        <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13 }}>{tr('lastUpdatedLabel', lang)} July 18, 2026</div>
       </div>
     </div>
   );

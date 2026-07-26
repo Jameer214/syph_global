@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { CURRENCIES, getCurrencyForCountry, getCurrencySymbol } from '@/lib/currency';
-import { LANGUAGES, RTL_LANGS } from '@/lib/i18n';
+import { LANGUAGES, RTL_LANGS, translate as tr } from '@/lib/i18n';
 import { getSellerProfile } from '@/lib/firestore';
 
 interface Props {
@@ -83,19 +83,19 @@ function Badge({ children }: { children: React.ReactNode }) {
 
 // ── Auth Required Modal ────────────────────────────────────────────────────────
 
-function AuthModal({ onClose, onSignup, onLogin }: { onClose: () => void; onSignup: () => void; onLogin: () => void }) {
+function AuthModal({ lang, onClose, onSignup, onLogin }: { lang: string; onClose: () => void; onSignup: () => void; onLogin: () => void }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(0,0,0,0.55)' }} onClick={onClose}>
       <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 360 }} onClick={e => e.stopPropagation()}>
         <div style={{ background: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', padding: '28px 24px 24px', textAlign: 'center' }}>
           <div style={{ width: 56, height: 56, background: 'rgba(255,255,255,0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 24 }}>🔒</div>
-          <div style={{ color: '#fff', fontWeight: 900, fontSize: 20 }}>Sign In to Continue</div>
-          <div style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600, fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>This feature is for registered users only.</div>
+          <div style={{ color: '#fff', fontWeight: 900, fontSize: 20 }}>{tr('signInToContinue', lang)}</div>
+          <div style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600, fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>{tr('featureRegisteredOnly', lang)}</div>
         </div>
         <div style={{ padding: '20px 20px 8px' }}>
-          <button onClick={onSignup} style={{ width: '100%', padding: '13px', background: '#1E4DD9', border: 'none', borderRadius: 14, color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', marginBottom: 10 }}>Create Account</button>
-          <button onClick={onLogin} style={{ width: '100%', padding: '13px', background: 'transparent', border: '2px solid #1E4DD9', borderRadius: 14, color: '#1E4DD9', fontWeight: 800, fontSize: 15, cursor: 'pointer', marginBottom: 10 }}>Login</button>
-          <button onClick={onClose} style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: '#9AA0B2', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginBottom: 8 }}>Not now</button>
+          <button onClick={onSignup} style={{ width: '100%', padding: '13px', background: '#1E4DD9', border: 'none', borderRadius: 14, color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', marginBottom: 10 }}>{tr('createAccount', lang)}</button>
+          <button onClick={onLogin} style={{ width: '100%', padding: '13px', background: 'transparent', border: '2px solid #1E4DD9', borderRadius: 14, color: '#1E4DD9', fontWeight: 800, fontSize: 15, cursor: 'pointer', marginBottom: 10 }}>{tr('login', lang)}</button>
+          <button onClick={onClose} style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: '#9AA0B2', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginBottom: 8 }}>{tr('notNow', lang)}</button>
         </div>
       </div>
     </div>
@@ -105,6 +105,7 @@ function AuthModal({ onClose, onSignup, onLogin }: { onClose: () => void; onSign
 // ── Currency Picker Sheet ──────────────────────────────────────────────────────
 
 function CurrencySheet({
+  lang,
   current,
   isAuto,
   country,
@@ -112,6 +113,7 @@ function CurrencySheet({
   onAuto,
   onClose,
 }: {
+  lang: string;
   current: string;
   isAuto: boolean;
   country: string;
@@ -137,12 +139,12 @@ function CurrencySheet({
         </div>
 
         <div style={{ padding: '16px 20px 12px' }}>
-          <div style={{ fontWeight: 900, fontSize: 22, color: '#182033', marginBottom: 10 }}>Display Currency</div>
+          <div style={{ fontWeight: 900, fontSize: 22, color: '#182033', marginBottom: 10 }}>{tr('displayCurrency', lang)}</div>
           {/* Info box */}
           <div style={{ background: '#EEF4FF', borderRadius: 14, padding: 12, display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16 }}>
             <span style={{ color: '#1E4DD9', opacity: 0.7, fontSize: 16 }}>ℹ️</span>
             <span style={{ color: '#1E4DD9', fontWeight: 600, fontSize: 13, opacity: 0.9, lineHeight: 1.4 }}>
-              Auto source: {country || 'Unknown'} → {autoCurrency}
+              {tr('autoSourceLabel', lang)}: {country || tr('unknownLabel', lang)} → {autoCurrency}
             </span>
           </div>
           {/* Search */}
@@ -151,7 +153,7 @@ function CurrencySheet({
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Search currency..."
+              placeholder={tr('searchCurrencyHint', lang)}
               style={{ width: '100%', padding: '12px 12px 12px 36px', border: '1px solid #DCE7F5', borderRadius: 14, fontSize: 14, outline: 'none', background: '#F8FAFF', boxSizing: 'border-box', fontFamily: 'inherit' }}
               autoFocus
             />
@@ -159,24 +161,24 @@ function CurrencySheet({
           {/* Auto option */}
           <CurrencyOption
             flag="⚙️"
-            title="Auto"
-            subtitle={`Use auto currency (${autoCurrency})`}
+            title={tr('autoLabel', lang)}
+            subtitle={`${tr('useAutoCurrencyDesc', lang)} (${autoCurrency})`}
             selected={isAuto}
             onTap={() => { onAuto(); onClose(); }}
           />
-          <div style={{ fontWeight: 800, fontSize: 11, color: '#9AA0B2', letterSpacing: '0.5px', margin: '12px 0 8px', paddingLeft: 4 }}>MANUAL SELECTION</div>
+          <div style={{ fontWeight: 800, fontSize: 11, color: '#9AA0B2', letterSpacing: '0.5px', margin: '12px 0 8px', paddingLeft: 4 }}>{tr('manualSelection', lang).toUpperCase()}</div>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 32px' }}>
           {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: '#9AA0B2', fontWeight: 700 }}>No currencies found</div>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: '#9AA0B2', fontWeight: 700 }}>{tr('noCurrenciesFound', lang)}</div>
           ) : (
             filtered.map(c => (
               <CurrencyOption
                 key={c.code}
                 flag={CURRENCY_FLAGS[c.code] ?? '💱'}
                 title={`${c.code} (${c.symbol})`}
-                subtitle={`Display all prices in ${c.code}`}
+                subtitle={`${tr('displayAllPricesIn', lang)} ${c.code}`}
                 selected={!isAuto && current === c.code}
                 onTap={() => { onSelect(c.code); onClose(); }}
               />
@@ -209,10 +211,12 @@ function CurrencyOption({ flag, title, subtitle, selected, onTap }: { flag: stri
 // ── Language Picker Sheet ──────────────────────────────────────────────────────
 
 function LanguageSheet({
+  lang,
   current,
   onSelect,
   onClose,
 }: {
+  lang: string;
   current: string;
   onSelect: (code: string) => void;
   onClose: () => void;
@@ -226,11 +230,11 @@ function LanguageSheet({
         </div>
 
         <div style={{ padding: '16px 20px 12px' }}>
-          <div style={{ fontWeight: 900, fontSize: 22, color: '#182033', marginBottom: 10 }}>Select Language</div>
+          <div style={{ fontWeight: 900, fontSize: 22, color: '#182033', marginBottom: 10 }}>{tr('selectLanguage', lang)}</div>
           <div style={{ background: '#EEF4FF', borderRadius: 14, padding: 12, display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16 }}>
             <span style={{ fontSize: 16 }}>🌐</span>
             <span style={{ color: '#1E4DD9', fontWeight: 600, fontSize: 13, opacity: 0.9, lineHeight: 1.4 }}>
-              Some content may only be available in English. The language setting affects the app interface.
+              {tr('languageSheetNote', lang)}
             </span>
           </div>
         </div>
@@ -332,7 +336,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
       setUser(null);
       router.replace('/home');
     } catch {
-      toast.error('Logout failed.');
+      toast.error(tr('logoutFailed', selectedLanguage));
     }
   };
 
@@ -344,10 +348,12 @@ export default function MenuDrawer({ open, onClose }: Props) {
   // not the country being browsed.
   const currencyAnchor = homeCountry || selectedCountry;
   const autoCurrency = getCurrencyForCountry(currencyAnchor);
-  const currencyBadgeText = isAutoCurrency ? `${autoCurrency} · Auto` : `${selectedCurrency} · Manual`;
+  const currencyBadgeText = isAutoCurrency
+    ? `${autoCurrency} · ${tr('autoLabel', selectedLanguage)}`
+    : `${selectedCurrency} · ${tr('manualLabel', selectedLanguage)}`;
   const currencySubLabel = isAutoCurrency
-    ? `Auto: ${currencyAnchor || 'unknown'}`
-    : 'Manual override';
+    ? `${tr('autoLabel', selectedLanguage)}: ${currencyAnchor || tr('unknownLabel', selectedLanguage)}`
+    : tr('manualOverride', selectedLanguage);
 
   // Language badge
   const langInfo = LANGUAGES.find(l => l.code === selectedLanguage) ?? LANGUAGES[0];
@@ -401,13 +407,13 @@ export default function MenuDrawer({ open, onClose }: Props) {
         {/* Greeting */}
         <div style={{ padding: '14px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <p style={{ fontSize: 12, color: '#9aa0b2', fontWeight: 600, margin: 0 }}>Hello,</p>
+            <p style={{ fontSize: 12, color: '#9aa0b2', fontWeight: 600, margin: 0 }}>{tr('helloGreeting', selectedLanguage)}</p>
             <p style={{ fontSize: 18, fontWeight: 900, color: '#1c2c52', margin: 0 }}>
-              {isGuest ? 'Guest' : sanitizeText(displayName).split(' ')[0]}
+              {isGuest ? tr('guest', selectedLanguage) : sanitizeText(displayName).split(' ')[0]}
             </p>
           </div>
           {!isGuest && (
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#1E4DD9', background: '#E3F0FF', borderRadius: 30, padding: '3px 10px' }}>MEMBER</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#1E4DD9', background: '#E3F0FF', borderRadius: 30, padding: '3px 10px' }}>{tr('memberBadge', selectedLanguage).toUpperCase()}</span>
           )}
         </div>
 
@@ -417,52 +423,52 @@ export default function MenuDrawer({ open, onClose }: Props) {
         <div style={{ flex: 1, padding: '0 8px 20px', overflowY: 'auto' }}>
 
           {/* MODE */}
-          <Section label="Mode" />
+          <Section label={tr('modeLabel', selectedLanguage)} />
           <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 30, padding: 4, margin: '4px 8px' }}>
             <button
               onClick={handleConsumerMode}
               style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', borderRadius: 26, border: 'none', cursor: 'pointer', background: !sellerMode ? '#fff' : 'none', boxShadow: !sellerMode ? '0 2px 8px rgba(30,77,217,0.12)' : 'none', fontWeight: 700, fontSize: 13, color: !sellerMode ? '#1E4DD9' : '#6f7b8f' }}
             >
-              <User size={16} color={!sellerMode ? '#1E4DD9' : '#6f7b8f'} /> Consumer
+              <User size={16} color={!sellerMode ? '#1E4DD9' : '#6f7b8f'} /> {tr('consumer', selectedLanguage)}
             </button>
             <button
               onClick={handleSellerMode}
               style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', borderRadius: 26, border: 'none', cursor: 'pointer', background: sellerMode ? '#fff' : 'none', boxShadow: sellerMode ? '0 2px 8px rgba(30,77,217,0.12)' : 'none', fontWeight: 700, fontSize: 13, color: sellerMode ? '#1E4DD9' : '#6f7b8f' }}
             >
-              <Store size={16} color={sellerMode ? '#1E4DD9' : '#6f7b8f'} /> Seller
+              <Store size={16} color={sellerMode ? '#1E4DD9' : '#6f7b8f'} /> {tr('seller', selectedLanguage)}
             </button>
           </div>
 
-          <Section label="Browse" />
-          <Item icon={LayoutGrid} label="Categories" onClick={() => nav('/categories')} />
+          <Section label={tr('browse', selectedLanguage)} />
+          <Item icon={LayoutGrid} label={tr('categories', selectedLanguage)} onClick={() => nav('/categories')} />
           <Item
             icon={DollarSign}
-            label="Display Currency"
+            label={tr('displayCurrency', selectedLanguage)}
             sublabel={currencySubLabel}
             badge={<Badge>{currencyBadgeText}</Badge>}
             onClick={() => setSheet('currency')}
           />
           <Item
             icon={Languages}
-            label="Language"
+            label={tr('language', selectedLanguage)}
             badge={<Badge>{langBadgeText}</Badge>}
             onClick={() => setSheet('language')}
           />
 
-          <Section label="Your Space" />
-          <Item icon={Bookmark} label="Saved Items" onClick={() => requireAuth('/saved')} />
-          <Item icon={MessageCircle} label="Messages" onClick={() => requireAuth('/messages')} />
-          <Item icon={Bell} label="Notifications" onClick={() => requireAuth('/notifications')} />
+          <Section label={tr('yourSpace', selectedLanguage)} />
+          <Item icon={Bookmark} label={tr('savedItems', selectedLanguage)} onClick={() => requireAuth('/saved')} />
+          <Item icon={MessageCircle} label={tr('messages', selectedLanguage)} onClick={() => requireAuth('/messages')} />
+          <Item icon={Bell} label={tr('notificationsLabel', selectedLanguage)} onClick={() => requireAuth('/notifications')} />
 
-          <Section label="More" />
-          <Item icon={FileText} label="Terms & Conditions" onClick={() => nav('/terms')} />
-          <Item icon={HeadphonesIcon} label="Contact Support" onClick={() => requireAuth('/support')} />
-          <Item icon={Info} label="About SYPH" onClick={() => nav('/about')} />
+          <Section label={tr('moreSection', selectedLanguage)} />
+          <Item icon={FileText} label={tr('termsConditions', selectedLanguage)} onClick={() => nav('/terms')} />
+          <Item icon={HeadphonesIcon} label={tr('contactSupport', selectedLanguage)} onClick={() => requireAuth('/support')} />
+          <Item icon={Info} label={tr('aboutSyph', selectedLanguage)} onClick={() => nav('/about')} />
 
           {/* Logout — only for signed-in users, inside scroll area */}
           {!isGuest && (
             <div style={{ margin: '16px 8px 0', background: '#fff5f5', borderRadius: 14, overflow: 'hidden' }}>
-              <Item icon={LogOut} label="Logout" destructive onClick={handleLogout} />
+              <Item icon={LogOut} label={tr('logout', selectedLanguage)} destructive onClick={handleLogout} />
             </div>
           )}
         </div>
@@ -477,7 +483,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
           {isGuest ? (
             <div>
               <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#9aa0b2', textAlign: 'center', letterSpacing: '0.3px' }}>
-                Join millions buying &amp; selling on SYPH
+                {tr('joinMillions', selectedLanguage)}
               </p>
               <button
                 onClick={() => nav('/welcome')}
@@ -489,7 +495,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
                 }}
               >
                 <User size={18} color="#fff" />
-                Sign In / Create Account
+                {tr('signInCreateAccount', selectedLanguage)}
               </button>
             </div>
           ) : (
@@ -498,13 +504,13 @@ export default function MenuDrawer({ open, onClose }: Props) {
                 <p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: '#1c2c52', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {displayName}
                 </p>
-                <p style={{ margin: 0, fontSize: 11, color: '#9aa0b2', fontWeight: 600 }}>Signed in</p>
+                <p style={{ margin: 0, fontSize: 11, color: '#9aa0b2', fontWeight: 600 }}>{tr('signedInLabel', selectedLanguage)}</p>
               </div>
               <button
                 onClick={() => requireAuth('/profile')}
                 style={{ padding: '8px 14px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#1E4DD9', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
               >
-                Profile
+                {tr('profile', selectedLanguage)}
               </button>
             </div>
           )}
@@ -515,6 +521,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
       {open && sheet === 'currency' && (
         <div style={{ zIndex: 102 }}>
           <CurrencySheet
+            lang={selectedLanguage}
             current={selectedCurrency}
             isAuto={isAutoCurrency}
             country={currencyAnchor}
@@ -529,6 +536,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
       {open && sheet === 'language' && (
         <div style={{ zIndex: 102 }}>
           <LanguageSheet
+            lang={selectedLanguage}
             current={selectedLanguage}
             onSelect={handleLanguageSelect}
             onClose={() => setSheet(null)}
@@ -539,6 +547,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
       {/* Auth required modal — independent of drawer state */}
       {showAuth && (
         <AuthModal
+          lang={selectedLanguage}
           onClose={() => setShowAuth(false)}
           onSignup={() => { setShowAuth(false); router.push('/signup'); }}
           onLogin={() => { setShowAuth(false); router.push('/login'); }}

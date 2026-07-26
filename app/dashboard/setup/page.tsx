@@ -11,12 +11,20 @@ import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import type { SellerProfile } from '@/types';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
+// Canonical English values stored to DB — only the display is translated.
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern', 'Other'];
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const REGION_KEYS: Record<string, string> = {
+  Central: 'regionCentral', Eastern: 'regionEastern', Northern: 'regionNorthern',
+  Western: 'regionWestern', Southern: 'regionSouthern', Other: 'regionOther',
+};
+const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'];
 
 export default function SellerSetupPage() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
   const [uid, setUid] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,7 +80,7 @@ export default function SellerSetupPage() {
 
   async function detectLocation() {
     if (!navigator.geolocation) {
-      toast.error('Geolocation not supported by your browser.');
+      toast.error(tr('geoNotSupported', lang));
       return;
     }
     setFetchingLocation(true);
@@ -97,9 +105,9 @@ export default function SellerSetupPage() {
       const resolved = parts.join(', ');
       setAddress(resolved || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
       if (!selectedCountry && data.address?.country) setSelectedCountry(data.address.country);
-      toast.success('Location detected!');
+      toast.success(tr('locationDetected', lang));
     } catch {
-      toast.error('Failed to detect location. Please try again.');
+      toast.error(tr('failedDetectLocation', lang));
     } finally {
       setFetchingLocation(false);
     }
@@ -107,16 +115,16 @@ export default function SellerSetupPage() {
 
   async function handleSave() {
     if (!uid) return;
-    if (!businessName.trim()) { toast.error('Please enter your business name.'); return; }
-    if (!phone.trim()) { toast.error('Please enter a contact number.'); return; }
-    if (!selectedCountry) { toast.error('Please select your country.'); return; }
-    if (!selectedRegion) { toast.error('Please select your region.'); return; }
-    if (!description.trim()) { toast.error('Please enter a business description.'); return; }
+    if (!businessName.trim()) { toast.error(tr('enterBusinessName', lang)); return; }
+    if (!phone.trim()) { toast.error(tr('enterContactNumber', lang)); return; }
+    if (!selectedCountry) { toast.error(tr('selectYourCountry', lang)); return; }
+    if (!selectedRegion) { toast.error(tr('selectYourRegion', lang)); return; }
+    if (!description.trim()) { toast.error(tr('enterBusinessDesc', lang)); return; }
     if (!open24Hours && (!openingTime || !closingTime)) {
-      toast.error('Please set your opening and closing times.'); return;
+      toast.error(tr('setOpeningClosing', lang)); return;
     }
     if (businessLat === null || businessLng === null) {
-      toast.error('Please set your business location using the GPS button.'); return;
+      toast.error(tr('setLocationGps', lang)); return;
     }
 
     setSaving(true);
@@ -124,8 +132,8 @@ export default function SellerSetupPage() {
       const safeName = sanitizeText(businessName, 60);
       const safeDesc = sanitizeText(description, 500);
       const safeAddress = sanitizeText(address, 200);
-      if (!safeName) { toast.error('Business name cannot be empty.'); return; }
-      if (!safeDesc) { toast.error('Business description cannot be empty.'); return; }
+      if (!safeName) { toast.error(tr('businessNameEmpty', lang)); return; }
+      if (!safeDesc) { toast.error(tr('businessDescEmpty', lang)); return; }
       const profileData: Omit<SellerProfile, 'isVerified' | 'rating' | 'totalReviews'> = {
         uid,
         businessName: safeName,
@@ -158,10 +166,10 @@ export default function SellerSetupPage() {
         await createSellerProfile(profileData, extraFields);
       }
 
-      toast.success('Seller profile saved!');
+      toast.success(tr('sellerProfileSaved', lang));
       router.push('/dashboard');
     } catch {
-      toast.error('Failed to save profile. Please try again.');
+      toast.error(tr('failedSaveProfile', lang));
     } finally {
       setSaving(false);
     }
@@ -181,8 +189,8 @@ export default function SellerSetupPage() {
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F0F4FF', padding: 24 }}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         <Store size={48} color="#2E5BFF" />
-        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45', marginTop: 16 }}>Sign in to set up your seller profile</div>
-        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>Sign In</button>
+        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45', marginTop: 16 }}>{tr('signInToSetupSeller', lang)}</div>
+        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>{tr('signIn', lang)}</button>
       </div>
     );
   }
@@ -224,7 +232,7 @@ export default function SellerSetupPage() {
               <div style={{ width: 40, height: 4, borderRadius: 99, background: '#e2e8f0' }} />
             </div>
             <div style={{ padding: '6px 16px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontWeight: 900, fontSize: 16, color: '#1E2B45' }}>Select Country</div>
+              <div style={{ fontWeight: 900, fontSize: 16, color: '#1E2B45' }}>{tr('selectCountry', lang)}</div>
               <button onClick={() => { setShowCountryModal(false); setCountryQuery(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                 <X size={20} color="#6B7A99" />
               </button>
@@ -235,7 +243,7 @@ export default function SellerSetupPage() {
                 autoFocus
                 value={countryQuery}
                 onChange={e => setCountryQuery(e.target.value)}
-                placeholder="Search country…"
+                placeholder={tr('searchCountryPlaceholder', lang)}
                 style={{ ...inputStyle, paddingLeft: 40, height: 44, fontSize: 14 }}
               />
             </div>
@@ -276,9 +284,9 @@ export default function SellerSetupPage() {
           }}>
             <Store size={38} color="#fff" />
           </div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#fff', marginBottom: 10 }}>Become a Seller</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#fff', marginBottom: 10 }}>{tr('becomeASeller', lang)}</div>
           <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.72)', fontWeight: 500, lineHeight: 1.6, maxWidth: 300, margin: '0 auto' }}>
-            Set up your seller profile to list products and services to buyers across 50+ countries — completely free.
+            {tr('sellerSetupHeroDesc', lang)}
           </div>
         </div>
       </div>
@@ -287,17 +295,17 @@ export default function SellerSetupPage() {
 
         {/* Business Information */}
         <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 18 }}>Business Information</div>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 18 }}>{tr('businessInformation', lang)}</div>
 
-          <label style={labelStyle}><Store size={14} color="#2E5BFF" /> Business Name *</label>
+          <label style={labelStyle}><Store size={14} color="#2E5BFF" /> {tr('businessName', lang)} *</label>
           <input value={businessName} onChange={e => setBusinessName(e.target.value)}
-            placeholder="e.g. Mama Sarah's Store" style={{ ...inputStyle, marginBottom: 16 }} />
+            placeholder={tr('businessNamePlaceholder', lang)} style={{ ...inputStyle, marginBottom: 16 }} />
 
-          <label style={labelStyle}><Phone size={14} color="#2E5BFF" /> Contact Number *</label>
+          <label style={labelStyle}><Phone size={14} color="#2E5BFF" /> {tr('contactNumber', lang)} *</label>
           <input value={phone} onChange={e => setPhone(e.target.value)}
             placeholder="+256 700 000 000" type="tel" style={{ ...inputStyle, marginBottom: 16 }} />
 
-          <label style={labelStyle}><Globe size={14} color="#2E5BFF" /> Country *</label>
+          <label style={labelStyle}><Globe size={14} color="#2E5BFF" /> {tr('countryField', lang)} *</label>
           <button
             type="button"
             onClick={() => setShowCountryModal(true)}
@@ -315,13 +323,13 @@ export default function SellerSetupPage() {
             ) : (
               <>
                 <Globe size={16} color="#9ca3af" />
-                <span style={{ flex: 1 }}>Select country…</span>
+                <span style={{ flex: 1 }}>{tr('selectCountry', lang)}…</span>
               </>
             )}
             <ChevronDown size={16} color="#9ca3af" />
           </button>
 
-          <label style={labelStyle}>Region *</label>
+          <label style={labelStyle}>{tr('region', lang)} *</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             {REGIONS.map(r => (
               <button key={r} onClick={() => setSelectedRegion(r)} style={{
@@ -331,13 +339,13 @@ export default function SellerSetupPage() {
                 background: selectedRegion === r ? '#2E5BFF' : '#fff',
                 color: selectedRegion === r ? '#fff' : '#4A5878',
                 fontWeight: 700, fontSize: 13,
-              }}>{r}</button>
+              }}>{tr(REGION_KEYS[r], lang)}</button>
             ))}
           </div>
 
-          <label style={labelStyle}><FileText size={14} color="#2E5BFF" /> Business Description *</label>
+          <label style={labelStyle}><FileText size={14} color="#2E5BFF" /> {tr('businessDescription', lang)} *</label>
           <textarea value={description} onChange={e => setDescription(e.target.value)}
-            placeholder="Describe what you sell or the services you offer…" rows={3}
+            placeholder={tr('describeSellPlaceholder', lang)} rows={3}
             style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6, marginBottom: 16 }} />
 
           {/* Service provider toggle */}
@@ -347,9 +355,9 @@ export default function SellerSetupPage() {
             border: '1px solid #E0E8F0',
           }}>
             <div>
-              <div style={{ fontWeight: 800, color: '#1E2B45', fontSize: 14 }}>Service Provider?</div>
+              <div style={{ fontWeight: 800, color: '#1E2B45', fontSize: 14 }}>{tr('serviceProviderQ', lang)}</div>
               <div style={{ color: '#6B7A99', fontSize: 12, marginTop: 2 }}>
-                {isServiceProvider ? 'You offer services (not physical goods)' : 'You sell physical goods'}
+                {isServiceProvider ? tr('offerServicesDesc', lang) : tr('sellPhysicalGoods', lang)}
               </div>
             </div>
             <label style={{ position: 'relative', width: 48, height: 28, cursor: 'pointer', flexShrink: 0 }}>
@@ -366,17 +374,17 @@ export default function SellerSetupPage() {
             <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(30,77,217,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Clock size={22} color="#1E4DD9" />
             </div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: '#1E2B45' }}>Business Hours</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#1E2B45' }}>{tr('businessHours', lang)}</div>
           </div>
           <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, marginBottom: 16, lineHeight: 1.55 }}>
-            Let buyers know when you&apos;re available to respond and transact.
+            {tr('businessHoursDesc', lang)}
           </div>
 
           <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid #E0ECFF' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
               <div>
-                <div style={{ fontWeight: 800, color: '#1E2B45', fontSize: 14 }}>Open 24 Hours</div>
-                <div style={{ color: '#6B7A99', fontSize: 12, marginTop: 2 }}>Always open, 7 days a week</div>
+                <div style={{ fontWeight: 800, color: '#1E2B45', fontSize: 14 }}>{tr('open24HoursLabel', lang)}</div>
+                <div style={{ color: '#6B7A99', fontSize: 12, marginTop: 2 }}>{tr('alwaysOpenDesc', lang)}</div>
               </div>
               <label style={{ position: 'relative', width: 48, height: 28, cursor: 'pointer', flexShrink: 0 }}>
                 <input type="checkbox" checked={open24Hours} onChange={() => setOpen24Hours(!open24Hours)} style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }} />
@@ -390,21 +398,21 @@ export default function SellerSetupPage() {
                 <div style={{ height: 1, background: '#f1f5f9' }} />
                 <div style={{ padding: '14px 16px', display: 'flex', gap: 12 }}>
                   <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontWeight: 700, fontSize: 12, color: '#4A5878', marginBottom: 6 }}>Opening Time</label>
+                    <label style={{ display: 'block', fontWeight: 700, fontSize: 12, color: '#4A5878', marginBottom: 6 }}>{tr('openingTimeLabel', lang)}</label>
                     <input type="time" value={openingTime} onChange={e => setOpeningTime(e.target.value)}
                       style={{ ...inputStyle, fontSize: 14 }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontWeight: 700, fontSize: 12, color: '#4A5878', marginBottom: 6 }}>Closing Time</label>
+                    <label style={{ display: 'block', fontWeight: 700, fontSize: 12, color: '#4A5878', marginBottom: 6 }}>{tr('closingTimeLabel', lang)}</label>
                     <input type="time" value={closingTime} onChange={e => setClosingTime(e.target.value)}
                       style={{ ...inputStyle, fontSize: 14 }} />
                   </div>
                 </div>
                 <div style={{ height: 1, background: '#f1f5f9' }} />
                 <div style={{ padding: '14px 16px' }}>
-                  <div style={{ fontWeight: 700, fontSize: 12, color: '#4A5878', marginBottom: 10 }}>Working Days</div>
+                  <div style={{ fontWeight: 700, fontSize: 12, color: '#4A5878', marginBottom: 10 }}>{tr('workingDaysLabel', lang)}</div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {DAY_LABELS.map((day, i) => (
+                    {DAY_KEYS.map((dayKey, i) => (
                       <button key={i} onClick={() => toggleDay(i)} style={{
                         width: 42, height: 40, borderRadius: 12,
                         border: `1.5px solid ${workingDays.includes(i) ? '#2E5BFF' : '#CDD5E0'}`,
@@ -412,7 +420,7 @@ export default function SellerSetupPage() {
                         background: workingDays.includes(i) ? '#2E5BFF' : 'transparent',
                         color: workingDays.includes(i) ? '#fff' : '#64748B',
                         fontWeight: 700, fontSize: 11,
-                      }}>{day}</button>
+                      }}>{tr(dayKey, lang)}</button>
                     ))}
                   </div>
                 </div>
@@ -427,15 +435,15 @@ export default function SellerSetupPage() {
             <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(30,77,217,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <MapPin size={22} color="#1E4DD9" />
             </div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: '#1E2B45' }}>Business Location</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#1E2B45' }}>{tr('businessLocation', lang)}</div>
           </div>
           <div style={{ fontSize: 13, color: '#6B7A99', fontWeight: 500, lineHeight: 1.55, marginBottom: 8 }}>
-            Pin your exact location so buyers can find you in &apos;Near Me&apos; search results.
+            {tr('pinLocationDesc', lang)}
           </div>
           {businessLat === null && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 700 }}>Required to appear in Near Me results</span>
+              <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 700 }}>{tr('requiredNearMe', lang)}</span>
             </div>
           )}
           {businessLat !== null && <div style={{ marginBottom: 14 }} />}
@@ -451,10 +459,10 @@ export default function SellerSetupPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}>
             {fetchingLocation
-              ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Detecting…</>
+              ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> {tr('detectingEllipsis', lang)}</>
               : businessLat !== null
-                ? <><MapPin size={16} /> Update Business Location</>
-                : <><MapPin size={16} /> Set Business Location</>
+                ? <><MapPin size={16} /> {tr('updateBusinessLocation', lang)}</>
+                : <><MapPin size={16} /> {tr('setBusinessLocation', lang)}</>
             }
           </button>
 
@@ -465,7 +473,7 @@ export default function SellerSetupPage() {
             }}>
               <CheckCircle size={20} color="#2E5BFF" style={{ flexShrink: 0, marginTop: 1 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: 13, color: '#1E2B45', marginBottom: 4 }}>Location Saved</div>
+                <div style={{ fontWeight: 800, fontSize: 13, color: '#1E2B45', marginBottom: 4 }}>{tr('locationSaved', lang)}</div>
                 <div style={{ fontSize: 12, color: '#6B7A99', lineHeight: 1.5, wordBreak: 'break-word' }}>
                   {address || `${businessLat.toFixed(6)}, ${businessLng?.toFixed(6)}`}
                 </div>
@@ -484,10 +492,10 @@ export default function SellerSetupPage() {
           {saving ? (
             <>
               <div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              Saving…
+              {tr('savingEllipsis', lang)}
             </>
           ) : (
-            isEditing ? 'Update Profile →' : 'Complete Setup →'
+            isEditing ? `${tr('updateProfileBtn', lang)} →` : `${tr('completeSetupBtn', lang)} →`
           )}
         </button>
       </div>

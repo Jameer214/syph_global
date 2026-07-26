@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Crown, Zap, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getMyPromotionRequests } from '@/lib/firestore';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 import type { PromotionRequest } from '@/types';
 
 function tsToDate(ts: string): Date | null {
@@ -24,13 +26,14 @@ function formatDate(ts: string): string {
 }
 
 const STATUS_CONFIG = {
-  approved: { icon: CheckCircle, color: '#2E9B55', bg: '#E8F5E9', label: 'Approved' },
-  rejected: { icon: XCircle, color: '#E53935', bg: '#FFECEC', label: 'Rejected' },
-  pending: { icon: AlertCircle, color: '#F39C12', bg: '#FFF8EE', label: 'Pending' },
+  approved: { icon: CheckCircle, color: '#2E9B55', bg: '#E8F5E9', labelKey: 'tabApproved' },
+  rejected: { icon: XCircle, color: '#E53935', bg: '#FFECEC', labelKey: 'tabRejected' },
+  pending: { icon: AlertCircle, color: '#F39C12', bg: '#FFF8EE', labelKey: 'tabPending' },
 };
 
 export default function PromotionsPage() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
   const [uid, setUid] = useState<string | null>(null);
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,8 +63,8 @@ export default function PromotionsPage() {
   if (!uid) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F0F4FF', padding: 24 }}>
-        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45' }}>Sign in to view promotions</div>
-        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>Sign In</button>
+        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45' }}>{tr('signInToViewPromos', lang)}</div>
+        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>{tr('signIn', lang)}</button>
       </div>
     );
   }
@@ -76,8 +79,8 @@ export default function PromotionsPage() {
           <ArrowLeft size={20} color="#fff" />
         </button>
         <div style={{ flex: 1 }}>
-          <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>My Promotions</div>
-          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>Track your sponsored & flash sale boosts</div>
+          <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('featPromotionsTitle', lang)}</div>
+          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>{tr('trackBoosts', lang)}</div>
         </div>
       </div>
 
@@ -88,13 +91,13 @@ export default function PromotionsPage() {
             <div style={{ width: 64, height: 64, background: '#F0F4FF', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <Crown size={28} color="#9ca3af" />
             </div>
-            <p style={{ margin: '0 0 8px', fontWeight: 900, fontSize: 18, color: '#0F2B6E' }}>No Promotions Yet</p>
+            <p style={{ margin: '0 0 8px', fontWeight: 900, fontSize: 18, color: '#0F2B6E' }}>{tr('noPromotionsYet', lang)}</p>
             <p style={{ margin: '0 0 20px', fontSize: 14, fontWeight: 600, color: '#9ca3af', lineHeight: 1.5 }}>
-              Promote your listings to reach more buyers with Sponsored or Flash Sale boosts.
+              {tr('promoteReachDesc', lang)}
             </p>
             <button onClick={() => router.push('/dashboard')}
               style={{ background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 28px', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-              Go to Dashboard
+              {tr('goToDashboard', lang)}
             </button>
           </div>
         ) : (
@@ -116,42 +119,42 @@ export default function PromotionsPage() {
                       </div>
                       <div>
                         <p style={{ margin: 0, fontWeight: 900, fontSize: 14, color: '#0F2B6E' }}>
-                          {isSponsored ? 'Sponsor Listing' : 'Flash Sale'}
+                          {isSponsored ? tr('sponsorListingLabel', lang) : tr('flashSaleLabel', lang)}
                         </p>
                         <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#9ca3af' }}>
-                          {req.days} days
+                          {req.days} {tr('daysWord', lang)}
                         </p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 99, background: cfg.bg }}>
                       <StatusIcon size={14} color={cfg.color} />
-                      <span style={{ fontSize: 12, fontWeight: 800, color: cfg.color }}>{cfg.label}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: cfg.color }}>{tr(cfg.labelKey, lang)}</span>
                     </div>
                   </div>
 
                   <div style={{ background: '#F8FAFF', borderRadius: 12, padding: '10px 14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>Amount Paid</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>{tr('amountPaid', lang)}</span>
                       <span style={{ fontSize: 13, fontWeight: 900, color: '#0F2B6E' }}>
                         {req.currencyCode} {req.amount.toLocaleString()}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>Payment Method</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>{tr('promotePayment', lang)}</span>
                       <span style={{ fontSize: 13, fontWeight: 800, color: '#4A5878', textTransform: 'capitalize' }}>
                         {req.paymentMethod || '—'}
                       </span>
                     </div>
                     {req.transactionReference && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>Reference</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>{tr('referenceLabel', lang)}</span>
                         <span style={{ fontSize: 12, fontWeight: 700, color: '#4A5878', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
                           {req.transactionReference}
                         </span>
                       </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>Submitted</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>{tr('submittedLabel', lang)}</span>
                       <span style={{ fontSize: 12, fontWeight: 700, color: '#4A5878', display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Clock size={11} color="#9ca3af" />
                         {req.createdAt ? formatDate(req.createdAt) : '—'}
@@ -162,7 +165,7 @@ export default function PromotionsPage() {
                   {req.listingId && (
                     <button onClick={() => router.push(`/listing/${req.listingId}`)}
                       style={{ width: '100%', marginTop: 10, padding: '10px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: '#fff', color: '#2E5BFF', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                      View Listing
+                      {tr('viewListing', lang)}
                     </button>
                   )}
                 </div>

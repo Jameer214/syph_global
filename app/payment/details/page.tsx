@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Smartphone, CreditCard, Lock, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
 type Method = 'mtn' | 'airtel' | 'bank';
 
@@ -15,6 +17,7 @@ const METHOD_META: Record<Method, { label: string; color: string; icon: React.Re
 
 function DetailsPageContent() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
   const sp = useSearchParams();
 
   const amount   = sp.get('amount') ?? '0';
@@ -35,11 +38,11 @@ function DetailsPageContent() {
     if (submitting) return;
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
-    if (!user) { toast.error('Please sign in first.'); return; }
+    if (!user) { toast.error(tr('signInFirst', lang)); return; }
 
     if (isMobile) {
       if (!phone.trim() || phone.trim().length < 9) {
-        toast.error(`Enter a valid ${meta.label} number.`);
+        toast.error(tr('enterValidNumber', lang));
         return;
       }
     }
@@ -74,7 +77,7 @@ function DetailsPageContent() {
       const params = new URLSearchParams({ paymentId, amount, currency, type });
       router.push(`/payment/waiting?${params}`);
     } catch (e) {
-      toast.error('Failed to initiate payment. Please try again.');
+      toast.error(tr('failedInitiatePayment', lang));
       setSubmitting(false);
     }
   }
@@ -86,7 +89,7 @@ function DetailsPageContent() {
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
           <ArrowLeft size={22} />
         </button>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>Payment Details</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>{tr('paymentDetailsTitle', lang)}</span>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
@@ -98,7 +101,7 @@ function DetailsPageContent() {
           <div>
             <div style={{ fontWeight: 900, fontSize: 15, color: '#182033' }}>{meta.label}</div>
             <div style={{ fontWeight: 600, fontSize: 13, color: '#6B7A99', marginTop: 2 }}>
-              {currency} {Number(amount).toLocaleString()} · {days} days
+              {currency} {Number(amount).toLocaleString()} · {days} {tr('daysWord', lang)}
             </div>
           </div>
         </div>
@@ -106,10 +109,10 @@ function DetailsPageContent() {
         {isMobile ? (
           <>
             <div style={{ fontWeight: 800, fontSize: 15, color: '#182033', marginBottom: 6 }}>
-              Enter your {method === 'mtn' ? 'MTN' : 'Airtel'} number
+              {tr('enterYourMobileNumber', lang)} ({method === 'mtn' ? 'MTN' : 'Airtel'})
             </div>
             <div style={{ fontWeight: 600, fontSize: 13, color: '#6B7A99', marginBottom: 20, lineHeight: 1.4 }}>
-              You will receive a payment prompt on your {method === 'mtn' ? 'MTN' : 'Airtel'} line
+              {tr('promptOnLine', lang)} ({method === 'mtn' ? 'MTN' : 'Airtel'})
             </div>
 
             <div style={{ position: 'relative', marginBottom: 14 }}>
@@ -128,23 +131,23 @@ function DetailsPageContent() {
             <div style={{ background: `${meta.color}12`, border: `1px solid ${meta.color}33`, borderRadius: 14, padding: 14, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <Info size={18} color={meta.color} style={{ flexShrink: 0, marginTop: 1 }} />
               <span style={{ color: `${meta.color}E6`, fontWeight: 600, fontSize: 12.5, lineHeight: 1.4 }}>
-                After tapping Okay, approve the payment prompt on your phone.
+                {tr('approvePrompt', lang)}
               </span>
             </div>
           </>
         ) : (
           <>
-            <div style={{ fontWeight: 800, fontSize: 15, color: '#182033', marginBottom: 6 }}>Pay with Card / Bank</div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: '#182033', marginBottom: 6 }}>{tr('payWithCardBank', lang)}</div>
             <div style={{ fontWeight: 600, fontSize: 13, color: '#6B7A99', marginBottom: 20, lineHeight: 1.45 }}>
-              Tap the button below — Pesapal&apos;s secure payment page will open for you to enter your card details.
+              {tr('pesapalDesc', lang)}
             </div>
 
             <div style={{ background: '#E8F0FF', borderRadius: 16, border: '1px solid #BDD0FF', padding: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
               <Lock size={20} color="#2F6BFF" style={{ flexShrink: 0, marginTop: 1 }} />
               <div>
-                <div style={{ fontWeight: 900, fontSize: 13.5, color: '#1D3D8F' }}>Secured by Pesapal</div>
+                <div style={{ fontWeight: 900, fontSize: 13.5, color: '#1D3D8F' }}>{tr('securedPayment', lang)}</div>
                 <div style={{ fontWeight: 600, fontSize: 12.5, color: '#1D3D8F', marginTop: 4, lineHeight: 1.4 }}>
-                  Visa, Mastercard and other cards are accepted. Your card details are never stored on our servers.
+                  {tr('cardsAccepted', lang)}
                 </div>
               </div>
             </div>
@@ -156,8 +159,8 @@ function DetailsPageContent() {
       <div style={{ padding: '12px 16px 28px', background: '#fff', boxShadow: '0 -4px 12px rgba(0,0,0,0.06)' }}>
         <button onClick={handleProceed} disabled={submitting} style={{ width: '100%', padding: '16px', background: submitting ? '#A0B4E0' : 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {submitting ? (
-            <><div style={{ width: 22, height: 22, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />Processing…</>
-          ) : 'Okay — Proceed to Pay'}
+            <><div style={{ width: 22, height: 22, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />{tr('processingEllipsis', lang)}</>
+          ) : tr('okayProceedToPay', lang)}
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </button>
       </div>

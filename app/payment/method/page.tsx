@@ -2,25 +2,27 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Smartphone, CreditCard, CheckCircle2 } from 'lucide-react';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
 type Method = 'mtn' | 'airtel' | 'bank';
 
 interface MethodConfig {
   id: Method;
   title: string;
-  subtitle: string;
+  subtitleKey: string;
   color: string;
   icon: React.ReactNode;
 }
 
 const METHODS: MethodConfig[] = [
-  { id: 'mtn', title: 'MTN Mobile Money', subtitle: 'Pay using your MTN MoMo number', color: '#FFAA00', icon: <Smartphone size={26} /> },
-  { id: 'airtel', title: 'Airtel Money', subtitle: 'Pay using your Airtel Money number', color: '#E53935', icon: <Smartphone size={26} /> },
-  { id: 'bank', title: 'Bank / Card', subtitle: 'Pay with Visa, Mastercard or bank card', color: '#2F6BFF', icon: <CreditCard size={26} /> },
+  { id: 'mtn', title: 'MTN Mobile Money', subtitleKey: 'mtnSubtitle', color: '#FFAA00', icon: <Smartphone size={26} /> },
+  { id: 'airtel', title: 'Airtel Money', subtitleKey: 'airtelSubtitle', color: '#E53935', icon: <Smartphone size={26} /> },
+  { id: 'bank', title: 'Bank / Card', subtitleKey: 'bankSubtitle', color: '#2F6BFF', icon: <CreditCard size={26} /> },
 ];
 
-const TYPE_LABELS: Record<string, string> = {
-  sponsored: 'Sponsored', flashsale: 'Flash Sale', happenings: 'Happenings', listing: 'Listing Fee',
+const TYPE_LABEL_KEYS: Record<string, string> = {
+  sponsored: 'sponsored', flashsale: 'flashSaleLabel', happenings: 'happenings', listing: 'listingFee',
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -29,6 +31,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 function MethodPageContent() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
   const sp = useSearchParams();
 
   const amount = sp.get('amount') ?? '0';
@@ -41,7 +44,7 @@ function MethodPageContent() {
   const [selected, setSelected] = useState<Method | null>(null);
 
   const typeColor = TYPE_COLORS[type] ?? '#2F6BFF';
-  const typeLabel = TYPE_LABELS[type] ?? type;
+  const typeLabel = TYPE_LABEL_KEYS[type] ? tr(TYPE_LABEL_KEYS[type], lang) : type;
 
   function handleContinue() {
     if (!selected) return;
@@ -56,7 +59,7 @@ function MethodPageContent() {
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
           <ArrowLeft size={22} />
         </button>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>Choose Payment Method</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 17 }}>{tr('choosePaymentMethod', lang)}</span>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
@@ -65,14 +68,14 @@ function MethodPageContent() {
           <div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 13 }}>{typeLabel}</div>
             <div style={{ color: '#fff', fontWeight: 900, fontSize: 26, margin: '4px 0' }}>{currency} {Number(amount).toLocaleString()}</div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 13 }}>{days} days promotion</div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 13 }}>{days} {tr('daysPromotionSuffix', lang)}</div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 14 }}>
             <CreditCard size={28} color="#fff" />
           </div>
         </div>
 
-        <div style={{ fontWeight: 900, fontSize: 17, color: '#182033', marginBottom: 14 }}>Select Payment Method</div>
+        <div style={{ fontWeight: 900, fontSize: 17, color: '#182033', marginBottom: 14 }}>{tr('selectPaymentMethod', lang)}</div>
 
         {METHODS.map((m) => {
           const isSel = selected === m.id;
@@ -83,7 +86,7 @@ function MethodPageContent() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 900, fontSize: 15, color: isSel ? m.color : '#182033' }}>{m.title}</div>
-                <div style={{ fontWeight: 600, fontSize: 12.5, color: '#6B7A99', marginTop: 3 }}>{m.subtitle}</div>
+                <div style={{ fontWeight: 600, fontSize: 12.5, color: '#6B7A99', marginTop: 3 }}>{tr(m.subtitleKey, lang)}</div>
               </div>
               <div style={{ width: 24, height: 24, borderRadius: '50%', background: isSel ? m.color : 'transparent', border: `2px solid ${isSel ? m.color : '#BCC8D8'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {isSel && <CheckCircle2 size={14} color="#fff" />}
@@ -96,7 +99,7 @@ function MethodPageContent() {
       {/* Continue button */}
       <div style={{ padding: '12px 16px 28px', background: '#fff', boxShadow: '0 -4px 12px rgba(0,0,0,0.06)' }}>
         <button onClick={handleContinue} disabled={!selected} style={{ width: '100%', padding: '16px', background: selected ? 'linear-gradient(135deg, #0F2B6E, #1E4DD9)' : '#D0D8F0', border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: selected ? 'pointer' : 'not-allowed' }}>
-          Continue
+          {tr('continueLabel', lang)}
         </button>
       </div>
     </div>

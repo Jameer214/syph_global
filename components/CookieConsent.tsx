@@ -1,9 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
+  const { selectedLanguage } = useAppStore();
 
   useEffect(() => {
     const accepted = localStorage.getItem('syph-cookie-consent');
@@ -30,11 +33,11 @@ export default function CookieConsent() {
       gap: 12, flexWrap: 'wrap',
     }}>
       <p style={{ margin: 0, fontSize: 13, flex: 1, minWidth: 200 }}>
-        We use cookies and secure cloud services to provide core features, analytics, and personalization.
-        By using SYPH you agree to our{' '}
-        <Link href="/privacy" style={{ color: '#93C5FD', textDecoration: 'underline' }}>Privacy Policy</Link>
-        {' '}and{' '}
-        <Link href="/terms" style={{ color: '#93C5FD', textDecoration: 'underline' }}>Terms</Link>.
+        {tr('cookieNotice', selectedLanguage)}{' '}
+        {tr('byUsingAgree', selectedLanguage)}{' '}
+        <Link href="/privacy" style={{ color: '#93C5FD', textDecoration: 'underline' }}>{tr('privacyPolicy', selectedLanguage)}</Link>
+        {' '}{tr('andWord', selectedLanguage)}{' '}
+        <Link href="/terms" style={{ color: '#93C5FD', textDecoration: 'underline' }}>{tr('terms', selectedLanguage)}</Link>.
       </p>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
         <button
@@ -45,7 +48,7 @@ export default function CookieConsent() {
             fontSize: 13, cursor: 'pointer',
           }}
         >
-          Accept All
+          {tr('acceptAll', selectedLanguage)}
         </button>
         <button
           onClick={acceptNecessary}
@@ -55,7 +58,7 @@ export default function CookieConsent() {
             fontSize: 13, cursor: 'pointer',
           }}
         >
-          Necessary Only
+          {tr('necessaryOnly', selectedLanguage)}
         </button>
       </div>
     </div>

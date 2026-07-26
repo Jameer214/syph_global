@@ -6,11 +6,14 @@ import Link from 'next/link';
 import { CheckCircle2, XCircle, MailCheck, Loader2 } from 'lucide-react';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 function ConfirmInner() {
   const params = useSearchParams();
+  const { selectedLanguage: lang } = useAppStore();
   const tokenHash = params.get('token_hash');
   const type = (params.get('type') ?? 'signup') as EmailOtpType;
 
@@ -19,7 +22,7 @@ function ConfirmInner() {
 
   const confirm = async () => {
     if (!tokenHash) {
-      setErrorMsg('This confirmation link is invalid or incomplete. Please use the button in your email.');
+      setErrorMsg(tr('linkInvalid', lang));
       setStatus('error');
       return;
     }
@@ -31,8 +34,8 @@ function ConfirmInner() {
       const msg = (error.message || '').toLowerCase();
       setErrorMsg(
         msg.includes('expired')
-          ? 'This link has expired. Please sign up again to get a fresh confirmation email.'
-          : 'We couldn’t confirm your email — the link may be invalid or already used.'
+          ? tr('linkExpired', lang)
+          : tr('couldNotConfirm', lang)
       );
       setStatus('error');
       return;
@@ -61,28 +64,28 @@ function ConfirmInner() {
           {status === 'success' ? (
             <>
               <CheckCircle2 size={56} color="#22C55E" style={{ display: 'inline-block' }} />
-              <h1 style={heading}>Email confirmed! 🎉</h1>
-              <p style={body}>Your SYPH account is ready. Please log in to continue.</p>
+              <h1 style={heading}>{tr('emailConfirmed', lang)}</h1>
+              <p style={body}>{tr('accountReadyLogin', lang)}</p>
               <Link href="/login" style={{ textDecoration: 'none' }}>
-                <span style={primaryBtn}>Go to Login</span>
+                <span style={primaryBtn}>{tr('goToLogin', lang)}</span>
               </Link>
             </>
           ) : status === 'error' ? (
             <>
               <XCircle size={56} color="#EF4444" style={{ display: 'inline-block' }} />
-              <h1 style={heading}>Confirmation failed</h1>
+              <h1 style={heading}>{tr('confirmationFailed', lang)}</h1>
               <p style={body}>{errorMsg}</p>
               <Link href="/signup" style={{ textDecoration: 'none' }}>
-                <span style={{ ...primaryBtn, background: '#132A66' }}>Back to Sign Up</span>
+                <span style={{ ...primaryBtn, background: '#132A66' }}>{tr('backToSignUp', lang)}</span>
               </Link>
             </>
           ) : (
             <>
               <MailCheck size={56} color="#2E5BFF" style={{ display: 'inline-block' }} />
-              <h1 style={heading}>Confirm your email</h1>
-              <p style={body}>Tap the button below to confirm your SYPH account and finish signing up.</p>
+              <h1 style={heading}>{tr('confirmYourEmail', lang)}</h1>
+              <p style={body}>{tr('confirmEmailDesc', lang)}</p>
               <button onClick={confirm} disabled={status === 'loading'} style={{ ...primaryBtn, opacity: status === 'loading' ? 0.7 : 1 }}>
-                {status === 'loading' ? (<><Loader2 size={18} className="spin" /> Confirming…</>) : 'Confirm my account'}
+                {status === 'loading' ? (<><Loader2 size={18} className="spin" /> {tr('confirmingEllipsis', lang)}</>) : tr('confirmMyAccount', lang)}
               </button>
             </>
           )}

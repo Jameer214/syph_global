@@ -6,6 +6,8 @@ import {
   Navigation, MapPin, MessageCircle, Coins, BadgeCheck, Heart,
 } from 'lucide-react';
 import Reveal from '@/components/Reveal';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
 // ── Count-up number that animates when scrolled into view ──────────────────────
 function CountUp({ target, suffix = '', duration = 1400 }: { target: number; suffix?: string; duration?: number }) {
@@ -47,16 +49,17 @@ const REGIONS = [
 ];
 
 const FEATURES = [
-  { Icon: Navigation, color: '#1E4DD9', title: 'GPS Directions', desc: 'Turn-by-turn navigation straight to the business’s door — no more getting lost.' },
-  { Icon: MapPin, color: '#2E9B55', title: 'Near Me', desc: 'See what’s around you, ranked by real distance from where you stand.', radar: true },
-  { Icon: MessageCircle, color: '#7A5AF8', title: 'Chat Direct', desc: 'Message any seller instantly. You talk to the business — never a middleman.' },
-  { Icon: Globe, color: '#4A7AFF', title: 'Any Country', desc: 'Search and filter by country and region, anywhere on the map.' },
-  { Icon: Coins, color: '#E08A00', title: 'Your Currency', desc: 'Every price auto-converted into the money you actually use.' },
-  { Icon: BadgeCheck, color: '#E25A2C', title: 'Trusted & Boosted', desc: 'Discover verified and sponsored businesses you can rely on.' },
+  { Icon: Navigation, color: '#1E4DD9', titleKey: 'featGpsTitle', descKey: 'featGpsDesc' },
+  { Icon: MapPin, color: '#2E9B55', titleKey: 'featNearMeTitle', descKey: 'featNearMeDesc', radar: true },
+  { Icon: MessageCircle, color: '#7A5AF8', titleKey: 'featChatTitle', descKey: 'featChatDesc' },
+  { Icon: Globe, color: '#4A7AFF', titleKey: 'featAnyCountryTitle', descKey: 'featAnyCountryDesc' },
+  { Icon: Coins, color: '#E08A00', titleKey: 'featCurrencyTitle', descKey: 'featCurrencyDesc' },
+  { Icon: BadgeCheck, color: '#E25A2C', titleKey: 'featTrustedTitle', descKey: 'featTrustedDesc' },
 ];
 
 export default function AboutPage() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 40, overflowX: 'hidden' }}>
@@ -81,7 +84,7 @@ export default function AboutPage() {
         <button onClick={() => router.back()} className="btn-tap" style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}>
           <ArrowLeft size={20} color="#fff" />
         </button>
-        <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>About SYPH</div>
+        <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('aboutSyph', lang)}</div>
       </div>
 
       <div style={{ padding: '20px 16px 0' }}>
@@ -95,16 +98,16 @@ export default function AboutPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontWeight: 800, fontSize: 11.5, borderRadius: 999, padding: '5px 11px', backdropFilter: 'blur(4px)' }}>
               <span className="about-globe" style={{ display: 'inline-block', animation: 'aboutSpin 6s linear infinite' }}>🌍</span>
-              GLOBAL MARKETPLACE
+              {tr('globalMarketplace', lang)}
             </span>
           </div>
 
           <div style={{ position: 'relative', marginTop: 26 }}>
-            {['Find it.', 'Locate it.', 'Connect.'].map((line, i) => (
+            {[tr('findIt', lang), tr('locateIt', lang), tr('connectIt', lang)].map((line, i) => (
               <div key={i} className="anim-fade-up about-hero-title" style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.6, lineHeight: 1.12, animationDelay: `${0.15 + i * 0.12}s` }}>{line}</div>
             ))}
             <div className="anim-fade-up" style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, marginTop: 12, maxWidth: 300, animationDelay: '0.55s' }}>
-              Your digital broker — connecting you to the businesses and services you want easily and efficiently, in any country, any region.
+              {tr('digitalBrokerDesc', lang)}
             </div>
           </div>
         </div>
@@ -112,22 +115,22 @@ export default function AboutPage() {
         {/* Broker relief — old way vs SYPH way */}
         <Reveal>
           <div style={{ background: '#fff', borderRadius: 28, padding: 22, marginBottom: 20, boxShadow: '0 8px 20px rgba(30,77,217,0.08)' }}>
-            <div style={{ fontWeight: 900, fontSize: 18, color: '#0F2B6E', letterSpacing: -0.3 }}>Skip the middleman hustle</div>
+            <div style={{ fontWeight: 900, fontSize: 18, color: '#0F2B6E', letterSpacing: -0.3 }}>{tr('skipMiddleman', lang)}</div>
             <div style={{ color: '#6B7A99', fontSize: 13.5, fontWeight: 600, marginTop: 6, lineHeight: 1.5 }}>
-              No more roaming markets, asking around, or paying a physical broker to find a business. SYPH <b>is</b> your digital broker — online, instant, everywhere.
+              {tr('skipMiddlemanDesc', lang)}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
               <div style={{ background: '#FFF1F0', border: '1px solid #F3D2CF', borderRadius: 18, padding: '14px 14px' }}>
                 <div style={{ fontSize: 22 }}>😩</div>
-                <div style={{ fontWeight: 800, fontSize: 13, color: '#C0392B', marginTop: 6 }}>The old way</div>
-                {['Roam market to market', 'Pay a broker’s cut', 'Endless asking around'].map((t) => (
+                <div style={{ fontWeight: 800, fontSize: 13, color: '#C0392B', marginTop: 6 }}>{tr('theOldWay', lang)}</div>
+                {[tr('oldWay1', lang), tr('oldWay2', lang), tr('oldWay3', lang)].map((t) => (
                   <div key={t} style={{ fontSize: 12, color: '#8a4a44', fontWeight: 600, marginTop: 6, lineHeight: 1.35 }}>• {t}</div>
                 ))}
               </div>
               <div className="lift" style={{ background: 'linear-gradient(135deg,#E9F7EF,#DFF4E8)', border: '1px solid #BEE7CE', borderRadius: 18, padding: '14px 14px' }}>
                 <div style={{ fontSize: 22 }} className="lift-emoji">⚡</div>
-                <div style={{ fontWeight: 800, fontSize: 13, color: '#1F8B4C', marginTop: 6 }}>The SYPH way</div>
-                {['Search & tap', 'GPS to their door', 'Chat the business direct'].map((t) => (
+                <div style={{ fontWeight: 800, fontSize: 13, color: '#1F8B4C', marginTop: 6 }}>{tr('theSyphWay', lang)}</div>
+                {[tr('syphWay1', lang), tr('syphWay2', lang), tr('syphWay3', lang)].map((t) => (
                   <div key={t} style={{ fontSize: 12, color: '#2f6b47', fontWeight: 600, marginTop: 6, lineHeight: 1.35 }}>• {t}</div>
                 ))}
               </div>
@@ -139,7 +142,7 @@ export default function AboutPage() {
         <Reveal>
           <div style={{ background: 'linear-gradient(135deg,#0F2B6E,#1E4DD9)', borderRadius: 24, padding: '18px 0 18px', marginBottom: 20, overflow: 'hidden', position: 'relative' }}>
             <div style={{ color: '#fff', fontWeight: 900, fontSize: 15, padding: '0 20px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Globe size={17} color="#BFD4FF" /> Connecting people across borders
+              <Globe size={17} color="#BFD4FF" /> {tr('connectingBorders', lang)}
             </div>
             <div style={{ display: 'flex', width: 'max-content', animation: 'scrollLeft 22s linear infinite' }} className="ticker-row">
               {[...REGIONS, ...REGIONS].map((r, i) => (
@@ -151,17 +154,17 @@ export default function AboutPage() {
 
         {/* How SYPH connects you — feature grid */}
         <Reveal>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#0F2B6E', letterSpacing: -0.3, margin: '4px 4px 14px' }}>How SYPH connects you</div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: '#0F2B6E', letterSpacing: -0.3, margin: '4px 4px 14px' }}>{tr('howSyphConnects', lang)}</div>
         </Reveal>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 22 }}>
-          {FEATURES.map(({ Icon, color, title, desc, radar }, i) => (
-            <Reveal key={title} delay={i * 0.06}>
+          {FEATURES.map(({ Icon, color, titleKey, descKey, radar }, i) => (
+            <Reveal key={titleKey} delay={i * 0.06}>
               <div className="lift" style={{ height: '100%', background: '#fff', borderRadius: 22, padding: 16, boxShadow: `0 6px 16px ${color}14`, border: '1px solid #EEF2FF' }}>
                 <div className={radar ? 'radar' : undefined} style={{ width: 44, height: 44, background: `${color}18`, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                   <Icon size={22} color={color} />
                 </div>
-                <div style={{ fontWeight: 900, fontSize: 14.5, color: '#0F2B6E' }}>{title}</div>
-                <div style={{ color: '#6B7A99', fontSize: 12.5, fontWeight: 600, lineHeight: 1.45, marginTop: 6 }}>{desc}</div>
+                <div style={{ fontWeight: 900, fontSize: 14.5, color: '#0F2B6E' }}>{tr(titleKey, lang)}</div>
+                <div style={{ color: '#6B7A99', fontSize: 12.5, fontWeight: 600, lineHeight: 1.45, marginTop: 6 }}>{tr(descKey, lang)}</div>
               </div>
             </Reveal>
           ))}
@@ -175,15 +178,15 @@ export default function AboutPage() {
                 <Compass size={28} color="#1E4DD9" />
               </div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: 18, color: '#0F2B6E', letterSpacing: -0.3 }}>Our Mission</div>
-                <div style={{ color: '#6B7A99', fontSize: 14, fontWeight: 600, marginTop: 4 }}>Connecting the world, locally</div>
+                <div style={{ fontWeight: 800, fontSize: 18, color: '#0F2B6E', letterSpacing: -0.3 }}>{tr('ourMission', lang)}</div>
+                <div style={{ color: '#6B7A99', fontSize: 14, fontWeight: 600, marginTop: 4 }}>{tr('missionSubtitle', lang)}</div>
               </div>
             </div>
             {[
-              'Discover items, services, and opportunities around you — fast.',
-              'Search what you need, filter by country/region, and connect with the right people.',
-              'For sellers and service providers, list offerings, reach local buyers, and boost visibility through sponsored placement.',
-              'Our goal is simple: help people find things nearby and connect quicker — no broker required.',
+              tr('mission1', lang),
+              tr('mission2', lang),
+              tr('mission3', lang),
+              tr('mission4', lang),
             ].map((text, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'linear-gradient(135deg, #1E4DD9, #4A7AFF)', flexShrink: 0, marginTop: 7 }} />
@@ -196,9 +199,9 @@ export default function AboutPage() {
         {/* Stats row — count up */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
           {[
-            { node: <CountUp target={10000} suffix="+" />, label: 'Active Users', Icon: Users, color: '#1E4DD9' },
-            { node: <CountUp target={50} suffix="+" />, label: 'Countries', Icon: Globe, color: '#4A7AFF' },
-            { node: <CountUp target={100000} suffix="+" />, label: 'Listings', Icon: ShoppingBag, color: '#80A5FF' },
+            { node: <CountUp target={10000} suffix="+" />, label: tr('activeUsers', lang), Icon: Users, color: '#1E4DD9' },
+            { node: <CountUp target={50} suffix="+" />, label: tr('countriesLabel', lang), Icon: Globe, color: '#4A7AFF' },
+            { node: <CountUp target={100000} suffix="+" />, label: tr('listingsStatLabel', lang), Icon: ShoppingBag, color: '#80A5FF' },
           ].map(({ node, label, Icon, color }, i) => (
             <Reveal key={label} delay={i * 0.08}>
               <div className="lift" style={{ background: '#fff', borderRadius: 22, padding: 16, boxShadow: `0 4px 12px ${color}1A`, textAlign: 'center' }}>
@@ -219,16 +222,16 @@ export default function AboutPage() {
               <Info size={20} color="#1E4DD9" />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, color: '#0F2B6E', fontSize: 15 }}>Version 1.0.0</div>
-              <div style={{ color: '#6B7A99', fontWeight: 600, fontSize: 13, marginTop: 4 }}>Last updated: July 2026</div>
+              <div style={{ fontWeight: 800, color: '#0F2B6E', fontSize: 15 }}>{tr('versionLabel', lang)} 1.0.0</div>
+              <div style={{ color: '#6B7A99', fontWeight: 600, fontSize: 13, marginTop: 4 }}>{tr('lastUpdatedLabel', lang)} July 2026</div>
             </div>
-            <div style={{ background: '#E1F5E8', borderRadius: 30, padding: '6px 12px', color: '#2DBE7F', fontWeight: 800, fontSize: 12 }}>Latest</div>
+            <div style={{ background: '#E1F5E8', borderRadius: 30, padding: '6px 12px', color: '#2DBE7F', fontWeight: 800, fontSize: 12 }}>{tr('latestLabel', lang)}</div>
           </div>
         </Reveal>
 
         {/* Footer */}
         <div style={{ textAlign: 'center', color: '#9AA0B2', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          Made with <Heart size={13} color="#E25A2C" fill="#E25A2C" className="bob" /> to connect the world
+          {tr('madeWith', lang)} <Heart size={13} color="#E25A2C" fill="#E25A2C" className="bob" /> {tr('toConnectWorld', lang)}
         </div>
       </div>
     </div>

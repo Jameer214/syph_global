@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 import { CONTINENTS, CONTINENT_VIEWBOX } from '@/data/continentPaths';
 
 /*
@@ -48,7 +49,7 @@ const ROUTE_AT = 2800;
 
 export default function SplashScreen() {
   const router = useRouter();
-  const { selectedCountry, locationSet } = useAppStore();
+  const { selectedCountry, locationSet, selectedLanguage: lang } = useAppStore();
   const routedRef = useRef(false);
   // Content is shown from the first frame (initial={false} → no entrance
   // transition); only the exit fade animates.
@@ -272,7 +273,7 @@ export default function SplashScreen() {
           pointerEvents: 'none',
         }}
       >
-        {['FIND IT', 'LOCATE IT', 'CONNECT'].map((word, i) => (
+        {[tr('findIt', lang), tr('locateIt', lang), tr('connectIt', lang)].map((raw) => raw.replace(/[.。।۔]\s*$/, '').toUpperCase()).map((word, i) => (
           <span key={word} style={{ display: 'inline-flex', alignItems: 'center', gap: 'clamp(10px, 3vw, 18px)' }}>
             <motion.span
               initial={false}
@@ -327,7 +328,7 @@ export default function SplashScreen() {
             boxShadow: '0 14px 38px rgba(46,91,255,0.5)',
           }}
         >
-          Explore SYPH <ArrowRight size={18} />
+          {tr('exploreSyph', lang)} <ArrowRight size={18} />
         </button>
       </motion.div>
 

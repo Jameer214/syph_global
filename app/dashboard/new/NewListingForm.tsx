@@ -10,9 +10,13 @@ import { CATEGORIES } from '@/data/categories';
 import type { SellerProfile } from '@/types';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
 const CURRENCIES = ['USD', 'UGX', 'KES', 'TZS', 'RWF', 'ETB', 'GHS', 'NGN', 'ZAR'];
+// Canonical English values stored to DB — only the display is translated.
 const CONDITIONS = ['New', 'Used', 'Refurbished'];
+const CONDITION_KEYS: Record<string, string> = { New: 'conditionNew', Used: 'conditionUsed', Refurbished: 'conditionRefurbished' };
 const DURATION_OPTS = [7, 15, 30];
 
 type FormType = 'listing' | 'sponsor' | 'flash';
@@ -23,14 +27,15 @@ interface AdminPricing {
   happenings: Record<string, number>;
 }
 
-const HEADERS: Record<FormType, { gradient: string; title: string; subtitle: string }> = {
-  listing: { gradient: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', title: 'New Listing', subtitle: 'List your item for buyers to discover' },
-  sponsor: { gradient: 'linear-gradient(135deg, #C67200, #E89A00)', title: 'Sponsor My Item', subtitle: 'Boost your listing\'s visibility' },
-  flash:   { gradient: 'linear-gradient(135deg, #C62828, #E53935)', title: 'Flash Sale', subtitle: 'Create a time-limited flash sale offer' },
+const HEADERS: Record<FormType, { gradient: string; titleKey: string; subtitleKey: string }> = {
+  listing: { gradient: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', titleKey: 'newListing', subtitleKey: 'listItemSubtitle' },
+  sponsor: { gradient: 'linear-gradient(135deg, #C67200, #E89A00)', titleKey: 'featSponsorTitle', subtitleKey: 'boostVisibilitySub' },
+  flash:   { gradient: 'linear-gradient(135deg, #C62828, #E53935)', titleKey: 'flashSaleLabel', subtitleKey: 'flashSaleSubtitle' },
 };
 
 export default function NewListingForm() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
   const searchParams = useSearchParams();
   const typeParam = searchParams.get('type');
   const formType: FormType = typeParam === 'sponsor' ? 'sponsor' : typeParam === 'flash' ? 'flash' : 'listing';
@@ -104,27 +109,27 @@ export default function NewListingForm() {
 
   function getDisplayPrice(): string {
     const ugx = getPriceUgx();
-    if (ugx <= 0) return adminPricing ? 'Contact support' : 'Loading...';
+    if (ugx <= 0) return adminPricing ? tr('contactSupport', lang) : tr('loading', lang);
     const sellerCurrency = getCurrencyForCountry(country || seller?.operatingCountry || '');
     const converted = convertPrice(ugx, 'UGX', sellerCurrency);
     return `${sellerCurrency} ${Math.round(converted).toLocaleString()}`;
   }
 
   async function handleSubmit() {
-    if (!uid || !seller) { toast.error('Please complete seller setup first.'); router.push('/dashboard/setup'); return; }
-    if (!title.trim()) { toast.error('Please enter a title.'); return; }
-    if (!selectedMainId) { toast.error('Please select a category.'); return; }
-    if (!description.trim()) { toast.error('Please enter a description.'); return; }
-    if (!price.trim()) { toast.error('Please enter a price.'); return; }
-    if (images.length === 0) { toast.error('Please add at least one image.'); return; }
-    if (!locationText.trim()) { toast.error('Please enter your location.'); return; }
+    if (!uid || !seller) { toast.error(tr('completeSetupFirst', lang)); router.push('/dashboard/setup'); return; }
+    if (!title.trim()) { toast.error(tr('enterTitleToast', lang)); return; }
+    if (!selectedMainId) { toast.error(tr('selectCategoryToast', lang)); return; }
+    if (!description.trim()) { toast.error(tr('enterDescToast', lang)); return; }
+    if (!price.trim()) { toast.error(tr('enterPriceToast', lang)); return; }
+    if (images.length === 0) { toast.error(tr('addOneImageToast', lang)); return; }
+    if (!locationText.trim()) { toast.error(tr('enterLocationToast', lang)); return; }
 
     const safeTitle = sanitizeText(title, 100);
     const safeDesc = sanitizeText(description, 1000);
     const safeLocation = sanitizeText(locationText, 200);
     const safeMessage = sanitizeText(messageForBuyers, 500);
-    if (!safeTitle) { toast.error('Title cannot be empty.'); return; }
-    if (!safeDesc) { toast.error('Description cannot be empty.'); return; }
+    if (!safeTitle) { toast.error(tr('titleEmptyToast', lang)); return; }
+    if (!safeDesc) { toast.error(tr('descEmptyToast', lang)); return; }
 
     setSubmitting(true);
     try {
@@ -169,11 +174,11 @@ export default function NewListingForm() {
         });
         router.push(`/payment/method?${params}`);
       } else {
-        toast.success('Listing submitted for review!');
+        toast.success(tr('listingSubmitted', lang));
         router.push('/dashboard');
       }
     } catch {
-      toast.error('Failed to submit. Please try again.');
+      toast.error(tr('failedSubmitRetry', lang));
       setSubmitting(false);
     }
   }
@@ -191,8 +196,8 @@ export default function NewListingForm() {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F0F4FF', padding: 24 }}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45' }}>Sign in to list an item</div>
-        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>Sign In</button>
+        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45' }}>{tr('signInToListItem', lang)}</div>
+        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>{tr('signIn', lang)}</button>
       </div>
     );
   }
@@ -212,8 +217,8 @@ export default function NewListingForm() {
           <ArrowLeft size={20} color="#fff" />
         </button>
         <div>
-          <div style={{ color: '#fff', fontWeight: 900, fontSize: 20 }}>{hdr.title}</div>
-          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}>{hdr.subtitle}</div>
+          <div style={{ color: '#fff', fontWeight: 900, fontSize: 20 }}>{tr(hdr.titleKey, lang)}</div>
+          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}>{tr(hdr.subtitleKey, lang)}</div>
         </div>
       </div>
 
@@ -221,7 +226,7 @@ export default function NewListingForm() {
 
         {/* Photos */}
         <div style={sectionStyle}>
-          <label style={labelStyle}>Photos ({images.length}/8)</label>
+          <label style={labelStyle}>{tr('photosLabel', lang)} ({images.length}/8)</label>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {imagePreviewUrls.map((url, i) => (
               <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
@@ -234,7 +239,7 @@ export default function NewListingForm() {
             {images.length < 8 && (
               <button onClick={() => fileInputRef.current?.click()} style={{ width: 80, height: 80, background: '#F0F4FF', border: '2px dashed #A0B4E0', borderRadius: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <Camera size={22} color="#6B7A99" />
-                <span style={{ fontSize: 10, color: '#6B7A99', fontWeight: 700 }}>Add</span>
+                <span style={{ fontSize: 10, color: '#6B7A99', fontWeight: 700 }}>{tr('addLabel', lang)}</span>
               </button>
             )}
           </div>
@@ -243,20 +248,20 @@ export default function NewListingForm() {
 
         {/* Item info */}
         <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>Item Information</div>
-          <label style={labelStyle}>Title *</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. iPhone 14 Pro Max" style={inputStyle} />
-          <label style={{ ...labelStyle, marginTop: 14 }}>Description *</label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your item..." rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
-          <label style={{ ...labelStyle, marginTop: 14 }}>Message for buyers</label>
-          <textarea value={messageForBuyers} onChange={(e) => setMessageForBuyers(e.target.value)} placeholder="Any special instructions..." rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
-          <label style={{ ...labelStyle, marginTop: 14 }}>Units Available <span style={{ fontWeight: 600, color: '#9ca3af' }}>(optional)</span></label>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('itemInformation', lang)}</div>
+          <label style={labelStyle}>{tr('listingTitle', lang)} *</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('titlePlaceholder', lang)} style={inputStyle} />
+          <label style={{ ...labelStyle, marginTop: 14 }}>{tr('listingDescription', lang)} *</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr('descPlaceholder', lang)} rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
+          <label style={{ ...labelStyle, marginTop: 14 }}>{tr('messageForBuyers', lang)}</label>
+          <textarea value={messageForBuyers} onChange={(e) => setMessageForBuyers(e.target.value)} placeholder={tr('specialInstructions', lang)} rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
+          <label style={{ ...labelStyle, marginTop: 14 }}>{tr('unitsAvailable', lang)} <span style={{ fontWeight: 600, color: '#9ca3af' }}>({tr('optionalLabel', lang)})</span></label>
           <input value={units} onChange={(e) => setUnits(e.target.value)} placeholder="e.g. 10" type="number" min="1" style={inputStyle} />
         </div>
 
         {/* Price */}
         <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>Pricing</div>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('pricingSection', lang)}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, flexShrink: 0 }}>
               {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -265,37 +270,37 @@ export default function NewListingForm() {
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, cursor: 'pointer' }}>
             <input type="checkbox" checked={negotiable} onChange={() => setNegotiable(!negotiable)} style={{ width: 18, height: 18, accentColor: '#2E5BFF', cursor: 'pointer' }} />
-            <span style={{ fontWeight: 700, color: '#4A5878', fontSize: 14 }}>Price is negotiable</span>
+            <span style={{ fontWeight: 700, color: '#4A5878', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
           </label>
         </div>
 
         {/* Condition */}
         <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 12 }}>Condition</div>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 12 }}>{tr('listingCondition', lang)}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             {CONDITIONS.map((c) => (
-              <button key={c} onClick={() => setCondition(c)} style={{ flex: 1, padding: '10px 0', borderRadius: 14, border: 'none', background: condition === c ? '#2E5BFF' : '#F0F4FF', color: condition === c ? '#fff' : '#4A5878', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{c}</button>
+              <button key={c} onClick={() => setCondition(c)} style={{ flex: 1, padding: '10px 0', borderRadius: 14, border: 'none', background: condition === c ? '#2E5BFF' : '#F0F4FF', color: condition === c ? '#fff' : '#4A5878', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{tr(CONDITION_KEYS[c], lang)}</button>
             ))}
           </div>
         </div>
 
         {/* Category */}
         <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>Category</div>
-          <label style={labelStyle}>Main Category *</label>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('category', lang)}</div>
+          <label style={labelStyle}>{tr('mainCategoryLabel', lang)} *</label>
           <div style={{ position: 'relative' }}>
             <select value={selectedMainId} onChange={(e) => { setSelectedMainId(e.target.value); setSelectedSubId(''); }} style={{ ...inputStyle, appearance: 'none' }}>
-              <option value="">Select category...</option>
+              <option value="">{tr('selectCategory', lang)}...</option>
               {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
             <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           </div>
           {subCategories.length > 0 && (
             <>
-              <label style={{ ...labelStyle, marginTop: 12 }}>Sub-Category</label>
+              <label style={{ ...labelStyle, marginTop: 12 }}>{tr('subcategoryField', lang)}</label>
               <div style={{ position: 'relative' }}>
                 <select value={selectedSubId} onChange={(e) => setSelectedSubId(e.target.value)} style={{ ...inputStyle, appearance: 'none' }}>
-                  <option value="">Select sub-category...</option>
+                  <option value="">{tr('selectSubcategory', lang)}...</option>
                   {subCategories.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
                 </select>
                 <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
@@ -306,15 +311,15 @@ export default function NewListingForm() {
 
         {/* Location */}
         <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>Location</div>
-          <label style={labelStyle}>Country</label>
-          <input value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. Uganda" style={inputStyle} />
-          <label style={{ ...labelStyle, marginTop: 12 }}>Region / City</label>
-          <input value={region} onChange={(e) => setRegion(e.target.value)} placeholder="e.g. Kampala" style={inputStyle} />
-          <label style={{ ...labelStyle, marginTop: 12 }}>Exact Location *</label>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('locationLabel', lang)}</div>
+          <label style={labelStyle}>{tr('countryField', lang)}</label>
+          <input value={country} onChange={(e) => setCountry(e.target.value)} placeholder={tr('countryPlaceholder', lang)} style={inputStyle} />
+          <label style={{ ...labelStyle, marginTop: 12 }}>{tr('regionCity', lang)}</label>
+          <input value={region} onChange={(e) => setRegion(e.target.value)} placeholder={tr('cityPlaceholder', lang)} style={inputStyle} />
+          <label style={{ ...labelStyle, marginTop: 12 }}>{tr('exactLocation', lang)} *</label>
           <div style={{ position: 'relative' }}>
             <MapPin size={16} color="#6B7A99" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
-            <input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder="e.g. Nakawa, Kampala" style={{ ...inputStyle, paddingLeft: 40 }} />
+            <input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder={tr('locationPlaceholder', lang)} style={{ ...inputStyle, paddingLeft: 40 }} />
           </div>
         </div>
 
@@ -322,7 +327,7 @@ export default function NewListingForm() {
         {formType !== 'listing' && (
           <div style={sectionStyle}>
             <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>
-              {formType === 'sponsor' ? 'Sponsorship' : 'Flash Sale'} Duration
+              {formType === 'sponsor' ? tr('sponsorshipDuration', lang) : tr('flashSaleDuration', lang)}
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
@@ -338,7 +343,7 @@ export default function NewListingForm() {
                 const color = formType === 'sponsor' ? '#2F6BFF' : '#E53935';
                 return (
                   <button key={d} onClick={() => setDuration(d)} style={{ flex: 1, padding: '14px 8px', borderRadius: 16, border: `${selected ? 2 : 1}px solid ${selected ? color : 'rgba(0,0,0,0.07)'}`, background: selected ? `${color}14` : '#fff', cursor: 'pointer', textAlign: 'center' }}>
-                    <div style={{ fontWeight: 900, fontSize: 13, color: selected ? color : '#182033' }}>{d} days</div>
+                    <div style={{ fontWeight: 900, fontSize: 13, color: selected ? color : '#182033' }}>{d} {tr('daysWord', lang)}</div>
                     <div style={{ fontWeight: 700, fontSize: 11.5, color: selected ? color : '#6B7A99', marginTop: 4 }}>{displayAmt}</div>
                   </button>
                 );
@@ -348,9 +353,9 @@ export default function NewListingForm() {
             {/* Summary */}
             <div style={{ background: formType === 'sponsor' ? '#EEF3FF' : '#FFF0F0', borderRadius: 14, padding: 14, marginTop: 14, border: `1px solid ${formType === 'sponsor' ? '#C0D0FF' : '#FFCDD2'}` }}>
               {[
-                { label: 'Type', value: formType === 'sponsor' ? 'Sponsored' : 'Flash Sale' },
-                { label: 'Duration', value: `${duration} days` },
-                { label: 'Price', value: getDisplayPrice() },
+                { label: tr('typeWord', lang), value: formType === 'sponsor' ? tr('sponsored', lang) : tr('flashSaleLabel', lang) },
+                { label: tr('durationWord', lang), value: `${duration} ${tr('daysWord', lang)}` },
+                { label: tr('listingPrice', lang), value: getDisplayPrice() },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13 }}>{label}</span>
@@ -364,9 +369,9 @@ export default function NewListingForm() {
         {/* Submit */}
         <button onClick={handleSubmit} disabled={submitting} style={{ width: '100%', padding: 16, background: submitting ? '#A0B4E0' : hdr.gradient, border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {submitting ? (
-            <><div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />Submitting…</>
+            <><div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />{tr('submittingEllipsis', lang)}</>
           ) : (
-            formType === 'listing' ? 'Submit Listing' : 'Continue to Payment'
+            formType === 'listing' ? tr('submitListing', lang) : tr('continueToPayment', lang)
           )}
         </button>
       </div>

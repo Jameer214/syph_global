@@ -5,19 +5,20 @@ import { Home, Zap, Globe, MessageCircle, Bookmark } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import { subscribeChatThreads } from '@/lib/firestore';
+import { translate as tr } from '@/lib/i18n';
 import type { ChatThread } from '@/types';
 
 const tabs = [
-  { label: 'Home', icon: Home, href: '/home' },
-  { label: 'Happenings', icon: Zap, href: '/happenings' },
-  { label: 'General', icon: Globe, href: '/general' },
-  { label: 'Messages', icon: MessageCircle, href: '/messages' },
-  { label: 'Saved', icon: Bookmark, href: '/saved' },
+  { labelKey: 'home', icon: Home, href: '/home' },
+  { labelKey: 'happenings', icon: Zap, href: '/happenings' },
+  { labelKey: 'general', icon: Globe, href: '/general' },
+  { labelKey: 'messages', icon: MessageCircle, href: '/messages' },
+  { labelKey: 'saved', icon: Bookmark, href: '/saved' },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { user } = useAppStore();
+  const { user, selectedLanguage } = useAppStore();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function BottomNav() {
                   </span>
                 )}
               </div>
-              <span style={{ fontSize: 10, fontWeight: active ? 800 : 600 }}>{tab.label}</span>
+              <span style={{ fontSize: 10, fontWeight: active ? 800 : 600 }}>{tr(tab.labelKey, selectedLanguage)}</span>
             </Link>
           );
         })}

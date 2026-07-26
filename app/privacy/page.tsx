@@ -1,6 +1,8 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 
 const SECTIONS = [
   {
@@ -116,6 +118,7 @@ const SECTIONS = [
 
 export default function PrivacyPage() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 40 }}>
@@ -124,15 +127,15 @@ export default function PrivacyPage() {
         <button onClick={() => router.back()} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}>
           <ArrowLeft size={20} color="#fff" />
         </button>
-        <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>Privacy Policy</div>
+        <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('privacyPolicy', lang)}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
         {/* Intro card */}
         <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 14, border: '1px solid rgba(0,0,0,0.06)' }}>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#0F2B6E', marginBottom: 8 }}>SYPH Privacy Policy</div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: '#0F2B6E', marginBottom: 8 }}>{tr('privacyIntroTitle', lang)}</div>
           <div style={{ color: '#4A5878', fontWeight: 600, fontSize: 13.5, lineHeight: 1.5 }}>
-            This Privacy Policy explains how SYPH (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) collects, uses, stores, and protects your personal information when you use our platform. We are committed to protecting your privacy and complying with applicable data protection laws including the General Data Protection Regulation (GDPR).
+            {tr('privacyIntroDesc', lang)}
           </div>
         </div>
 
@@ -143,7 +146,7 @@ export default function PrivacyPage() {
           </div>
         ))}
 
-        <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13, marginTop: 4 }}>Last updated: June 9, 2026</div>
+        <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13, marginTop: 4 }}>{tr('lastUpdatedLabel', lang)} June 9, 2026</div>
       </div>
     </div>
   );

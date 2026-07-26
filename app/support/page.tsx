@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, ShieldCheck, Send } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { subscribeSupportMessages, sendSupportMessage, markSupportRead } from '@/lib/firestore';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 import type { SupportMessage } from '@/types';
 
 function timeLabel(ts: string): string {
@@ -20,6 +22,7 @@ function timeLabel(ts: string): string {
 
 export default function SupportPage() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
   const [authUser, setAuthUser] = useState<{ uid: string; displayName: string | null; email: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
@@ -96,16 +99,16 @@ export default function SupportPage() {
       <div style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         <ShieldCheck size={48} color="#2E5BFF" />
-        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45', marginTop: 16 }}>Sign in to contact support</div>
-        <div style={{ color: '#6B7A99', fontSize: 14, marginTop: 8, textAlign: 'center' }}>You need to be logged in to chat with the SYPH support team.</div>
+        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45', marginTop: 16 }}>{tr('signInToContactSupport', lang)}</div>
+        <div style={{ color: '#6B7A99', fontSize: 14, marginTop: 8, textAlign: 'center' }}>{tr('loginToChatSupport', lang)}</div>
         <button onClick={() => router.push('/login')} style={{
           marginTop: 24, background: '#2E5BFF', color: '#fff', border: 'none',
           borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer',
-        }}>Sign In</button>
+        }}>{tr('signIn', lang)}</button>
         <button onClick={() => router.back()} style={{
           marginTop: 12, background: 'transparent', color: '#6B7A99', border: 'none',
           fontSize: 14, fontWeight: 600, cursor: 'pointer',
-        }}>Go Back</button>
+        }}>{tr('goBack', lang)}</button>
       </div>
     );
   }
@@ -130,8 +133,8 @@ export default function SupportPage() {
           <ShieldCheck size={20} color="#fff" />
         </div>
         <div>
-          <div style={{ color: '#fff', fontWeight: 900, fontSize: 14, letterSpacing: -0.2 }}>SYPH Support</div>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>Admin team</div>
+          <div style={{ color: '#fff', fontWeight: 900, fontSize: 14, letterSpacing: -0.2 }}>{tr('syphSupport', lang)}</div>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>{tr('adminTeam', lang)}</div>
         </div>
       </div>
 
@@ -143,7 +146,7 @@ export default function SupportPage() {
       }}>
         <ShieldCheck size={16} color="#2E5BFF" style={{ flexShrink: 0, marginTop: 1 }} />
         <span style={{ color: '#0F2B6E', fontWeight: 600, fontSize: 12, lineHeight: 1.4 }}>
-          Messages go directly to the SYPH admin team. Response within 24 hours.
+          {tr('supportBanner', lang)}
         </span>
       </div>
 
@@ -157,8 +160,8 @@ export default function SupportPage() {
             }}>
               <ShieldCheck size={44} color="#2E5BFF" />
             </div>
-            <div style={{ fontWeight: 900, fontSize: 17, color: '#1E2B45' }}>Send us a message</div>
-            <div style={{ color: '#6B7A99', fontWeight: 600, fontSize: 14 }}>Our admin team will get back to you.</div>
+            <div style={{ fontWeight: 900, fontSize: 17, color: '#1E2B45' }}>{tr('sendUsMessage', lang)}</div>
+            <div style={{ color: '#6B7A99', fontWeight: 600, fontSize: 14 }}>{tr('adminWillReply', lang)}</div>
           </div>
         )}
 
@@ -181,7 +184,7 @@ export default function SupportPage() {
               }}>
                 {!fromMe && (
                   <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 11, letterSpacing: 0.2, marginBottom: 4 }}>
-                    SYPH Admin
+                    {tr('syphAdmin', lang)}
                   </div>
                 )}
                 <div style={{ color: fromMe ? '#fff' : '#1E2B45', fontWeight: 500, fontSize: 14, lineHeight: 1.45 }}>
@@ -191,7 +194,7 @@ export default function SupportPage() {
                   <span style={{ color: fromMe ? 'rgba(255,255,255,0.6)' : '#9AA0B2', fontSize: 11 }}>
                     {timeLabel(msg.createdAt)}
                   </span>
-                  {fromMe && <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>· Sent</span>}
+                  {fromMe && <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>· {tr('sentLabel', lang)}</span>}
                 </div>
               </div>
             </div>
@@ -210,7 +213,7 @@ export default function SupportPage() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message admin…"
+          placeholder={tr('messageAdminPlaceholder', lang)}
           rows={1}
           disabled={sending}
           style={{

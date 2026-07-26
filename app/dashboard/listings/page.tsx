@@ -9,6 +9,8 @@ import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { deleteListing } from '@/lib/firestore';
+import { useAppStore } from '@/store';
+import { translate as tr } from '@/lib/i18n';
 import type { Listing } from '@/types';
 
 type Tab = 'all' | 'normal' | 'happenings' | 'flash' | 'sponsored';
@@ -19,15 +21,15 @@ const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
   rejected: { text: '#D13B3B', bg: '#FFECEC' },
 };
 
-function expiryLabel(dateStr: string): string {
+function expiryLabel(dateStr: string, lang: string): string {
   const exp = new Date(dateStr);
   const diff = exp.getTime() - Date.now();
-  if (diff < 0) return 'Expired';
+  if (diff < 0) return tr('expiredLabel', lang);
   const days = Math.floor(diff / 86400000);
-  if (days >= 1) return `Expires in ${days}d`;
+  if (days >= 1) return `${tr('expiresIn', lang)} ${days}d`;
   const hrs = Math.floor(diff / 3600000);
-  if (hrs >= 1) return `Expires in ${hrs}h`;
-  return 'Expires soon';
+  if (hrs >= 1) return `${tr('expiresIn', lang)} ${hrs}h`;
+  return tr('expiresSoon', lang);
 }
 
 function mapListing(data: Record<string, unknown>, id: string): Listing {
@@ -63,6 +65,7 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
 
 export default function MyListingsPage() {
   const router = useRouter();
+  const { selectedLanguage: lang } = useAppStore();
   const [uid, setUid] = useState<string | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,21 +114,21 @@ export default function MyListingsPage() {
     setDeleting(true);
     try {
       await deleteListing(deleteConfirm.id);
-      toast.success('Listing deleted');
+      toast.success(tr('listingDeleted', lang));
       setDeleteConfirm(null);
     } catch {
-      toast.error('Failed to delete listing');
+      toast.error(tr('failedToDeleteListing', lang));
     } finally {
       setDeleting(false);
     }
   };
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'normal', label: 'Normal' },
-    { id: 'happenings', label: 'Happenings' },
-    { id: 'flash', label: 'Flash Sale' },
-    { id: 'sponsored', label: 'Sponsored' },
+    { id: 'all', label: tr('tabAll', lang) },
+    { id: 'normal', label: tr('normalTab', lang) },
+    { id: 'happenings', label: tr('happenings', lang) },
+    { id: 'flash', label: tr('flashSaleLabel', lang) },
+    { id: 'sponsored', label: tr('sponsored', lang) },
   ];
 
   if (loading) {
@@ -140,8 +143,8 @@ export default function MyListingsPage() {
   if (!uid) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F0F4FF', padding: 24 }}>
-        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45' }}>Sign in to view listings</div>
-        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>Sign In</button>
+        <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45' }}>{tr('signInToViewListings', lang)}</div>
+        <button onClick={() => router.push('/login')} style={{ marginTop: 20, background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 32px', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>{tr('signIn', lang)}</button>
       </div>
     );
   }
@@ -156,11 +159,11 @@ export default function MyListingsPage() {
           <ArrowLeft size={20} color="#fff" />
         </button>
         <div style={{ flex: 1 }}>
-          <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>My Listings</div>
-          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>{listings.length} listing{listings.length !== 1 ? 's' : ''}</div>
+          <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('myListings', lang)}</div>
+          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>{listings.length} {tr('listingsWord', lang)}</div>
         </div>
         <button onClick={() => router.push('/dashboard/new')} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', color: '#fff', fontWeight: 800, fontSize: 13 }}>
-          + New
+          {tr('newShort', lang)}
         </button>
       </div>
 
@@ -169,16 +172,16 @@ export default function MyListingsPage() {
         {/* Summary card */}
         {listings.length > 0 && (
           <div style={{ background: 'linear-gradient(135deg, #1D49C6, #2E67F5)', borderRadius: 24, padding: 20, marginBottom: 16, boxShadow: '0 10px 22px rgba(36,83,212,0.22)' }}>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 900, fontSize: 11, letterSpacing: 0.8, marginBottom: 6 }}>MY LISTINGS</div>
-            <div style={{ color: '#fff', fontWeight: 900, fontSize: 22, marginBottom: 8 }}>{listings.length} listing{listings.length !== 1 ? 's' : ''}</div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 900, fontSize: 11, letterSpacing: 0.8, marginBottom: 6 }}>{tr('myListings', lang).toUpperCase()}</div>
+            <div style={{ color: '#fff', fontWeight: 900, fontSize: 22, marginBottom: 8 }}>{listings.length} {tr('listingsWord', lang)}</div>
             <div style={{ color: '#fff', fontWeight: 500, fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
-              Track your published items, happenings, sponsored posts, and moderation status from one place.
+              {tr('trackListingsDesc', lang)}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
               {[
-                { label: 'Approved', value: approved },
-                { label: 'Pending', value: pending },
-                { label: 'Rejected', value: rejected },
+                { label: tr('tabApproved', lang), value: approved },
+                { label: tr('tabPending', lang), value: pending },
+                { label: tr('tabRejected', lang), value: rejected },
               ].map(({ label, value }) => (
                 <div key={label} style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: '12px 10px', textAlign: 'center' }}>
                   <div style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{value}</div>
@@ -208,17 +211,17 @@ export default function MyListingsPage() {
             <div style={{ width: 72, height: 72, background: '#EAF1FF', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
               <Package size={36} color="#2E5BFF" />
             </div>
-            <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45' }}>No listings yet</div>
+            <div style={{ fontWeight: 900, fontSize: 18, color: '#1E2B45' }}>{tr('noListingsYet', lang)}</div>
             <div style={{ color: '#6B7A99', fontWeight: 600, fontSize: 13, marginTop: 8, lineHeight: 1.45 }}>
-              When you submit items, they will appear here.
+              {tr('whenSubmitAppear', lang)}
             </div>
             <button onClick={() => router.push('/dashboard/new')} style={{ marginTop: 16, width: '100%', background: '#2E5BFF', border: 'none', borderRadius: 16, padding: '14px 0', color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-              Create Listing
+              {tr('createListing', lang)}
             </button>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 20px', color: '#6B7A99', fontWeight: 700, fontSize: 14 }}>
-            No listings in this category.
+            {tr('noListingsCategory', lang)}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -252,11 +255,13 @@ export default function MyListingsPage() {
                         {l.locationText && (
                           <span style={{ background: '#F0F4FF', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#4A5878' }}>{l.locationText}</span>
                         )}
-                        {l.isHappening && <span style={{ background: '#E6F7EC', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#2E9B55' }}>Happening</span>}
-                        {l.isSponsored && <span style={{ background: '#EAF1FF', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#2F6BFF' }}>Sponsored</span>}
-                        {l.isFlashSale && <span style={{ background: '#FFECEC', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#E53935' }}>Flash Sale</span>}
+                        {l.isHappening && <span style={{ background: '#E6F7EC', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#2E9B55' }}>{tr('happening', lang)}</span>}
+                        {l.isSponsored && <span style={{ background: '#EAF1FF', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#2F6BFF' }}>{tr('sponsored', lang)}</span>}
+                        {l.isFlashSale && <span style={{ background: '#FFECEC', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#E53935' }}>{tr('flashSaleLabel', lang)}</span>}
                       </div>
-                      <span style={{ background: sc.bg, color: sc.text, fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '3px 10px', textTransform: 'capitalize' }}>{l.status}</span>
+                      <span style={{ background: sc.bg, color: sc.text, fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '3px 10px', textTransform: 'capitalize' }}>
+                        {l.status === 'approved' ? tr('tabApproved', lang) : l.status === 'pending' ? tr('tabPending', lang) : l.status === 'rejected' ? tr('tabRejected', lang) : l.status === 'blocked' ? tr('statusBlocked', lang) : l.status}
+                      </span>
                     </div>
 
                     {/* Menu */}
@@ -269,13 +274,13 @@ export default function MyListingsPage() {
                           <div onClick={() => setMenuOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
                           <div style={{ position: 'absolute', top: 28, right: 0, background: '#fff', borderRadius: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 91, minWidth: 160, border: '1px solid #E0E8F0', overflow: 'hidden' }}>
                             {[
-                              { icon: <Eye size={15} />, label: 'View', color: '#0F2B6E', action: () => { setMenuOpen(null); router.push(`/listing/${l.id}`); } },
-                              { icon: <Pencil size={15} />, label: 'Edit', color: '#0F2B6E', action: () => { setMenuOpen(null); router.push(`/dashboard/edit/${l.id}`); } },
+                              { icon: <Eye size={15} />, label: tr('viewLabel', lang), color: '#0F2B6E', action: () => { setMenuOpen(null); router.push(`/listing/${l.id}`); } },
+                              { icon: <Pencil size={15} />, label: tr('editShort', lang), color: '#0F2B6E', action: () => { setMenuOpen(null); router.push(`/dashboard/edit/${l.id}`); } },
                               ...(l.status === 'approved' && !l.isHappening && !l.isSponsored && !l.isFlashSale ? [{
-                                icon: <Rocket size={15} />, label: 'Upgrade', color: '#2F6BFF',
+                                icon: <Rocket size={15} />, label: tr('upgradeLabel', lang), color: '#2F6BFF',
                                 action: () => { setMenuOpen(null); router.push(`/dashboard/upgrade/${l.id}`); },
                               }] : []),
-                              { icon: <Trash2 size={15} />, label: 'Delete', color: '#E53935', action: () => { setMenuOpen(null); setDeleteConfirm(l); } },
+                              { icon: <Trash2 size={15} />, label: tr('deleteListing', lang), color: '#E53935', action: () => { setMenuOpen(null); setDeleteConfirm(l); } },
                             ].map(({ icon, label, color, action }) => (
                               <button key={label} onClick={action} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer', color, fontWeight: 700, fontSize: 14, textAlign: 'left' }}>
                                 {icon} {label}
@@ -292,14 +297,14 @@ export default function MyListingsPage() {
                     <div style={{ margin: '0 14px 14px', padding: '8px 12px', borderRadius: 12, background: l.isFlashSale ? '#FFEBEE' : '#EAF1FF', border: `1px solid ${l.isFlashSale ? 'rgba(229,57,53,0.25)' : 'rgba(47,107,255,0.25)'}`, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         {l.isFlashSale ? <Zap size={14} color="#E53935" /> : <Crown size={14} color="#2F6BFF" />}
-                        <span style={{ fontSize: 12.5, fontWeight: 700, color: l.isFlashSale ? '#E53935' : '#2F6BFF' }}>{expiryLabel(l.flashSaleEndsAt!)}</span>
+                        <span style={{ fontSize: 12.5, fontWeight: 700, color: l.isFlashSale ? '#E53935' : '#2F6BFF' }}>{expiryLabel(l.flashSaleEndsAt!, lang)}</span>
                       </div>
-                      <span style={{ background: 'rgba(46,157,85,0.1)', borderRadius: 999, padding: '3px 8px', fontSize: 10.5, fontWeight: 700, color: '#2E7D32' }}>Reverts to normal</span>
+                      <span style={{ background: 'rgba(46,157,85,0.1)', borderRadius: 999, padding: '3px 8px', fontSize: 10.5, fontWeight: 700, color: '#2E7D32' }}>{tr('revertsToNormal', lang)}</span>
                     </div>
                   )}
                   {hasPromo && promoExpired && (
                     <div style={{ margin: '0 14px 14px', padding: '8px 12px', borderRadius: 12, background: '#FFF4E5', border: '1px solid rgba(224,138,0,0.3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#E08A00' }}>Promotion expired</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#E08A00' }}>{tr('promotionExpired', lang)}</span>
                     </div>
                   )}
                 </div>
@@ -318,14 +323,14 @@ export default function MyListingsPage() {
             <div style={{ width: 56, height: 56, background: '#FFECEC', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
               <Trash2 size={26} color="#E53935" />
             </div>
-            <div style={{ textAlign: 'center', fontWeight: 900, fontSize: 18, color: '#1E2B45', marginBottom: 8 }}>Delete Listing?</div>
+            <div style={{ textAlign: 'center', fontWeight: 900, fontSize: 18, color: '#1E2B45', marginBottom: 8 }}>{tr('deleteListingQ', lang)}</div>
             <div style={{ textAlign: 'center', color: '#6B7A99', fontSize: 13, fontWeight: 600, lineHeight: 1.5, marginBottom: 24 }}>
-              Are you sure you want to delete <strong style={{ color: '#0F2B6E' }}>{deleteConfirm.title}</strong>? This cannot be undone.
+              {tr('areYouSureDelete', lang)} <strong style={{ color: '#0F2B6E' }}>{deleteConfirm.title}</strong>? {tr('cannotBeUndone', lang)}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setDeleteConfirm(null)} disabled={deleting} style={{ flex: 1, padding: 14, borderRadius: 16, border: '1.5px solid #e2e8f0', background: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', color: '#4A5878' }}>Cancel</button>
+              <button onClick={() => setDeleteConfirm(null)} disabled={deleting} style={{ flex: 1, padding: 14, borderRadius: 16, border: '1.5px solid #e2e8f0', background: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', color: '#4A5878' }}>{tr('cancel', lang)}</button>
               <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: 14, borderRadius: 16, border: 'none', background: '#E53935', color: '#fff', fontWeight: 900, fontSize: 15, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}>
-                {deleting ? 'Deleting…' : 'Delete'}
+                {deleting ? tr('deletingEllipsis', lang) : tr('deleteListing', lang)}
               </button>
             </div>
           </div>
