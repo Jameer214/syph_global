@@ -523,8 +523,8 @@ export default function ListingDetailsPage() {
           </p>
         </SectionCard>
 
-        {/* Bio */}
-        {listing.bio?.trim() && (
+        {/* Bio — happenings only; regular listings no longer use a bio */}
+        {listing.isHappening && listing.bio?.trim() && (
           <SectionCard icon={<Info size={20} color="#2E5BFF" />} title={tr('aboutThisItem', selectedLanguage)} marginBottom={14}>
             <p style={{ margin: 0, fontWeight: 600, lineHeight: 1.6, color: 'rgba(0,0,0,0.85)', fontSize: 14 }}>{sanitizeText(listing.bio)}</p>
           </SectionCard>

@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame, Truck } from 'lucide-react';
 import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
@@ -29,6 +29,7 @@ interface ShopData {
   lat: number | null;
   lng: number | null;
   isVerified: boolean;
+  delivers: boolean;
 }
 
 
@@ -48,6 +49,7 @@ function parseShopData(d: Record<string, unknown>): ShopData {
     lat: typeof d.business_latitude === 'number' ? d.business_latitude : typeof d.businessLatitude === 'number' ? d.businessLatitude : null,
     lng: typeof d.business_longitude === 'number' ? d.business_longitude : typeof d.businessLongitude === 'number' ? d.businessLongitude : null,
     isVerified: Boolean(d.is_verified ?? d.isVerified),
+    delivers: Boolean(d.delivers),
   };
 }
 
@@ -392,6 +394,11 @@ export default function SellerShopPage() {
                       <path fill="#E53935" d="M23 12l-2.44-2.78.34-3.68-3.61-.82-1.89-3.18L12 3 8.6 1.54 6.71 4.72l-3.61.81.34 3.68L1 12l2.44 2.78-.34 3.69 3.61.82 1.89 3.18L12 21l3.4 1.46 1.89-3.18 3.61-.82-.34-3.68z" />
                       <path fill="#fff" d="M10.09 16.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48z" />
                     </svg>
+                  )}
+                  {shop?.delivers && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(27,138,75,0.9)', color: '#fff', fontWeight: 800, fontSize: 11, borderRadius: 999, padding: '3px 8px', flexShrink: 0 }}>
+                      <Truck size={12} /> {tr('deliversChip', selectedLanguage)}
+                    </span>
                   )}
                 </div>
 
