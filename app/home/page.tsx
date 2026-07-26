@@ -6,7 +6,7 @@ import Image from 'next/image';
 import {
   Search, SlidersHorizontal, MapPin, Zap, TrendingUp,
   Star, Crown, Globe, Eye, Bookmark, MessageCircle, Menu,
-  LayoutGrid, X, ChevronDown, ShoppingBag, Sparkles, Award,
+  LayoutGrid, X, ChevronDown, ShoppingBag, Sparkles, Award, Timer,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
@@ -269,8 +269,30 @@ function SectionStrip({
   );
 }
 
+// Cosmetic urgency countdown to the next UTC midnight — matches the dedicated
+// /flash-sales page card and the Flutter flash-sale card.
+function useCountdown(): string {
+  const [time, setTime] = useState('');
+  useEffect(() => {
+    function compute() {
+      const now = new Date();
+      const midnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+      const diff = midnight.getTime() - now.getTime();
+      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+      setTime(`${h}:${m}:${s}`);
+    }
+    compute();
+    const id = setInterval(compute, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return time;
+}
+
 function FlashCard({ listing, onClick, selectedCurrency, distanceKm, verified }: { listing: Listing; onClick: () => void; selectedCurrency: string; distanceKm?: number; verified?: boolean }) {
   const { selectedLanguage } = useAppStore();
+  const countdown = useCountdown();
   return (
     <div
       onClick={onClick}
@@ -296,7 +318,7 @@ function FlashCard({ listing, onClick, selectedCurrency, distanceKm, verified }:
         }}>{tr('flashWord', selectedLanguage).toUpperCase()}</span>
         <ZigzagEdge color="#fff" />
       </div>
-      <div style={{ padding: '6px 8px 8px' }}>
+      <div style={{ padding: '6px 8px 6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <p style={{ margin: 0, flex: 1, minWidth: 0, fontSize: 11, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {listing.title}
@@ -309,6 +331,11 @@ function FlashCard({ listing, onClick, selectedCurrency, distanceKm, verified }:
         {distanceKm != null && (
           <div style={{ marginTop: 4 }}><DistanceChip km={distanceKm} size="xs" /></div>
         )}
+      </div>
+      {/* Countdown banner — same behaviour/format as the app & /flash-sales page */}
+      <div style={{ background: '#D32F2F', padding: '5px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+        <Timer size={12} color="#fff" />
+        <span style={{ color: '#fff', fontSize: 11, fontWeight: 900, letterSpacing: 0.5 }}>{countdown} left</span>
       </div>
     </div>
   );
