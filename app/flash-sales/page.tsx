@@ -12,6 +12,8 @@ import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
 import ZigzagEdge from '@/components/ZigzagEdge';
 import { useDistances } from '@/lib/useDistances';
+import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
+import VerifiedTick from '@/components/VerifiedTick';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -65,7 +67,7 @@ function useCountdown(): string {
   return time;
 }
 
-function FlashSaleCard({ item, selectedCurrency, distanceKm }: { item: Listing; selectedCurrency: string; distanceKm?: number }) {
+function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item: Listing; selectedCurrency: string; distanceKm?: number; verified?: boolean }) {
   const { selectedLanguage } = useAppStore();
   const router = useRouter();
   const countdown = useCountdown();
@@ -121,7 +123,10 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm }: { item: Listing; 
 
       {/* Body */}
       <div style={{ padding: '8px 8px 0' }}>
-        <div style={{ fontWeight: 800, fontSize: 12.5, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 12.5, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+          {verified && <VerifiedTick size={14} />}
+        </div>
         {originalPrice && (
           <div style={{ color: '#9AA0B2', fontSize: 10.5, fontWeight: 600, textDecoration: 'line-through', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{originalPrice}</div>
         )}
@@ -152,6 +157,7 @@ export default function FlashSalesPage() {
   const { selectedCountry, selectedCurrency, selectedLanguage } = useAppStore();
   const [items, setItems] = useState<Listing[]>([]);
   const distanceById = useDistances(items);
+  const verifiedSellers = useVerifiedSellers(items);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -219,7 +225,7 @@ export default function FlashSalesPage() {
         {!loading && items.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             {items.map((item) => (
-              <FlashSaleCard key={item.id} item={item} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(item.id)} />
+              <FlashSaleCard key={item.id} item={item} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(item.id)} verified={verifiedSellers.has(item.ownerUid)} />
             ))}
           </div>
         )}

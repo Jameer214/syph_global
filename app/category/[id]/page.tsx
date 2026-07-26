@@ -12,6 +12,8 @@ import { isPast } from '@/lib/promo';
 import { CATEGORIES, getCategoryById } from '@/data/categories';
 import DistanceChip from '@/components/DistanceChip';
 import { useDistances } from '@/lib/useDistances';
+import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
+import VerifiedTick from '@/components/VerifiedTick';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -73,6 +75,7 @@ export default function CategoryResultsPage() {
   const PAGE_SIZE = 24;
   const [listings, setListings] = useState<Listing[]>([]);
   const distanceById = useDistances(listings);
+  const verifiedSellers = useVerifiedSellers(listings);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -304,7 +307,7 @@ export default function CategoryResultsPage() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {filtered.map((l, i) => (
-                <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} distanceKm={distanceById.get(l.id)} />
+                <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} distanceKm={distanceById.get(l.id)} verified={verifiedSellers.has(l.ownerUid)} />
               ))}
             </div>
             {hasMore && (
@@ -416,7 +419,7 @@ export default function CategoryResultsPage() {
   );
 }
 
-function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0, distanceKm }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string; index?: number; distanceKm?: number }) {
+function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0, distanceKm, verified }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string; index?: number; distanceKm?: number; verified?: boolean }) {
   const router = useRouter();
   const { selectedLanguage } = useAppStore();
   const img = l.imageUrls?.[0] ?? l.imageUrl;
@@ -441,6 +444,7 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
           <p style={{ margin: 0, fontWeight: 900, fontSize: 14, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#0f172a' }}>{l.title}</p>
+          {verified && <span style={{ flexShrink: 0, marginTop: 1 }}><VerifiedTick size={15} /></span>}
           {l.isSponsored && (
             <span style={{ background: '#2E5BFF', color: '#fff', borderRadius: 999, padding: '3px 7px', fontSize: 10, fontWeight: 900, flexShrink: 0 }}>{tr('adBadge', selectedLanguage)}</span>
           )}

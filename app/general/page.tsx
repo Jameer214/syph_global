@@ -11,6 +11,8 @@ import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
 import { useDistances } from '@/lib/useDistances';
+import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
+import VerifiedTick from '@/components/VerifiedTick';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -64,6 +66,7 @@ export default function GeneralPage() {
   }
   const [listings, setListings] = useState<Listing[]>([]);
   const distanceById = useDistances(listings);
+  const verifiedSellers = useVerifiedSellers(listings);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -263,7 +266,10 @@ export default function GeneralPage() {
                   )}
                 </div>
                 <div style={{ padding: '8px 10px 10px' }}>
-                  <div style={{ fontWeight: 800, fontSize: 12.5, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 12.5, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+                    {verifiedSellers.has(item.ownerUid) && <VerifiedTick size={14} />}
+                  </div>
                   <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 13, marginTop: 2 }}>{displayPrice(item)}</div>
                   {item.locationText && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#6B7A99', fontSize: 10, marginTop: 4 }}>

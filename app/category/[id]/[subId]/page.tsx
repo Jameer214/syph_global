@@ -12,6 +12,8 @@ import { isPast } from '@/lib/promo';
 import { getCategoryById } from '@/data/categories';
 import DistanceChip from '@/components/DistanceChip';
 import { useDistances } from '@/lib/useDistances';
+import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
+import VerifiedTick from '@/components/VerifiedTick';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -73,6 +75,7 @@ export default function SubCategoryResultsPage() {
   const PAGE_SIZE = 24;
   const [listings, setListings] = useState<Listing[]>([]);
   const distanceById = useDistances(listings);
+  const verifiedSellers = useVerifiedSellers(listings);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -221,6 +224,7 @@ export default function SubCategoryResultsPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                       <p style={{ margin: 0, fontWeight: 900, fontSize: 14, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#0f172a' }}>{l.title}</p>
+                      {verifiedSellers.has(l.ownerUid) && <span style={{ flexShrink: 0, marginTop: 1 }}><VerifiedTick size={15} /></span>}
                       {l.isSponsored && <span style={{ background: '#2E5BFF', color: '#fff', borderRadius: 999, padding: '3px 7px', fontSize: 10, fontWeight: 900, flexShrink: 0 }}>{tr('adBadge', selectedLanguage)}</span>}
                     </div>
                     <p style={{ margin: '4px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13 }}>{price}</p>
