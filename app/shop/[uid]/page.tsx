@@ -9,6 +9,7 @@ import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import DistanceChip from '@/components/DistanceChip';
+import ZigzagEdge from '@/components/ZigzagEdge';
 import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 
@@ -143,6 +144,7 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
         {listing.isFlashSale && (
           <div style={{ position: 'absolute', top: 8, right: 8, background: '#E53935', borderRadius: 8, padding: '3px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>{tr('flashWord', selectedLanguage)}</div>
         )}
+        <ZigzagEdge color="#fff" />
       </div>
       <div style={{ padding: '10px 12px' }}>
         <div style={{ fontWeight: 800, fontSize: 13, color: '#182033', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.title}</div>

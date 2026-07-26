@@ -9,6 +9,7 @@ import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
+import ZigzagEdge from '@/components/ZigzagEdge';
 import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 
@@ -114,6 +115,7 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm }: { item: Listing; 
           background: '#D32F2F', color: '#fff', fontSize: 9, fontWeight: 900,
           borderRadius: 20, padding: '3px 8px', letterSpacing: 0.5,
         }}>{tr('flashWord', selectedLanguage).toUpperCase()}</div>
+        <ZigzagEdge color="#fff" />
       </div>
 
       {/* Body */}

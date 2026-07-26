@@ -18,6 +18,7 @@ import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
 import MenuDrawer from '@/components/MenuDrawer';
 import DistanceChip from '@/components/DistanceChip';
+import ZigzagEdge from '@/components/ZigzagEdge';
 import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 import { readListingsCache, writeListingsCache, isCacheFresh, HOT_SELLING_TTL_MS } from '@/lib/listingsCache';
@@ -281,6 +282,7 @@ function FlashCard({ listing, onClick, selectedCurrency, distanceKm }: { listing
           background: '#E53935', color: '#fff', fontSize: 8, fontWeight: 900,
           padding: '2px 6px', borderRadius: 8,
         }}>{tr('flashWord', selectedLanguage).toUpperCase()}</span>
+        <ZigzagEdge color="#fff" />
       </div>
       <div style={{ padding: '6px 8px 8px' }}>
         <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -331,6 +333,7 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm }: { list
             padding: '2px 7px', borderRadius: 8,
           }}>{tr('openNowFilter', selectedLanguage)}</span>
         )}
+        <ZigzagEdge color="#fff" />
       </div>
       <div style={{ padding: '10px 10px 12px' }}>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -380,6 +383,7 @@ function GridCard({ listing, onClick, selectedCurrency, distanceKm }: { listing:
             <LayoutGrid size={24} color="#9ca3af" />
           </div>
         )}
+        <ZigzagEdge color="#fff" />
         {listing.openNow && (
           <span style={{
             position: 'absolute', bottom: 6, left: 6,
