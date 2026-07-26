@@ -161,6 +161,8 @@ export default function FlashSalesPage() {
         .select('*, listing_images(url, sort_order)')
         .eq('status', 'active')
         .eq('is_flash_sale', true)
+        // Exclude flash sales whose timer has already run out (null = no expiry).
+        .or(`flash_sale_until.is.null,flash_sale_until.gt.${new Date().toISOString()}`)
         .order('created_at', { ascending: false })
         .limit(40);
       if (selectedCountry) q = q.eq('country', selectedCountry);

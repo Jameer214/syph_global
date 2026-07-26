@@ -26,6 +26,13 @@ import { mainCategoryForQuery, getCategoryById } from '@/data/categories';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
+/** True when a `*_until` timestamp exists and is already in the past. */
+function isPast(raw: unknown): boolean {
+  if (raw == null) return false;
+  const t = new Date(String(raw)).getTime();
+  return isFinite(t) && t <= Date.now();
+}
+
 function mapListing(data: Record<string, unknown>, id: string): Listing {
   const imgs = Array.isArray(data.listing_images) ? (data.listing_images as { url: string; sort_order?: number }[]) : [];
   const sorted = [...imgs].sort((a, b) => ((a.sort_order ?? 0) - (b.sort_order ?? 0)));
@@ -50,9 +57,12 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
     mainCategoryId: String(data.category_id ?? ''),
     subCategoryId: data.sub_category_id ? String(data.sub_category_id) : undefined,
     openNow: Boolean(data.open_now),
-    isSponsored: Boolean(data.is_sponsored),
+    // Timed promos expire: a listing stays flagged in the DB but should stop
+    // counting as sponsored / flash once its `*_until` timestamp has passed
+    // (mirrors the Flutter listing mapper so web and app agree).
+    isSponsored: Boolean(data.is_sponsored) && !isPast(data.sponsored_until),
     isHappening: Boolean(data.is_happening),
-    isFlashSale: Boolean(data.is_flash_sale),
+    isFlashSale: Boolean(data.is_flash_sale) && !isPast(data.flash_sale_until),
     isTrial: Boolean(data.is_trial),
     status: status === 'active' ? 'approved' : status,
     viewsCount: typeof data.view_count === 'number' ? data.view_count : 0,
@@ -185,6 +195,14 @@ function useListings(opts: {
       if (isFlashSale !== undefined) q = q.eq('is_flash_sale', isFlashSale);
       if (isHappening !== undefined) q = q.eq('is_happening', isHappening);
       if (isSponsored !== undefined) q = q.eq('is_sponsored', isSponsored);
+      // Drop expired timed promos server-side (null = no expiry set = still on),
+      // matching the Flutter flash-sale/sponsored feed queries.
+      if (isFlashSale === true) {
+        q = q.or(`flash_sale_until.is.null,flash_sale_until.gt.${new Date().toISOString()}`);
+      }
+      if (isSponsored === true) {
+        q = q.or(`sponsored_until.is.null,sponsored_until.gt.${new Date().toISOString()}`);
+      }
       if (country) q = q.eq('country', country);
       const { data } = await q;
       const items = (data ?? []).map(r => mapListing(r as Record<string, unknown>, String((r as Record<string, unknown>).id ?? '')));
@@ -935,7 +953,12 @@ export default function HomePage() {
     setNearMeLoading(true);
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject);
+        // Explicit user action → get the most accurate, fresh fix available.
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
       });
       setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       toast.success(tr('showingNearestListings', selectedLanguage));

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { haversineKm, getCoordsIfGranted, type LatLng } from '@/lib/distance';
+import { haversineKm, getCoordsIfGranted, isValidLatLng, type LatLng } from '@/lib/distance';
 
 /**
  * Given a set of listings, returns Map<listingId, distanceKm> from the user to
@@ -32,7 +32,7 @@ type DistanceInput = {
 };
 
 function ownVenue(l: DistanceInput): LatLng | null {
-  return l.venueLatitude != null && l.venueLongitude != null
+  return isValidLatLng(l.venueLatitude, l.venueLongitude)
     ? { lat: Number(l.venueLatitude), lng: Number(l.venueLongitude) }
     : null;
 }
@@ -97,9 +97,11 @@ export function useDistances(
       setSellerCoords((prev) => {
         const next = new Map(prev);
         for (const row of data as Record<string, unknown>[]) {
-          const lat = row.business_latitude;
-          const lng = row.business_longitude;
-          if (lat != null && lng != null) {
+          const lat = row.business_latitude as number | null;
+          const lng = row.business_longitude as number | null;
+          // Skip unset / placeholder seller coords so we never show a bogus
+          // "thousands of km away" chip for a seller who never set GPS.
+          if (isValidLatLng(lat, lng)) {
             const coord = { lat: Number(lat), lng: Number(lng) };
             if (row.user_id != null) next.set(String(row.user_id), coord);
             if (row.id != null) next.set(String(row.id), coord);
@@ -114,7 +116,7 @@ export function useDistances(
   // Build the id → km map — venue for happenings, seller for everything else.
   return useMemo(() => {
     const out = new Map<string, number>();
-    if (!coords) return out;
+    if (!coords || !isValidLatLng(coords.lat, coords.lng)) return out;
     for (const l of listings) {
       const target = ownVenue(l) ?? (l.ownerUid ? sellerCoords.get(l.ownerUid) : undefined);
       if (target) out.set(l.id, haversineKm(coords, target));

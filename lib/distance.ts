@@ -6,6 +6,29 @@ export type LatLng = { lat: number; lng: number };
 const R_KM = 6371;
 const toRad = (d: number) => (d * Math.PI) / 180;
 
+/**
+ * True only for real, plausible coordinates. Guards against the common bad
+ * data that makes distance chips look "very off":
+ *  - out-of-range values (|lat| > 90, |lng| > 180)
+ *  - the null-island placeholder (0, 0) that unset sellers get stored as
+ *  - NaN / Infinity
+ * Callers should hide the chip (rather than show a bogus "6000 km away") when
+ * this returns false.
+ */
+export function isValidLatLng(
+  lat: number | null | undefined,
+  lng: number | null | undefined,
+): boolean {
+  if (lat == null || lng == null) return false;
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!isFinite(la) || !isFinite(ln)) return false;
+  if (Math.abs(la) > 90 || Math.abs(ln) > 180) return false;
+  // Treat coordinates within ~10 m of (0,0) as unset (null island).
+  if (Math.abs(la) < 0.0001 && Math.abs(ln) < 0.0001) return false;
+  return true;
+}
+
 /** Great-circle distance in km between two coordinates (Haversine). */
 export function haversineKm(a: LatLng, b: LatLng): number {
   const dLat = toRad(b.lat - a.lat);
@@ -45,7 +68,10 @@ export async function getCoordsIfGranted(): Promise<LatLng | null> {
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         () => resolve(null),
-        { maximumAge: 300000, timeout: 8000, enableHighAccuracy: false },
+        // High accuracy so the chip reflects the real device location rather
+        // than a coarse IP/Wi-Fi fix (the main cause of wildly-off distances).
+        // A 2-min cache keeps repeated reads cheap without going stale.
+        { maximumAge: 120000, timeout: 8000, enableHighAccuracy: true },
       );
     });
   } catch {
