@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame, Truck } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Calendar, Phone, Navigation, Package, Zap, Award, Flame, Truck, Star } from 'lucide-react';
 import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
@@ -30,6 +30,9 @@ interface ShopData {
   lng: number | null;
   isVerified: boolean;
   delivers: boolean;
+  bannerUrl: string | null;
+  rating: number;
+  reviewCount: number;
 }
 
 
@@ -50,6 +53,9 @@ function parseShopData(d: Record<string, unknown>): ShopData {
     lng: typeof d.business_longitude === 'number' ? d.business_longitude : typeof d.businessLongitude === 'number' ? d.businessLongitude : null,
     isVerified: Boolean(d.is_verified ?? d.isVerified),
     delivers: Boolean(d.delivers),
+    bannerUrl: (d.shop_banner_url ?? d.shop_logo_url) ? String(d.shop_banner_url ?? d.shop_logo_url) : null,
+    rating: typeof d.avg_rating === 'number' ? d.avg_rating : Number(d.avg_rating ?? 0) || 0,
+    reviewCount: typeof d.review_count === 'number' ? d.review_count : Number(d.review_count ?? 0) || 0,
   };
 }
 
@@ -326,6 +332,10 @@ export default function SellerShopPage() {
 
   const sellerName = shop?.businessName?.trim() || (listings[0]?.sellerName ?? 'Seller Shop');
   const initial = sellerName[0]?.toUpperCase() ?? '?';
+  // Hero banner: the seller's banner if set, else fall back to their top
+  // listing's photo so the shop still opens with a real image (not just a
+  // flat gradient), à la the food-app shop headers.
+  const heroImage = shop?.bannerUrl || listings[0]?.imageUrl || null;
   const loc = shop ? locationLabel(shop, listings) : '';
   const sellerIsOpen = shop ? isOpen(shop) : false;
   const hasHours = shop && (shop.open24Hours || shop.openingTime || shop.closingTime);
@@ -353,6 +363,18 @@ export default function SellerShopPage() {
 
         {/* Hero card */}
         <div style={{ background: 'linear-gradient(135deg, #1A42BB, #2E67F5)', borderRadius: 28, boxShadow: '0 12px 24px rgba(36,83,212,0.28)', overflow: 'hidden', position: 'relative', marginBottom: 14 }}>
+          {/* Banner photo + description overlay (like a food-app shop header) */}
+          {heroImage && (
+            <div style={{ position: 'relative', width: '100%', height: 150 }}>
+              <Image src={heroImage} alt={sellerName} fill sizes="480px" style={{ objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,45,0.88), rgba(10,20,45,0.15) 55%, rgba(10,20,45,0.05))' }} />
+              {shop?.description?.trim() && (
+                <p style={{ position: 'absolute', left: 16, right: 16, bottom: 12, margin: 0, color: '#fff', fontWeight: 700, fontSize: 13.5, lineHeight: 1.45, textShadow: '0 1px 4px rgba(0,0,0,0.45)' }}>
+                  &ldquo;{sanitizeText(shop.description)}&rdquo;
+                </p>
+              )}
+            </div>
+          )}
           {/* Decorative circles */}
           <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', left: -24, bottom: -30, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
@@ -402,6 +424,15 @@ export default function SellerShopPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Rating — social proof, only when the shop has reviews */}
+                {shop != null && shop.reviewCount > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+                    <Star size={14} color="#FFC53D" fill="#FFC53D" />
+                    <span style={{ color: '#fff', fontWeight: 900, fontSize: 13 }}>{shop.rating.toFixed(1)}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600, fontSize: 12 }}>({shop.reviewCount})</span>
+                  </div>
+                )}
 
                 {/* Location */}
                 {loc && (
