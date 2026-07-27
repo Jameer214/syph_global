@@ -105,7 +105,7 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}>
       {/* Image */}
-      <div style={{ position: 'relative', width: '100%', paddingBottom: '103%', background: '#f0f4f8' }}>
+      <div style={{ position: 'relative', width: '100%', paddingBottom: '120%', background: '#f0f4f8' }}>
         {item.imageUrl ? (
           <Image src={item.imageUrl} alt={item.title} fill style={{ objectFit: 'cover' }} sizes="240px" />
         ) : (
@@ -209,7 +209,7 @@ export default function FlashSalesPage() {
         )}
       </div>
 
-      <div style={{ padding: '16px 12px 90px' }}>
+      <div style={{ padding: '16px 7px 90px' }}>
         {loading && (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
             <div style={{ width: 36, height: 36, border: '3px solid #FFE0E0', borderTop: '3px solid #E53935', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -227,7 +227,7 @@ export default function FlashSalesPage() {
         )}
 
         {!loading && items.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
             {items.map((item) => (
               <FlashSaleCard key={item.id} item={item} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(item.id)} verified={verifiedSellers.has(item.ownerUid)} />
             ))}

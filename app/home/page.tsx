@@ -299,16 +299,16 @@ function FlashCard({ listing, onClick, selectedCurrency, distanceKm, verified }:
       onClick={onClick}
       className="card-tap card-zoom"
       style={{
-        width: 120, borderRadius: 12, overflow: 'hidden',
+        width: 160, borderRadius: 12, overflow: 'hidden',
         background: '#fff', flexShrink: 0,
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)', cursor: 'pointer',
       }}
     >
-      <div className="card-media" style={{ position: 'relative', height: 90 }}>
+      <div className="card-media" style={{ position: 'relative', paddingTop: '83.33%' /* aspect 1.2, matches grid cards */ }}>
         {listing.imageUrl ? (
-          <Image src={listing.imageUrl} alt={listing.title} fill sizes="120px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
+          <Image src={listing.imageUrl} alt={listing.title} fill sizes="160px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
         ) : (
-          <div style={{ width: '100%', height: '100%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <LayoutGrid size={24} color="#9ca3af" />
           </div>
         )}
@@ -317,6 +317,9 @@ function FlashCard({ listing, onClick, selectedCurrency, distanceKm, verified }:
           background: '#E53935', color: '#fff', fontSize: 8, fontWeight: 900,
           padding: '2px 6px', borderRadius: 8,
         }}>{tr('flashWord', selectedLanguage).toUpperCase()}</span>
+        <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+          <OpenStatusChip ownerUid={listing.ownerUid} country={listing.country} size="xs" variant="solid" />
+        </span>
         <ZigzagEdge color="#fff" />
       </div>
       <div style={{ padding: '6px 8px 6px' }}>
