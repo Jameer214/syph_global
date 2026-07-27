@@ -266,7 +266,7 @@ export default function GeneralPage() {
                     <span style={{ position: 'absolute', top: 6, left: 6, background: '#FF8C00', color: '#fff', fontSize: 8, fontWeight: 900, borderRadius: 10, padding: '2px 7px', letterSpacing: 0.3 }}>{tr('featured', selectedLanguage).toUpperCase()}</span>
                   )}
                   <span style={{ position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
-                    <OpenStatusChip ownerUid={item.ownerUid} size="xs" variant="solid" />
+                    <OpenStatusChip ownerUid={item.ownerUid} country={item.country} size="xs" variant="solid" />
                   </span>
                 </div>
                 <div style={{ padding: '8px 10px 10px' }}>

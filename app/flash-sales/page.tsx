@@ -120,7 +120,7 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
           borderRadius: 20, padding: '3px 8px', letterSpacing: 0.5,
         }}>{tr('flashWord', selectedLanguage).toUpperCase()}</div>
         <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
-          <OpenStatusChip ownerUid={item.ownerUid} size="xs" variant="solid" />
+          <OpenStatusChip ownerUid={item.ownerUid} country={item.country} size="xs" variant="solid" />
         </span>
         <ZigzagEdge color="#fff" />
       </div>

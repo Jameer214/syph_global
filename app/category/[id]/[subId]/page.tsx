@@ -222,7 +222,7 @@ export default function SubCategoryResultsPage() {
                   <div className="card-media" style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>
                     {img ? <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="72px" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>}
                     <span style={{ position: 'absolute', top: 4, right: 4, zIndex: 2 }}>
-                      <OpenStatusChip ownerUid={l.ownerUid} size="xs" variant="solid" />
+                      <OpenStatusChip ownerUid={l.ownerUid} country={l.country} size="xs" variant="solid" />
                     </span>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

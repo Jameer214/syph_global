@@ -440,7 +440,7 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>
         )}
         <span style={{ position: 'absolute', top: 4, right: 4, zIndex: 2 }}>
-          <OpenStatusChip ownerUid={l.ownerUid} size="xs" variant="solid" />
+          <OpenStatusChip ownerUid={l.ownerUid} country={l.country} size="xs" variant="solid" />
         </span>
       </div>
 

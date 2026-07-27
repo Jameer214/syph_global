@@ -133,7 +133,7 @@ export default function SavedPage() {
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>
                     )}
                     <span style={{ position: 'absolute', top: 3, right: 3, zIndex: 2 }}>
-                      <OpenStatusChip ownerUid={l.ownerUid} size="xs" variant="solid" />
+                      <OpenStatusChip ownerUid={l.ownerUid} country={l.country} size="xs" variant="solid" />
                     </span>
                   </div>
 

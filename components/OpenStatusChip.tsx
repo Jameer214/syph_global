@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useReducer } from 'react';
 import { batchGetSellerHoursMap } from '@/lib/firestore';
+import { computeOpenNow } from '@/lib/openStatus';
 import { useAppStore } from '@/store';
 import { tr } from '@/lib/i18n';
 import type { SellerHoursInfo } from '@/types';
@@ -61,33 +62,16 @@ function useSellerHours(uid?: string): SellerHoursInfo | null | undefined {
   return uid ? cache.get(uid) : undefined;
 }
 
-// ─── Open/closed rule — mirrors isOpen() on the shop page ────────────────────
-function hasHours(h: SellerHoursInfo): boolean {
-  return h.open24Hours || !!h.openingTime?.trim() || !!h.closingTime?.trim();
-}
-
-function isOpenNow(h: SellerHoursInfo): boolean {
-  const today = (new Date().getDay() + 6) % 7; // JS 0=Sun → 0=Mon
-  if (h.workingDays.length > 0 && !h.workingDays.includes(today)) return false;
-  if (h.open24Hours) return true;
-  const open = (h.openingTime ?? '').trim();
-  const close = (h.closingTime ?? '').trim();
-  if (!open || !close) return false;
-  const [oh, om] = open.split(':').map(Number);
-  const [ch, cm] = close.split(':').map(Number);
-  const now = new Date();
-  const nowM = now.getHours() * 60 + now.getMinutes();
-  const openM = oh * 60 + om;
-  const closeM = ch * 60 + cm;
-  return closeM > openM ? nowM >= openM && nowM < closeM : nowM >= openM || nowM < closeM;
-}
-
 export default function OpenStatusChip({
   ownerUid,
+  country,
   size = 'sm',
   variant = 'soft',
 }: {
   ownerUid?: string;
+  /** Seller's country (from the listing) — used to evaluate the hours in the
+   *  SELLER's timezone, matching the app's SellerClock. */
+  country?: string | null;
   size?: 'sm' | 'xs';
   /** 'soft' pastel pill for on-white body rows; 'solid' high-contrast badge
    *  for overlaying on a photo corner (paid/cramped cards). */
@@ -102,8 +86,8 @@ export default function OpenStatusChip({
     return () => clearInterval(t);
   }, []);
 
-  if (!hours || !hasHours(hours)) return null; // unknown / never set → render nothing
-  const open = isOpenNow(hours);
+  const open = computeOpenNow(hours, country); // seller-timezone-correct
+  if (open === null) return null; // unknown / never set → render nothing
   const solid = variant === 'solid';
 
   const fs = size === 'xs' ? 9.5 : 11;

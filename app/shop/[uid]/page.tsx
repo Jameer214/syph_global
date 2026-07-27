@@ -9,6 +9,7 @@ import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { isPast } from '@/lib/promo';
+import { computeOpenNow } from '@/lib/openStatus';
 import DistanceChip from '@/components/DistanceChip';
 import ZigzagEdge from '@/components/ZigzagEdge';
 import { useDistances } from '@/lib/useDistances';
@@ -59,20 +60,10 @@ function parseShopData(d: Record<string, unknown>): ShopData {
   };
 }
 
+// Open/closed evaluated in the SELLER's timezone (shop.country), matching the
+// app's SellerClock and the listing-card OpenStatusChip.
 function isOpen(shop: ShopData): boolean {
-  const today = (new Date().getDay() + 6) % 7; // JS 0=Sun → 0=Mon
-  if (shop.workingDays.length > 0 && !shop.workingDays.includes(today)) return false;
-  if (shop.open24Hours) return true;
-  const open = shop.openingTime.trim();
-  const close = shop.closingTime.trim();
-  if (!open || !close) return false;
-  const [oh, om] = open.split(':').map(Number);
-  const [ch, cm] = close.split(':').map(Number);
-  const now = new Date();
-  const nowM = now.getHours() * 60 + now.getMinutes();
-  const openM = oh * 60 + om;
-  const closeM = ch * 60 + cm;
-  return closeM > openM ? nowM >= openM && nowM < closeM : nowM >= openM || nowM < closeM;
+  return computeOpenNow(shop, shop.country) === true;
 }
 
 const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'];

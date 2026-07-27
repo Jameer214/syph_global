@@ -370,7 +370,7 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm, verified
           }}>{tr('adBadge', selectedLanguage)}</span>
         )}
         <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
-          <OpenStatusChip ownerUid={listing.ownerUid} size="xs" variant="solid" />
+          <OpenStatusChip ownerUid={listing.ownerUid} country={listing.country} size="xs" variant="solid" />
         </span>
         <ZigzagEdge color="#fff" />
       </div>
@@ -425,7 +425,7 @@ function GridCard({ listing, onClick, selectedCurrency, distanceKm, verified }: 
         )}
         <ZigzagEdge color="#fff" />
         <span style={{ position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
-          <OpenStatusChip ownerUid={listing.ownerUid} size="xs" variant="solid" />
+          <OpenStatusChip ownerUid={listing.ownerUid} country={listing.country} size="xs" variant="solid" />
         </span>
       </div>
       <div style={{ padding: '8px 10px 10px' }}>

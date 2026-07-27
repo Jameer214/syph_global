@@ -671,7 +671,7 @@ export default function ListingDetailsPage() {
                     <div className="card-media" style={{ aspectRatio: '1.2', position: 'relative', backgroundColor: '#f2f5f9' }}>
                       {rImg ? <Image src={rImg} alt={r.title} fill style={{ objectFit: 'cover' }} sizes="220px" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>📦</div>}
                       <span style={{ position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
-                        <OpenStatusChip ownerUid={r.ownerUid} size="xs" variant="solid" />
+                        <OpenStatusChip ownerUid={r.ownerUid} country={r.country} size="xs" variant="solid" />
                       </span>
                     </div>
                     <div style={{ padding: '10px 10px 8px' }}>
