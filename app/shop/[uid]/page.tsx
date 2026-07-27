@@ -35,11 +35,11 @@ interface ShopData {
 
 function parseShopData(d: Record<string, unknown>): ShopData {
   return {
-    businessName: String(d.business_name ?? d.businessName ?? ''),
-    contact: String(d.contact_number ?? d.contactNumber ?? d.businessPhone ?? ''),
+    businessName: String(d.shop_name ?? d.business_name ?? d.businessName ?? ''),
+    contact: String(d.phone ?? d.contact_number ?? d.contactNumber ?? d.businessPhone ?? ''),
     country: String(d.country ?? d.operatingCountry ?? ''),
     region: String(d.region ?? d.operatingRegion ?? ''),
-    description: String(d.description ?? d.bio ?? ''),
+    description: String(d.shop_description ?? d.description ?? d.bio ?? ''),
     isServiceProvider: Boolean(d.is_service_provider ?? d.isServiceProvider),
     open24Hours: Boolean(d.open_24_hours ?? d.open24Hours),
     openingTime: String(d.opening_time ?? d.openingTime ?? ''),
@@ -263,14 +263,15 @@ export default function SellerShopPage() {
     if (!uid) return;
     let cancelled = false;
     (async () => {
-      // Get seller internal id first
-      const { data: sellerRow } = await supabase.from('sellers').select('id').eq('user_id', uid).single();
-      if (!sellerRow || cancelled) return;
+      // listings.seller_id is the seller's auth user_id (== the route uid),
+      // NOT the sellers-table PK. Joining on sellers.id returned zero rows,
+      // which is why the shop showed none of the seller's listings.
       const { data } = await supabase.from('listings')
         .select('*, listing_images(url, sort_order)')
-        .eq('seller_id', sellerRow.id)
+        .eq('seller_id', uid)
         .eq('status', 'active')
         .order('updated_at', { ascending: false });
+      if (cancelled) return;
       if (!cancelled && data) {
         const items: Listing[] = data.map((row) => {
           const r = row as Record<string, unknown>;
@@ -361,7 +362,7 @@ export default function SellerShopPage() {
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
               {/* Avatar */}
               <div style={{ width: 72, height: 72, background: 'rgba(255,255,255,0.18)', borderRadius: 22, border: '1.5px solid rgba(255,255,255,0.30)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                {photoUrl && !shop?.isServiceProvider ? (
+                {photoUrl ? (
                   <Image src={photoUrl} alt={sellerName} width={72} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                 ) : shop?.isServiceProvider ? (
                   <span style={{ fontSize: 28 }}>🛠️</span>
