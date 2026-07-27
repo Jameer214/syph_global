@@ -221,6 +221,9 @@ export default function SubCategoryResultsPage() {
                 <div key={l.id} onClick={() => router.push(`/listing/${l.id}`)} className="card-tap anim-fade-up card-zoom" style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', animationDelay: `${Math.min(i, 8) * 0.05}s`, animationDuration: '0.35s' }}>
                   <div className="card-media" style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>
                     {img ? <Image src={img} alt={l.title} fill style={{ objectFit: 'cover' }} sizes="72px" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>}
+                    <span style={{ position: 'absolute', top: 4, right: 4, zIndex: 2 }}>
+                      <OpenStatusChip ownerUid={l.ownerUid} size="xs" variant="solid" />
+                    </span>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
@@ -232,7 +235,6 @@ export default function SubCategoryResultsPage() {
                     <p style={{ margin: '0 0 4px', fontSize: 12, color: '#6B7A99', fontWeight: 700, lineHeight: 1.25 }}>{l.regionOrCity}, {l.country}</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                       {distanceById.get(l.id) != null && <DistanceChip km={distanceById.get(l.id)} size="xs" />}
-                      <OpenStatusChip ownerUid={l.ownerUid} size="xs" />
                       {l.rating != null && <span style={{ background: '#FFF8E1', color: '#B8860B', borderRadius: 999, padding: '4px 8px', fontSize: 11, fontWeight: 800 }}>★ {l.rating.toFixed(1)}</span>}
                     </div>
                   </div>

@@ -265,6 +265,9 @@ export default function GeneralPage() {
                   {item.isSponsored && (
                     <span style={{ position: 'absolute', top: 6, left: 6, background: '#FF8C00', color: '#fff', fontSize: 8, fontWeight: 900, borderRadius: 10, padding: '2px 7px', letterSpacing: 0.3 }}>{tr('featured', selectedLanguage).toUpperCase()}</span>
                   )}
+                  <span style={{ position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
+                    <OpenStatusChip ownerUid={item.ownerUid} size="xs" variant="solid" />
+                  </span>
                 </div>
                 <div style={{ padding: '8px 10px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -278,10 +281,9 @@ export default function GeneralPage() {
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 4 }}>
-                    {distanceById.get(item.id) != null && <DistanceChip km={distanceById.get(item.id)} size="xs" />}
-                    <OpenStatusChip ownerUid={item.ownerUid} size="xs" />
-                  </div>
+                  {distanceById.get(item.id) != null && (
+                    <div style={{ marginTop: 4 }}><DistanceChip km={distanceById.get(item.id)} size="xs" /></div>
+                  )}
                   {item.rating != null && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 4 }}>
                       <Star size={10} color="#FFB800" fill="#FFB800" />

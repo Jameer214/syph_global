@@ -132,16 +132,18 @@ export default function SavedPage() {
                     ) : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>
                     )}
+                    <span style={{ position: 'absolute', top: 3, right: 3, zIndex: 2 }}>
+                      <OpenStatusChip ownerUid={l.ownerUid} size="xs" variant="solid" />
+                    </span>
                   </div>
 
                   {/* Text */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: '0 0 3px', fontWeight: 900, fontSize: 14, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
                     <p style={{ margin: 0, fontSize: 12.5, color: '#6B7A99', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 4 }}>
-                      {distanceById.get(l.id) != null && <DistanceChip km={distanceById.get(l.id)} size="xs" />}
-                      <OpenStatusChip ownerUid={l.ownerUid} size="xs" />
-                    </div>
+                    {distanceById.get(l.id) != null && (
+                      <div style={{ marginTop: 4 }}><DistanceChip km={distanceById.get(l.id)} size="xs" /></div>
+                    )}
                   </div>
 
                   {/* Remove button */}

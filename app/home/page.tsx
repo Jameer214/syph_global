@@ -424,13 +424,9 @@ function GridCard({ listing, onClick, selectedCurrency, distanceKm, verified }: 
           </div>
         )}
         <ZigzagEdge color="#fff" />
-        {listing.openNow && (
-          <span style={{
-            position: 'absolute', bottom: 6, left: 6,
-            background: '#1F7A3D', color: '#fff', fontSize: 9, fontWeight: 800,
-            padding: '2px 7px', borderRadius: 8,
-          }}>{tr('openNowFilter', selectedLanguage)}</span>
-        )}
+        <span style={{ position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
+          <OpenStatusChip ownerUid={listing.ownerUid} size="xs" variant="solid" />
+        </span>
       </div>
       <div style={{ padding: '8px 10px 10px' }}>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -442,10 +438,9 @@ function GridCard({ listing, onClick, selectedCurrency, distanceKm, verified }: 
         <p style={{ margin: '2px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, lineHeight: 1.25, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <MapPin size={10} />{listing.locationText || listing.regionOrCity}
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-          {distanceKm != null && <DistanceChip km={distanceKm} />}
-          <OpenStatusChip ownerUid={listing.ownerUid} />
-        </div>
+        {distanceKm != null && (
+          <div style={{ marginTop: 4 }}><DistanceChip km={distanceKm} /></div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>
             <Eye size={10} />{listing.viewsCount}

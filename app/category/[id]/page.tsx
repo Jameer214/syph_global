@@ -439,6 +439,9 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📦</div>
         )}
+        <span style={{ position: 'absolute', top: 4, right: 4, zIndex: 2 }}>
+          <OpenStatusChip ownerUid={l.ownerUid} size="xs" variant="solid" />
+        </span>
       </div>
 
       {/* Text */}
@@ -454,7 +457,6 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
         <p style={{ margin: '0 0 4px', fontSize: 12, color: '#6B7A99', fontWeight: 700, lineHeight: 1.25 }}>{l.regionOrCity}, {l.country}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
           {distanceKm != null && <DistanceChip km={distanceKm} size="xs" />}
-          <OpenStatusChip ownerUid={l.ownerUid} size="xs" />
           {l.rating != null && <Badge text={`★ ${l.rating.toFixed(1)}`} bg="#FFF8E1" fg="#B8860B" />}
         </div>
       </div>

@@ -17,6 +17,7 @@ import { getListing, getListingReviews, getRelatedListings } from '@/lib/firesto
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import Reveal from '@/components/Reveal';
 import DistanceChip from '@/components/DistanceChip';
+import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
 import type { Listing, Review } from '@/types';
 
@@ -669,6 +670,9 @@ export default function ListingDetailsPage() {
                   <div key={r.id} onClick={() => router.push(`/listing/${r.id}`)} className="card-tap card-zoom" style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 3px 6px rgba(0,0,0,0.03)', cursor: 'pointer' }}>
                     <div className="card-media" style={{ aspectRatio: '1.2', position: 'relative', backgroundColor: '#f2f5f9' }}>
                       {rImg ? <Image src={rImg} alt={r.title} fill style={{ objectFit: 'cover' }} sizes="220px" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>📦</div>}
+                      <span style={{ position: 'absolute', top: 6, right: 6, zIndex: 2 }}>
+                        <OpenStatusChip ownerUid={r.ownerUid} size="xs" variant="solid" />
+                      </span>
                     </div>
                     <div style={{ padding: '10px 10px 8px' }}>
                       <p style={{ margin: '0 0 4px', fontWeight: 900, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', color: '#0f172a' }}>{r.title}</p>
