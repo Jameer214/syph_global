@@ -105,7 +105,7 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}>
       {/* Image */}
-      <div style={{ position: 'relative', width: '100%', paddingBottom: '83%', background: '#f0f4f8' }}>
+      <div style={{ position: 'relative', width: '100%', paddingBottom: '95%', background: '#f0f4f8' }}>
         {item.imageUrl ? (
           <Image src={item.imageUrl} alt={item.title} fill style={{ objectFit: 'cover' }} sizes="240px" />
         ) : (
@@ -119,11 +119,14 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
           background: '#D32F2F', color: '#fff', fontSize: 9, fontWeight: 900,
           borderRadius: 20, padding: '3px 8px', letterSpacing: 0.5,
         }}>{tr('flashWord', selectedLanguage).toUpperCase()}</div>
+        <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+          <OpenStatusChip ownerUid={item.ownerUid} size="xs" variant="solid" />
+        </span>
         <ZigzagEdge color="#fff" />
       </div>
 
       {/* Body */}
-      <div style={{ padding: '8px 8px 0' }}>
+      <div style={{ padding: '7px 8px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 12.5, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
           {verified && <VerifiedTick size={14} />}
@@ -135,15 +138,14 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
         {item.locationText && (
           <div style={{ color: '#6B7A99', fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</div>
         )}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 4 }}>
-          {distanceKm != null && <DistanceChip km={distanceKm} size="xs" />}
-          <OpenStatusChip ownerUid={item.ownerUid} size="xs" />
-        </div>
+        {distanceKm != null && (
+          <div style={{ marginTop: 3 }}><DistanceChip km={distanceKm} size="xs" /></div>
+        )}
       </div>
 
       {/* Countdown banner */}
       <div style={{
-        background: '#D32F2F', padding: '5px 8px', marginTop: 8,
+        background: '#D32F2F', padding: '5px 8px', marginTop: 6,
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
       }}>
         <Timer size={12} color="#fff" />
@@ -207,7 +209,7 @@ export default function FlashSalesPage() {
         )}
       </div>
 
-      <div style={{ padding: '16px 16px 90px' }}>
+      <div style={{ padding: '16px 12px 90px' }}>
         {loading && (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
             <div style={{ width: 36, height: 36, border: '3px solid #FFE0E0', borderTop: '3px solid #E53935', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -225,7 +227,7 @@ export default function FlashSalesPage() {
         )}
 
         {!loading && items.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {items.map((item) => (
               <FlashSaleCard key={item.id} item={item} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(item.id)} verified={verifiedSellers.has(item.ownerUid)} />
             ))}

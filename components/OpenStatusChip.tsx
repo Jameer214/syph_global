@@ -85,9 +85,13 @@ function isOpenNow(h: SellerHoursInfo): boolean {
 export default function OpenStatusChip({
   ownerUid,
   size = 'sm',
+  variant = 'soft',
 }: {
   ownerUid?: string;
   size?: 'sm' | 'xs';
+  /** 'soft' pastel pill for on-white body rows; 'solid' high-contrast badge
+   *  for overlaying on a photo corner (paid/cramped cards). */
+  variant?: 'soft' | 'solid';
 }) {
   const { selectedLanguage } = useAppStore();
   const hours = useSellerHours(ownerUid);
@@ -100,23 +104,28 @@ export default function OpenStatusChip({
 
   if (!hours || !hasHours(hours)) return null; // unknown / never set → render nothing
   const open = isOpenNow(hours);
+  const solid = variant === 'solid';
 
   const fs = size === 'xs' ? 9.5 : 11;
   const dot = size === 'xs' ? 6 : 7;
+  const bg = solid ? (open ? '#1F7A3D' : '#E53935') : open ? '#E6F6EC' : '#FDEBEC';
+  const fg = solid ? '#fff' : open ? '#1F7A3D' : '#C0392B';
+  const dotColor = solid ? '#fff' : open ? '#1F7A3D' : '#C0392B';
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: 4,
-        background: open ? '#E6F6EC' : '#FDEBEC',
-        color: open ? '#1F7A3D' : '#C0392B',
-        fontWeight: 700,
+        background: bg,
+        color: fg,
+        fontWeight: solid ? 800 : 700,
         fontSize: fs,
         borderRadius: 999,
-        padding: size === 'xs' ? '1px 6px' : '2px 8px',
+        padding: size === 'xs' ? '2px 7px' : '2px 8px',
         lineHeight: 1.3,
         whiteSpace: 'nowrap',
+        ...(solid ? { boxShadow: '0 1px 4px rgba(0,0,0,0.25)' } : null),
       }}
     >
       <span
@@ -124,7 +133,7 @@ export default function OpenStatusChip({
           width: dot,
           height: dot,
           borderRadius: '50%',
-          background: open ? '#1F7A3D' : '#C0392B',
+          background: dotColor,
           flexShrink: 0,
         }}
       />

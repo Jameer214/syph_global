@@ -354,7 +354,7 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm, verified
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)', cursor: 'pointer',
       }}
     >
-      <div className="card-media" style={{ position: 'relative', paddingTop: '56.25%' /* 16:9 */ }}>
+      <div className="card-media" style={{ position: 'relative', paddingTop: '72%' }}>
         {listing.imageUrl ? (
           <Image src={listing.imageUrl} alt={listing.title} fill sizes="220px" className="img-fade" onLoad={(e) => e.currentTarget.classList.add('img-loaded')} style={{ objectFit: 'cover' }} />
         ) : (
@@ -369,16 +369,12 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm, verified
             padding: '2px 7px', borderRadius: 8,
           }}>{tr('adBadge', selectedLanguage)}</span>
         )}
-        {listing.openNow && (
-          <span style={{
-            position: 'absolute', top: 8, right: 8,
-            background: '#1F7A3D', color: '#fff', fontSize: 9, fontWeight: 800,
-            padding: '2px 7px', borderRadius: 8,
-          }}>{tr('openNowFilter', selectedLanguage)}</span>
-        )}
+        <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+          <OpenStatusChip ownerUid={listing.ownerUid} size="xs" variant="solid" />
+        </span>
         <ZigzagEdge color="#fff" />
       </div>
-      <div style={{ padding: '10px 10px 12px' }}>
+      <div style={{ padding: '7px 10px 8px' }}>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {listing.title}
         </p>
@@ -388,11 +384,10 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm, verified
         <p style={{ margin: '2px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, lineHeight: 1.25, display: 'flex', alignItems: 'center', gap: 4 }}>
           <MapPin size={10} />{listing.locationText || listing.regionOrCity}
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-          {distanceKm != null && <DistanceChip km={distanceKm} />}
-          <OpenStatusChip ownerUid={listing.ownerUid} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5 }}>
+        {distanceKm != null && (
+          <div style={{ marginTop: 4 }}><DistanceChip km={distanceKm} /></div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
           {[
             { icon: <Eye size={10} />, val: listing.viewsCount },
             { icon: <Bookmark size={10} />, val: listing.savesCount },
