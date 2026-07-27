@@ -34,7 +34,19 @@ function mapListing(row: Record<string, unknown>): Listing {
     imageUrls: images.length > 0 ? images : undefined,
     videoUrl: row.video_url ? String(row.video_url) : undefined,
     bio: row.bio ? String(row.bio) : undefined,
-    specifications: undefined,
+    // specifications is a JSON object on the row ({ "color": "black" }); coerce
+    // values to strings for the details view. Was hardcoded undefined, so the
+    // Specifications section never rendered.
+    specifications:
+      row.specifications &&
+      typeof row.specifications === 'object' &&
+      !Array.isArray(row.specifications)
+        ? Object.fromEntries(
+            Object.entries(row.specifications as Record<string, unknown>)
+              .filter(([, v]) => v != null && String(v).trim() !== '')
+              .map(([k, v]) => [k, String(v)]),
+          )
+        : undefined,
     venueLatitude: typeof row.venue_latitude === 'number' ? row.venue_latitude : undefined,
     venueLongitude: typeof row.venue_longitude === 'number' ? row.venue_longitude : undefined,
     sellerName: String(row.seller_name ?? ''),
