@@ -105,7 +105,7 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}>
       {/* Image */}
-      <div style={{ position: 'relative', width: '100%', paddingBottom: '95%', background: '#f0f4f8' }}>
+      <div style={{ position: 'relative', width: '100%', paddingBottom: '103%', background: '#f0f4f8' }}>
         {item.imageUrl ? (
           <Image src={item.imageUrl} alt={item.title} fill style={{ objectFit: 'cover' }} sizes="240px" />
         ) : (
@@ -126,20 +126,20 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
       </div>
 
       {/* Body */}
-      <div style={{ padding: '7px 8px 0' }}>
+      <div style={{ padding: '8px 8px 2px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <div style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 12.5, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+          <div style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 12.5, lineHeight: 1.2, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
           {verified && <VerifiedTick size={14} />}
         </div>
         {originalPrice && (
-          <div style={{ color: '#9AA0B2', fontSize: 10.5, fontWeight: 600, textDecoration: 'line-through', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{originalPrice}</div>
+          <div style={{ color: '#9AA0B2', fontSize: 10.5, fontWeight: 600, lineHeight: 1.2, textDecoration: 'line-through', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{originalPrice}</div>
         )}
-        <div style={{ color: '#E53935', fontWeight: 900, fontSize: 13, marginTop: originalPrice ? 1 : 3 }}>{price}</div>
+        <div style={{ color: '#E53935', fontWeight: 900, fontSize: 13, lineHeight: 1.2, marginTop: 1 }}>{price}</div>
         {item.locationText && (
-          <div style={{ color: '#6B7A99', fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</div>
+          <div style={{ color: '#6B7A99', fontSize: 11, lineHeight: 1.2, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</div>
         )}
         {distanceKm != null && (
-          <div style={{ marginTop: 3 }}><DistanceChip km={distanceKm} size="xs" /></div>
+          <div style={{ marginTop: 2 }}><DistanceChip km={distanceKm} size="xs" /></div>
         )}
       </div>
 
@@ -187,7 +187,7 @@ export default function FlashSalesPage() {
   }, [selectedCountry]);
 
   return (
-    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
+    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 540, margin: '0 auto' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Header */}
