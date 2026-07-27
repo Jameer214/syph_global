@@ -9,6 +9,7 @@ import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { getListing, getSavedIds, syncSavedIds } from '@/lib/firestore';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
+import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 
@@ -135,11 +136,12 @@ export default function SavedPage() {
 
                   {/* Text */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: '0 0 4px', fontWeight: 900, fontSize: 14, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
-                    <p style={{ margin: 0, fontSize: 12.5, color: '#6B7A99', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>
-                    {distanceById.get(l.id) != null && (
-                      <div style={{ marginTop: 5 }}><DistanceChip km={distanceById.get(l.id)} size="xs" /></div>
-                    )}
+                    <p style={{ margin: '0 0 3px', fontWeight: 900, fontSize: 14, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</p>
+                    <p style={{ margin: 0, fontSize: 12.5, color: '#6B7A99', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 4 }}>
+                      {distanceById.get(l.id) != null && <DistanceChip km={distanceById.get(l.id)} size="xs" />}
+                      <OpenStatusChip ownerUid={l.ownerUid} size="xs" />
+                    </div>
                   </div>
 
                   {/* Remove button */}

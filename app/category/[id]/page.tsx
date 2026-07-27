@@ -11,6 +11,7 @@ import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { isPast } from '@/lib/promo';
 import { CATEGORIES, getCategoryById } from '@/data/categories';
 import DistanceChip from '@/components/DistanceChip';
+import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
 import VerifiedTick from '@/components/VerifiedTick';
@@ -449,11 +450,11 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
             <span style={{ background: '#2E5BFF', color: '#fff', borderRadius: 999, padding: '3px 7px', fontSize: 10, fontWeight: 900, flexShrink: 0 }}>{tr('adBadge', selectedLanguage)}</span>
           )}
         </div>
-        <p style={{ margin: '4px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13 }}>{price}</p>
-        <p style={{ margin: '0 0 6px', fontSize: 12, color: '#6B7A99', fontWeight: 700 }}>{l.regionOrCity}, {l.country}</p>
+        <p style={{ margin: '3px 0', fontWeight: 800, color: '#2E5BFF', fontSize: 13, lineHeight: 1.25 }}>{price}</p>
+        <p style={{ margin: '0 0 4px', fontSize: 12, color: '#6B7A99', fontWeight: 700, lineHeight: 1.25 }}>{l.regionOrCity}, {l.country}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
           {distanceKm != null && <DistanceChip km={distanceKm} size="xs" />}
-          {l.openNow && <Badge text={tr('openNow', selectedLanguage)} bg="#DFF5E8" fg="#1F7A3D" />}
+          <OpenStatusChip ownerUid={l.ownerUid} size="xs" />
           {l.rating != null && <Badge text={`★ ${l.rating.toFixed(1)}`} bg="#FFF8E1" fg="#B8860B" />}
         </div>
       </div>

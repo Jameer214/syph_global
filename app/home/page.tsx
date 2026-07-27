@@ -18,6 +18,7 @@ import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
 import MenuDrawer from '@/components/MenuDrawer';
 import DistanceChip from '@/components/DistanceChip';
+import OpenStatusChip from '@/components/OpenStatusChip';
 import ZigzagEdge from '@/components/ZigzagEdge';
 import VerifiedTick from '@/components/VerifiedTick';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
@@ -381,16 +382,17 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm, verified
         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {listing.title}
         </p>
-        <p style={{ margin: '4px 0 0', fontSize: 14, fontWeight: 800, color: '#2E5BFF' }}>
+        <p style={{ margin: '2px 0 0', fontSize: 14, fontWeight: 800, color: '#2E5BFF', lineHeight: 1.25 }}>
           {displayPrice(listing, selectedCurrency)}
         </p>
-        <p style={{ margin: '4px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <p style={{ margin: '2px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, lineHeight: 1.25, display: 'flex', alignItems: 'center', gap: 4 }}>
           <MapPin size={10} />{listing.locationText || listing.regionOrCity}
         </p>
-        {distanceKm != null && (
-          <div style={{ marginTop: 5 }}><DistanceChip km={distanceKm} /></div>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+          {distanceKm != null && <DistanceChip km={distanceKm} />}
+          <OpenStatusChip ownerUid={listing.ownerUid} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5 }}>
           {[
             { icon: <Eye size={10} />, val: listing.viewsCount },
             { icon: <Bookmark size={10} />, val: listing.savesCount },
@@ -439,15 +441,16 @@ function GridCard({ listing, onClick, selectedCurrency, distanceKm, verified }: 
         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {listing.title}
         </p>
-        <p style={{ margin: '3px 0 0', fontSize: 14, fontWeight: 800, color: '#2E5BFF' }}>
+        <p style={{ margin: '2px 0 0', fontSize: 14, fontWeight: 800, color: '#2E5BFF', lineHeight: 1.25 }}>
           {displayPrice(listing, selectedCurrency)}
         </p>
-        <p style={{ margin: '3px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <p style={{ margin: '2px 0 0', fontSize: 11, color: '#6B7A99', fontWeight: 500, lineHeight: 1.25, display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <MapPin size={10} />{listing.locationText || listing.regionOrCity}
         </p>
-        {distanceKm != null && (
-          <div style={{ marginTop: 5 }}><DistanceChip km={distanceKm} /></div>
-        )}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+          {distanceKm != null && <DistanceChip km={distanceKm} />}
+          <OpenStatusChip ownerUid={listing.ownerUid} />
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>
             <Eye size={10} />{listing.viewsCount}

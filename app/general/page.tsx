@@ -10,6 +10,7 @@ import { isPast, isEventExpired } from '@/lib/promo';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
+import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
 import VerifiedTick from '@/components/VerifiedTick';
@@ -272,14 +273,15 @@ export default function GeneralPage() {
                   </div>
                   <div style={{ color: '#2E5BFF', fontWeight: 900, fontSize: 13, marginTop: 2 }}>{displayPrice(item)}</div>
                   {item.locationText && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#6B7A99', fontSize: 10, marginTop: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#6B7A99', fontSize: 10, marginTop: 3 }}>
                       <MapPin size={10} />
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</span>
                     </div>
                   )}
-                  {distanceById.get(item.id) != null && (
-                    <div style={{ marginTop: 4 }}><DistanceChip km={distanceById.get(item.id)} size="xs" /></div>
-                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 4 }}>
+                    {distanceById.get(item.id) != null && <DistanceChip km={distanceById.get(item.id)} size="xs" />}
+                    <OpenStatusChip ownerUid={item.ownerUid} size="xs" />
+                  </div>
                   {item.rating != null && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 4 }}>
                       <Star size={10} color="#FFB800" fill="#FFB800" />

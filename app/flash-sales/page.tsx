@@ -10,6 +10,7 @@ import { isPast } from '@/lib/promo';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
+import OpenStatusChip from '@/components/OpenStatusChip';
 import ZigzagEdge from '@/components/ZigzagEdge';
 import { useDistances } from '@/lib/useDistances';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
@@ -134,9 +135,10 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
         {item.locationText && (
           <div style={{ color: '#6B7A99', fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.locationText}</div>
         )}
-        {distanceKm != null && (
-          <div style={{ marginTop: 4 }}><DistanceChip km={distanceKm} size="xs" /></div>
-        )}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 4 }}>
+          {distanceKm != null && <DistanceChip km={distanceKm} size="xs" />}
+          <OpenStatusChip ownerUid={item.ownerUid} size="xs" />
+        </div>
       </div>
 
       {/* Countdown banner */}
