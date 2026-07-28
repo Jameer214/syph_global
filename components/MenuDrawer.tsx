@@ -457,6 +457,7 @@ export default function MenuDrawer({ open, onClose }: Props) {
 
           <Section label={tr('yourSpace', selectedLanguage)} />
           <Item icon={Bookmark} label={tr('savedItems', selectedLanguage)} onClick={() => requireAuth('/saved')} />
+          <Item icon={Search} label={tr('savedSearches', selectedLanguage)} onClick={() => requireAuth('/saved-searches')} />
           <Item icon={MessageCircle} label={tr('messages', selectedLanguage)} onClick={() => requireAuth('/messages')} />
           <Item icon={Bell} label={tr('notificationsLabel', selectedLanguage)} onClick={() => requireAuth('/notifications')} />
 

@@ -26,6 +26,7 @@ import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 import { readListingsCache, writeListingsCache, isCacheFresh, HOT_SELLING_TTL_MS } from '@/lib/listingsCache';
 import { getRecentlyViewed, clearRecentlyViewed } from '@/lib/recentlyViewed';
+import { addSavedSearch } from '@/lib/firestore';
 import { isPast, isEventExpired, startOfTodayISO } from '@/lib/promo';
 import { mainCategoryForQuery, getCategoryById } from '@/data/categories';
 
@@ -594,7 +595,7 @@ function FilterSheet({
 export default function HomePage() {
   const router = useRouter();
   const {
-    selectedCountry, selectedRegion, locationSet, selectedCurrency, selectedLanguage,
+    user, selectedCountry, selectedRegion, locationSet, selectedCurrency, selectedLanguage,
   } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -633,6 +634,15 @@ export default function HomePage() {
     } catch {
       // ignore parse errors
     }
+  }, []);
+
+  // Revisit a saved search: when arriving with ?q=... (from the Saved Searches
+  // page), pre-fill the search field so the results dropdown re-runs. Read from
+  // window.location to avoid needing a Suspense boundary for useSearchParams.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q && q.trim()) setSearchQuery(q.trim());
   }, []);
 
   // Pick up search query carried from the location screen's dark search bar
@@ -833,6 +843,28 @@ export default function HomePage() {
       setExploreHasMore(page.length === EXPLORE_PAGE);
     } finally {
       setExploreLoadingMore(false);
+    }
+  };
+
+  // Save the current keyword + active filters so it can be revisited and
+  // alerted on when new matching listings appear (additive).
+  const handleSaveSearch = async () => {
+    const keyword = searchQuery.trim();
+    if (!keyword) return;
+    if (!user?.uid) { router.push('/login'); return; }
+    try {
+      await addSavedSearch(user.uid, keyword, {
+        country: selectedCountry,
+        region: selectedRegion,
+        timeSort: filters.timeSort,
+        priceSort: filters.priceSort,
+        rating: filters.rating,
+        openNow: filters.openNow,
+        nearMe: filters.nearMe,
+      });
+      toast.success(tr('searchSaved', selectedLanguage));
+    } catch {
+      // best-effort
     }
   };
 
@@ -1235,6 +1267,23 @@ export default function HomePage() {
             )}
           </button>
         </div>
+
+        {/* ── Save search (additive) — only when a keyword is present ── */}
+        {searchQuery.trim() !== '' && (
+          <button
+            onClick={handleSaveSearch}
+            className="btn-tap"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              marginBottom: 12, padding: '8px 14px', borderRadius: 12,
+              background: '#fff', border: '1.5px solid rgba(46,91,255,0.4)',
+              color: '#2E5BFF', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            }}
+          >
+            <Bookmark size={15} />
+            {tr('saveSearch', selectedLanguage)}
+          </button>
+        )}
 
         {/* ── Flash Sales ── */}
         {flashSales.length > 0 && (

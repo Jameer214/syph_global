@@ -696,6 +696,60 @@ export async function syncSavedIds(uid: string, ids: string[]): Promise<void> {
   }
 }
 
+// ─── Saved Searches + Alerts ─────────────────────────────────────────────────
+// A user keeps a search (keyword + filters). A background matcher fires a push
+// when new listings match. Owner-only reads/writes (RLS on user_id).
+
+export interface SavedSearchFilters {
+  country?: string;
+  region?: string;
+  timeSort?: string;
+  priceSort?: string;
+  rating?: string;
+  openNow?: boolean;
+  nearMe?: boolean;
+}
+
+export interface SavedSearch {
+  id: string;
+  keyword: string;
+  filters: SavedSearchFilters;
+  createdAt: string | null;
+}
+
+export async function getSavedSearches(uid: string): Promise<SavedSearch[]> {
+  const { data } = await supabase
+    .from('saved_searches')
+    .select('id, keyword, filters, created_at')
+    .eq('user_id', uid)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    id: String(r.id ?? ''),
+    keyword: String(r.keyword ?? ''),
+    filters: (r.filters ?? {}) as SavedSearchFilters,
+    createdAt: r.created_at ? String(r.created_at) : null,
+  }));
+}
+
+export async function addSavedSearch(
+  uid: string,
+  keyword: string,
+  filters: SavedSearchFilters,
+): Promise<void> {
+  const trimmed = keyword.trim();
+  if (!trimmed) return;
+  await supabase.from('saved_searches').insert({
+    user_id: uid,
+    keyword: trimmed,
+    filters,
+  });
+}
+
+export async function deleteSavedSearch(uid: string, id: string): Promise<void> {
+  await supabase.from('saved_searches').delete().eq('user_id', uid).eq('id', id);
+}
+
 // ─── Reports ─────────────────────────────────────────────────────────────────
 
 export async function createReport(report: Report): Promise<void> {
