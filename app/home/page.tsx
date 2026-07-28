@@ -1290,7 +1290,7 @@ export default function HomePage() {
             <SectionStrip
               gradient={['#37474F', '#546E7A']}
               icon={<History size={16} />}
-              title="Recently viewed"
+              title={tr('recentlyViewed', selectedLanguage)}
             />
             <div style={{
               background: '#fff', borderRadius: '0 0 14px 14px',
@@ -1311,7 +1311,7 @@ export default function HomePage() {
                   cursor: 'pointer', whiteSpace: 'nowrap',
                 }}
               >
-                Clear
+                {tr('clearAction', selectedLanguage)}
               </button>
             </div>
           </div>
