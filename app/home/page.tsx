@@ -6,7 +6,7 @@ import Image from 'next/image';
 import {
   Search, SlidersHorizontal, MapPin, Zap, TrendingUp,
   Star, Crown, Globe, Eye, Bookmark, MessageCircle, Menu,
-  LayoutGrid, X, ChevronDown, ShoppingBag, Sparkles, Award, Timer,
+  LayoutGrid, X, ChevronDown, ShoppingBag, Sparkles, Award, Timer, History,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
@@ -25,6 +25,7 @@ import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
 import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 import { readListingsCache, writeListingsCache, isCacheFresh, HOT_SELLING_TTL_MS } from '@/lib/listingsCache';
+import { getRecentlyViewed, clearRecentlyViewed } from '@/lib/recentlyViewed';
 import { isPast, isEventExpired, startOfTodayISO } from '@/lib/promo';
 import { mainCategoryForQuery, getCategoryById } from '@/data/categories';
 
@@ -670,6 +671,13 @@ export default function HomePage() {
     } catch { /* ignore */ }
   }, []);
 
+  // Recently viewed — local-only personal history, hydrated client-side (like
+  // railSeed above) so server and first client render match.
+  const [recentlyViewed, setRecentlyViewed] = useState<Listing[]>([]);
+  useEffect(() => {
+    setRecentlyViewed(getRecentlyViewed());
+  }, []);
+
   // Data subscriptions — ALL sections filtered by selected country
   const filterCountry = selectedCountry || undefined;
   const flashSales = useListings({ isFlashSale: true, count: 20, country: filterCountry });
@@ -1272,6 +1280,39 @@ export default function HomePage() {
               {trending.slice(0, 10).map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} verified={verifiedSellers.has(l.ownerUid)} />
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Recently Viewed — local-only personal history ── */}
+        {recentlyViewed.length > 0 && (
+          <div className="anim-fade-up" style={{ marginBottom: 16 }}>
+            <SectionStrip
+              gradient={['#37474F', '#546E7A']}
+              icon={<History size={16} />}
+              title="Recently viewed"
+            />
+            <div style={{
+              background: '#fff', borderRadius: '0 0 14px 14px',
+              padding: '12px 12px',
+              overflowX: 'auto', display: 'flex', gap: 10, alignItems: 'stretch',
+            }}
+              className="no-scrollbar rail rail-stagger"
+            >
+              {recentlyViewed.map((l) => (
+                <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} verified={verifiedSellers.has(l.ownerUid)} />
+              ))}
+              <button
+                onClick={() => { clearRecentlyViewed(); setRecentlyViewed([]); }}
+                style={{
+                  flex: '0 0 auto', alignSelf: 'center', background: '#ECEFF1',
+                  border: 'none', borderRadius: 12, color: '#546E7A',
+                  fontWeight: 700, fontSize: 12, padding: '10px 14px',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                Clear
+              </button>
             </div>
           </div>
         )}

@@ -19,6 +19,7 @@ import Reveal from '@/components/Reveal';
 import DistanceChip from '@/components/DistanceChip';
 import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
+import { recordRecentlyViewed } from '@/lib/recentlyViewed';
 import type { Listing, Review } from '@/types';
 
 // ─── Report Modal ─────────────────────────────────────────────────────────────
@@ -212,6 +213,8 @@ export default function ListingDetailsPage() {
     getListing(id).then((l) => {
       setListing(l);
       setLoading(false);
+      // Record for the Home "Recently viewed" rail (local-only, best-effort).
+      if (l) recordRecentlyViewed(l);
     }).catch(() => setLoading(false));
   }, [id]);
 
