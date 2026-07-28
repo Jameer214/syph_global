@@ -6,7 +6,7 @@ import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
-import { getListing, getSavedIds, syncSavedIds } from '@/lib/firestore';
+import { getListing, getSavedIds, syncSavedIds, getPriceDropEvents, type PriceDropEvent } from '@/lib/firestore';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
 import OpenStatusChip from '@/components/OpenStatusChip';
@@ -32,6 +32,23 @@ export default function SavedPage() {
   const [savedListings, setSavedListings] = useState<Listing[]>([]);
   const distanceById = useDistances(savedListings);
   const [loading, setLoading] = useState(true);
+  // Price-drop events keyed by listing id (best-effort; empty on any failure).
+  const [priceDrops, setPriceDrops] = useState<Record<string, PriceDropEvent>>({});
+
+  // Load price-drop events for the current user (best-effort, additive).
+  useEffect(() => {
+    if (!uid) { setPriceDrops({}); return; }
+    getPriceDropEvents(uid).then(setPriceDrops).catch(() => setPriceDrops({}));
+  }, [uid]);
+
+  // Formats a raw numeric price into the user's display currency (mirrors displayPrice).
+  function fmtPrice(value: number | null, listingCurrency: string): string {
+    if (value == null) return '';
+    if (selectedCurrency && selectedCurrency !== listingCurrency) {
+      return formatConverted(value, listingCurrency, selectedCurrency);
+    }
+    return `${getCurrencySymbol(listingCurrency)}${value.toLocaleString()}`;
+  }
 
   // Load saved listings whenever savedIds changes
   useEffect(() => {
@@ -144,6 +161,32 @@ export default function SavedPage() {
                     {distanceById.get(l.id) != null && (
                       <div style={{ marginTop: 4 }}><DistanceChip km={distanceById.get(l.id)} size="xs" /></div>
                     )}
+                    {(() => {
+                      // ADDITIVE price-drop badge: prefer a recorded event, else
+                      // fall back to the listing's own original/current price pair.
+                      const ev = priceDrops[l.id];
+                      const oldVal = ev?.oldPrice ?? l.originalPriceValue ?? null;
+                      const newVal = ev?.newPrice ?? l.priceValue ?? null;
+                      const cur = ev?.currency ?? l.currencyCode;
+                      if (oldVal == null || newVal == null || oldVal <= newVal) return null;
+                      const percent = ev?.percent && ev.percent > 0
+                        ? ev.percent
+                        : Math.round(((oldVal - newVal) / oldVal) * 100);
+                      if (percent <= 0) return null;
+                      return (
+                        <div style={{
+                          marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '5px 10px', borderRadius: 999,
+                          background: 'linear-gradient(135deg, #FF3D71 0%, #E5346B 100%)',
+                          boxShadow: '0 3px 8px rgba(229,52,107,0.28)',
+                        }}>
+                          <span style={{ color: '#fff', fontWeight: 900, fontSize: 11.5 }}>🎉 {tr('priceDropped', selectedLanguage)}</span>
+                          <span style={{ color: '#fff', fontWeight: 600, fontSize: 11, textDecoration: 'line-through' }}>{fmtPrice(oldVal, cur)}</span>
+                          <span style={{ color: '#fff', fontWeight: 900, fontSize: 12 }}>{fmtPrice(newVal, cur)}</span>
+                          <span style={{ background: '#fff', color: '#E5346B', fontWeight: 900, fontSize: 11, borderRadius: 6, padding: '2px 6px' }}>-{percent}%</span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Remove button */}

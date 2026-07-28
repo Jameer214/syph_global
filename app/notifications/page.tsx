@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   MessageCircle, CheckCircle, XCircle, Zap, Calendar, Star,
-  Bell, ChevronRight, Shield, Info, Award,
+  Bell, ChevronRight, Shield, Info, Award, Tag,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import BottomNav from '@/components/BottomNav';
@@ -61,6 +61,7 @@ function iconBgForType(type: string): string {
     case 'flash_sale_approved': return '#FFEEE8';
     case 'happening_approved': return '#EAF7EE';
     case 'recommendation': return '#F1ECFF';
+    case 'price_drop': return '#FFE4EE';
     default: return '#F2F5F9';
   }
 }
@@ -74,6 +75,7 @@ function iconColorForType(type: string): string {
     case 'flash_sale_approved': return '#E25A2C';
     case 'happening_approved': return '#2E9B55';
     case 'recommendation': return '#7A5AF8';
+    case 'price_drop': return '#E5346B';
     default: return '#6B7A99';
   }
 }
@@ -88,6 +90,7 @@ function IconForType({ type, color }: { type: string; color: string }) {
     case 'flash_sale_approved': return <Zap {...props} />;
     case 'happening_approved': return <Calendar {...props} />;
     case 'recommendation': return <Star {...props} />;
+    case 'price_drop': return <Tag {...props} />;
     default: return <Bell {...props} />;
   }
 }
@@ -274,6 +277,41 @@ export default function NotificationsPage() {
         )}
 
         {uid && notifications.map((n) => {
+          // Price-drop notifications get a dedicated COLOURFUL celebratory bubble.
+          if (n.type === 'price_drop') {
+            return (
+              <div key={n.id}
+                onClick={() => markNotifRead(n.id, n.route)}
+                style={{
+                  background: n.isRead
+                    ? 'linear-gradient(135deg, #FFE4EE, #FFD6E4)'
+                    : 'linear-gradient(135deg, #FF3D71, #E5346B)',
+                  borderRadius: 22, marginBottom: 12, padding: 14, cursor: 'pointer',
+                  boxShadow: `0 5px 12px rgba(229,52,107,${n.isRead ? 0.08 : 0.26})`,
+                }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 16, flexShrink: 0,
+                    background: n.isRead ? 'rgba(229,52,107,0.12)' : 'rgba(255,255,255,0.22)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Tag size={26} color={n.isRead ? '#E5346B' : '#fff'} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontWeight: 900, fontSize: 14.5, color: n.isRead ? '#182033' : '#fff' }}>{n.title}</span>
+                      {!n.isRead && <div style={{ width: 10, height: 10, background: '#fff', borderRadius: '50%', flexShrink: 0, marginLeft: 6 }} />}
+                    </div>
+                    <div style={{ color: n.isRead ? '#3D4658' : 'rgba(255,255,255,0.95)', fontWeight: 700, lineHeight: 1.4, fontSize: 13.5, marginTop: 6 }}>{n.body}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                      <span style={{ color: n.isRead ? '#6B7A99' : 'rgba(255,255,255,0.85)', fontWeight: 700, fontSize: 12 }}>{timeAgo(n.createdAt)}</span>
+                      <ChevronRight size={22} color={n.isRead ? '#6B7A99' : '#fff'} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
           const iconBg = iconBgForType(n.type);
           const iconColor = iconColorForType(n.type);
           return (

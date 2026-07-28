@@ -696,6 +696,57 @@ export async function syncSavedIds(uid: string, ids: string[]): Promise<void> {
   }
 }
 
+// ─── Price-Drop Alerts ───────────────────────────────────────────────────────
+// When a seller LOWERS the price of a saved listing, the backend records a
+// price_drop_events row for the user. The client only READS its own rows
+// (RLS: auth.uid() = user_id). Best-effort: any failure returns an empty map so
+// the Saved page degrades gracefully to its normal look.
+
+export interface PriceDropEvent {
+  listingId: string;
+  oldPrice: number | null;
+  newPrice: number | null;
+  currency: string | null;
+  seen: boolean;
+  percent: number;
+}
+
+export async function getPriceDropEvents(
+  uid: string,
+): Promise<Record<string, PriceDropEvent>> {
+  try {
+    const { data } = await supabase
+      .from('price_drop_events')
+      .select('listing_id, old_price, new_price, currency, seen, created_at')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    const map: Record<string, PriceDropEvent> = {};
+    for (const r of (data ?? []) as Record<string, unknown>[]) {
+      const listingId = String(r.listing_id ?? '');
+      if (!listingId || map[listingId]) continue; // newest-first: keep latest
+      const oldPrice = r.old_price != null ? Number(r.old_price) : null;
+      const newPrice = r.new_price != null ? Number(r.new_price) : null;
+      const percent =
+        oldPrice != null && newPrice != null && oldPrice > 0 && newPrice < oldPrice
+          ? Math.round(((oldPrice - newPrice) / oldPrice) * 100)
+          : 0;
+      map[listingId] = {
+        listingId,
+        oldPrice,
+        newPrice,
+        currency: r.currency != null ? String(r.currency) : null,
+        seen: r.seen === true,
+        percent,
+      };
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}
+
 // ─── Saved Searches + Alerts ─────────────────────────────────────────────────
 // A user keeps a search (keyword + filters). A background matcher fires a push
 // when new listings match. Owner-only reads/writes (RLS on user_id).
