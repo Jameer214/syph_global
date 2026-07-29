@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, SlidersHorizontal, ArrowUpDown, X, Clock, Navigation, Bookmark, BookmarkCheck } from 'lucide-react';
 import Image from 'next/image';
@@ -177,7 +177,14 @@ export default function CategoryResultsPage() {
     return filtered;
   }
 
-  const filtered = applyFiltersAndSort(listings);
+  // Memoised: filter+sort of the (potentially hundreds of) listings was running
+  // on EVERY render (every keystroke, toggle, re-render). Now it recomputes only
+  // when the listings or a filter/sort input actually changes.
+  const filtered = useMemo(
+    () => applyFiltersAndSort(listings),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [listings, ratingFilter, minPrice, maxPrice, conditionFilter, openNow, sortBy],
+  );
 
   const hasActiveFilters = minPrice || maxPrice || ratingFilter !== 'Any' || conditionFilter;
 

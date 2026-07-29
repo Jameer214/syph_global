@@ -62,6 +62,37 @@ function useSellerHours(uid?: string): SellerHoursInfo | null | undefined {
   return uid ? cache.get(uid) : undefined;
 }
 
+// ─── Shared, page-wide minute ticker ────────────────────────────────────────
+// Every "Open now" pill must re-evaluate at opening/closing boundaries, but a
+// grid can mount 60-100+ chips. One setInterval PER chip meant 60-100+ timers
+// waking the device every minute (battery drain + a re-render storm). Instead a
+// SINGLE module-level interval fans out to all mounted chips, and it only runs
+// while at least one chip is mounted (started on first subscriber, stopped on
+// last). Net: one timer for the whole page instead of N.
+const tickListeners = new Set<() => void>();
+let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+function subscribeMinuteTick(cb: () => void): () => void {
+  tickListeners.add(cb);
+  if (tickTimer === null) {
+    tickTimer = setInterval(() => {
+      for (const l of tickListeners) l();
+    }, 60000);
+  }
+  return () => {
+    tickListeners.delete(cb);
+    if (tickListeners.size === 0 && tickTimer !== null) {
+      clearInterval(tickTimer);
+      tickTimer = null;
+    }
+  };
+}
+
+function useMinuteTick(): void {
+  const [, tick] = useReducer((x) => x + 1, 0);
+  useEffect(() => subscribeMinuteTick(tick), []);
+}
+
 export default function OpenStatusChip({
   ownerUid,
   country,
@@ -77,14 +108,15 @@ export default function OpenStatusChip({
    *  for overlaying on a photo corner (paid/cramped cards). */
   variant?: 'soft' | 'solid';
 }) {
-  const { selectedLanguage } = useAppStore();
+  // Subscribe to only the language slice — the default useAppStore() (whole
+  // store) re-rendered every chip on ANY store write (save toggle, unread count,
+  // currency…). With ~100 chips mounted, one bookmark tap re-rendered the whole
+  // grid. A slice selector re-renders a chip only when the language changes.
+  const selectedLanguage = useAppStore((s) => s.selectedLanguage);
   const hours = useSellerHours(ownerUid);
-  // Re-evaluate each minute so the pill flips at opening/closing boundaries.
-  const [, tick] = useReducer((x) => x + 1, 0);
-  useEffect(() => {
-    const t = setInterval(tick, 60000);
-    return () => clearInterval(t);
-  }, []);
+  // Re-evaluate each minute so the pill flips at opening/closing boundaries —
+  // via the SHARED page ticker (one timer for all chips, not one per chip).
+  useMinuteTick();
 
   const open = computeOpenNow(hours, country); // seller-timezone-correct
   if (open === null) return null; // unknown / never set → render nothing

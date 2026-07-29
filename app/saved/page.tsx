@@ -6,7 +6,7 @@ import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
-import { getListing, getSavedIds, syncSavedIds, getPriceDropEvents, type PriceDropEvent } from '@/lib/firestore';
+import { getListingsByIds, getSavedIds, syncSavedIds, getPriceDropEvents, type PriceDropEvent } from '@/lib/firestore';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
 import OpenStatusChip from '@/components/OpenStatusChip';
@@ -65,9 +65,11 @@ export default function SavedPage() {
     }
 
     setLoading(true);
-    Promise.all(savedIds.map((id) => getListing(id)))
+    // Single batched query instead of one request per saved id (was an N+1:
+    // 80 saved items → 80 round-trips on every mount / save toggle).
+    getListingsByIds(savedIds)
       .then((results) => {
-        setSavedListings(results.filter((l): l is Listing => l !== null));
+        setSavedListings(results);
         setLoading(false);
       })
       .catch(() => setLoading(false));

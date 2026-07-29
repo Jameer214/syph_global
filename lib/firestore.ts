@@ -152,6 +152,25 @@ export async function getListing(id: string): Promise<Listing | null> {
   return mapListing(data as Record<string, unknown>);
 }
 
+// Batch-fetch many listings in ONE query. The Saved page previously did
+// Promise.all(ids.map(getListing)) — one round-trip PER saved item, so a user
+// with 80 saved listings fired 80 requests on every mount and on every save
+// toggle. This collapses that to a single `.in('id', ids)` query. Order is
+// restored to match `ids` (the caller's order) since `.in` does not guarantee it.
+export async function getListingsByIds(ids: string[]): Promise<Listing[]> {
+  if (ids.length === 0) return [];
+  const { data } = await supabase
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .in('id', ids);
+  const byId = new Map<string, Listing>();
+  for (const r of data ?? []) {
+    const l = mapListing(r as Record<string, unknown>);
+    byId.set(l.id, l);
+  }
+  return ids.map((id) => byId.get(id)).filter((l): l is Listing => l != null);
+}
+
 export async function getSponsoredListings(count = 8, country?: string): Promise<Listing[]> {
   let q = supabase
     .from('listings')

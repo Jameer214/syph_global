@@ -941,7 +941,12 @@ export default function HomePage() {
 
   // Apply client-side sorting/filtering to explore.
   // Region filter is client-side only (no guaranteed Firestore composite index).
-  const sortedExplore = useCallback(() => {
+  // useMemo (a VALUE), not useCallback-then-call: the old `sortedExplore()`
+  // returned a brand-new array every render, so `exploreItems` changed identity
+  // each time → `allShownListings` useMemo re-ran → useDistances/useVerifiedSellers
+  // rebuilt their id-keys (O(n log n) over ~100 listings) on every keystroke/tick.
+  // As a memoised value the array identity is stable while inputs are unchanged.
+  const exploreItems = useMemo(() => {
     let items = [...explore];
     // Belt-and-suspenders country filter
     if (selectedCountry) items = items.filter((l) => l.country === selectedCountry);
@@ -965,8 +970,6 @@ export default function HomePage() {
     }
     return items;
   }, [explore, filters, userCoords, selectedCountry, selectedRegion]);
-
-  const exploreItems = sortedExplore();
 
   // Distance chips — how far the user is from each visible listing's seller.
   // railPool covers the Recommended/Just In/Top Rated rails (all derived from

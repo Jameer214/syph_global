@@ -15,7 +15,9 @@ export default function DistanceChip({
   km: number | null | undefined;
   size?: 'sm' | 'xs';
 }) {
-  const { selectedLanguage } = useAppStore();
+  // Slice selector (not whole-store) so this chip re-renders only when the
+  // language changes — not on every save-toggle / unread / currency write.
+  const selectedLanguage = useAppStore((s) => s.selectedLanguage);
   const label = distanceLabel(km, tr('awayWord', selectedLanguage));
   if (!label) return null;
   const fs = size === 'xs' ? 9.5 : 11;
