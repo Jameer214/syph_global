@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, SlidersHorizontal, ArrowUpDown, X, Clock, Navigation } from 'lucide-react';
 import Image from 'next/image';
@@ -60,7 +60,14 @@ export default function SubCategoryResultsPage() {
   const router = useRouter();
   const mainId = params.id as string;
   const subId = params.subId as string;
-  const { isSaved, toggleSaved, selectedCurrency, selectedLanguage } = useAppStore();
+  // Slice selectors instead of useAppStore() (the whole store), which
+  // re-rendered this entire results grid on ANY store write. We subscribe to the
+  // savedIds ARRAY (ref changes on save toggle → bookmarks update) rather than
+  // the isSaved() function (stable ref → would never re-render on toggle).
+  const savedIds = useAppStore((s) => s.savedIds);
+  const toggleSaved = useAppStore((s) => s.toggleSaved);
+  const selectedCurrency = useAppStore((s) => s.selectedCurrency);
+  const selectedLanguage = useAppStore((s) => s.selectedLanguage);
 
   function displayPrice(listing: Listing): string {
     if (listing.priceValue != null && selectedCurrency && selectedCurrency !== listing.currencyCode) {
@@ -168,7 +175,14 @@ export default function SubCategoryResultsPage() {
     return filtered;
   }
 
-  const filtered = applyFiltersAndSort(listings);
+  // Memoised: the filter+sort of the whole (potentially hundreds of) listings
+  // was running on EVERY render. Now it recomputes only when listings or a
+  // filter/sort input actually changes. (Parity with the parent category page.)
+  const filtered = useMemo(
+    () => applyFiltersAndSort(listings),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [listings, ratingFilter, minPrice, maxPrice, conditionFilter, openNow, sortBy],
+  );
 
   // Count of active filters shown as a badge on the filter button (parity with mobile).
   const filterCount = [openNow, ratingFilter !== 'Any', Boolean(minPrice || maxPrice), Boolean(conditionFilter)].filter(Boolean).length;
@@ -238,8 +252,8 @@ export default function SubCategoryResultsPage() {
                       {l.rating != null && <span style={{ background: '#FFF8E1', color: '#B8860B', borderRadius: 999, padding: '4px 8px', fontSize: 11, fontWeight: 800 }}>★ {l.rating.toFixed(1)}</span>}
                     </div>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); toggleSaved(l.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: isSaved(l.id) ? '#2E5BFF' : '#9ca3af', flexShrink: 0, fontSize: 20 }}>
-                    {isSaved(l.id) ? '🔖' : '🔖'}
+                  <button onClick={(e) => { e.stopPropagation(); toggleSaved(l.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: savedIds.includes(l.id) ? '#2E5BFF' : '#9ca3af', flexShrink: 0, fontSize: 20 }}>
+                    {savedIds.includes(l.id) ? '🔖' : '🔖'}
                   </button>
                 </div>
               );

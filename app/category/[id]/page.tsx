@@ -60,7 +60,17 @@ export default function CategoryResultsPage() {
   const router = useRouter();
   const mainId = params.id as string;
 
-  const { isSaved, toggleSaved, selectedCurrency, selectedLanguage } = useAppStore();
+  // Slice selectors instead of the whole store. A category grid mounts many
+  // cards, and subscribing to the entire store (useAppStore()) re-rendered the
+  // WHOLE grid on ANY store write — an unread-count tick, a profile update,
+  // sellerMode/location changes — none of which affect these results.
+  // NOTE: we subscribe to savedIds (the array, whose reference changes on every
+  // save toggle) rather than the isSaved() function, whose reference is stable
+  // and would therefore never trigger a re-render when a bookmark is toggled.
+  const savedIds = useAppStore((s) => s.savedIds);
+  const toggleSaved = useAppStore((s) => s.toggleSaved);
+  const selectedCurrency = useAppStore((s) => s.selectedCurrency);
+  const selectedLanguage = useAppStore((s) => s.selectedLanguage);
 
   function displayPrice(listing: Listing): string {
     if (listing.priceValue != null && selectedCurrency && selectedCurrency !== listing.currencyCode) {
@@ -315,7 +325,7 @@ export default function CategoryResultsPage() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {filtered.map((l, i) => (
-                <ResultCard key={l.id} listing={l} isSaved={isSaved(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} distanceKm={distanceById.get(l.id)} verified={verifiedSellers.has(l.ownerUid)} />
+                <ResultCard key={l.id} listing={l} isSaved={savedIds.includes(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} distanceKm={distanceById.get(l.id)} verified={verifiedSellers.has(l.ownerUid)} />
               ))}
             </div>
             {hasMore && (
@@ -429,7 +439,7 @@ export default function CategoryResultsPage() {
 
 function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0, distanceKm, verified }: { listing: Listing; isSaved: boolean; onToggleSave: () => void; priceDisplay: string; index?: number; distanceKm?: number; verified?: boolean }) {
   const router = useRouter();
-  const { selectedLanguage } = useAppStore();
+  const selectedLanguage = useAppStore((s) => s.selectedLanguage);
   const img = l.imageUrls?.[0] ?? l.imageUrl;
   const price = priceDisplay;
 
