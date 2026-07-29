@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useMemo, useState } from 'react';
 import { haversineKm, getCoordsIfGranted, isValidLatLng, type LatLng } from '@/lib/distance';
+import { useSellerRecords } from '@/lib/sellerRecords';
 
 /**
  * Given a set of listings, returns Map<listingId, distanceKm> from the user to
@@ -42,8 +42,6 @@ export function useDistances(
   externalCoords?: LatLng | null,
 ): Map<string, number> {
   const [silentCoords, setSilentCoords] = useState<LatLng | null>(null);
-  const [sellerCoords, setSellerCoords] = useState<Map<string, LatLng>>(new Map());
-  const requested = useRef<Set<string>>(new Set());
 
   // Silent, prompt-free location on mount, re-read when the tab regains
   // visibility (user may have moved while away). Battery-safe: the browser
@@ -66,61 +64,33 @@ export function useDistances(
 
   const coords = externalCoords ?? silentCoords;
 
-  // Stable key of seller ids we still need — happenings measure from their own
-  // venue, so they don't need a seller lookup.
-  const sellerIdsKey = useMemo(() => {
+  // Seller ids we need coords for — happenings measure from their own venue, so
+  // they don't need a seller lookup. Coords come from the SHARED seller-record
+  // cache (see lib/sellerRecords), the SAME batched query that feeds verified
+  // ticks — so distance + verified are one round-trip, not two, and a seller is
+  // never re-fetched. Fetching is not gated on `coords`: the shared cache is
+  // populated regardless (verified needs it too); we only skip the distance
+  // MATH below when we have no user location.
+  const sellerIds = useMemo(() => {
     const ids = new Set<string>();
     for (const l of listings) if (l.ownerUid && !ownVenue(l)) ids.add(l.ownerUid);
-    return Array.from(ids).sort().join(',');
+    return Array.from(ids);
   }, [listings]);
 
-  // Fetch coords for any sellers we haven't looked up yet.
-  useEffect(() => {
-    if (!coords || !sellerIdsKey) return;
-    const missing = sellerIdsKey
-      .split(',')
-      .filter((id) => id && !requested.current.has(id));
-    if (missing.length === 0) return;
-    missing.forEach((id) => requested.current.add(id));
-
-    let alive = true;
-    (async () => {
-      // A listing's `seller_id` (→ ownerUid) is the seller's auth user_id, not
-      // the sellers PK. Match on user_id, but also key the result by the row id
-      // defensively so lookups resolve regardless of which the listing carries.
-      const list = missing.join(',');
-      const { data } = await supabase
-        .from('sellers')
-        .select('id, user_id, business_latitude, business_longitude')
-        .or(`user_id.in.(${list}),id.in.(${list})`);
-      if (!alive || !data) return;
-      setSellerCoords((prev) => {
-        const next = new Map(prev);
-        for (const row of data as Record<string, unknown>[]) {
-          const lat = row.business_latitude as number | null;
-          const lng = row.business_longitude as number | null;
-          // Skip unset / placeholder seller coords so we never show a bogus
-          // "thousands of km away" chip for a seller who never set GPS.
-          if (isValidLatLng(lat, lng)) {
-            const coord = { lat: Number(lat), lng: Number(lng) };
-            if (row.user_id != null) next.set(String(row.user_id), coord);
-            if (row.id != null) next.set(String(row.id), coord);
-          }
-        }
-        return next;
-      });
-    })();
-    return () => { alive = false; };
-  }, [coords, sellerIdsKey]);
+  const sellerRecords = useSellerRecords(sellerIds);
 
   // Build the id → km map — venue for happenings, seller for everything else.
   return useMemo(() => {
     const out = new Map<string, number>();
     if (!coords || !isValidLatLng(coords.lat, coords.lng)) return out;
     for (const l of listings) {
-      const target = ownVenue(l) ?? (l.ownerUid ? sellerCoords.get(l.ownerUid) : undefined);
+      let target = ownVenue(l);
+      if (!target && l.ownerUid) {
+        const rec = sellerRecords.get(l.ownerUid);
+        if (rec && rec.lat != null && rec.lng != null) target = { lat: rec.lat, lng: rec.lng };
+      }
       if (target) out.set(l.id, haversineKm(coords, target));
     }
     return out;
-  }, [coords, sellerCoords, listings]);
+  }, [coords, sellerRecords, listings]);
 }
