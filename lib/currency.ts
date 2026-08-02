@@ -37,6 +37,11 @@ export function convertPrice(amount: number, fromCurrency: string, toCurrency: s
   return (amount / fromRate) * toRate;
 }
 
+/** True when we have a real exchange rate for this currency (not a 1:1 guess). */
+export function hasRate(code: string): boolean {
+  return Object.prototype.hasOwnProperty.call(RATES_FROM_USD, code);
+}
+
 export function getCurrencySymbol(code: string): string {
   return CURRENCIES.find((c) => c.code === code)?.symbol ?? code;
 }
