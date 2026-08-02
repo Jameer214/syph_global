@@ -432,8 +432,8 @@ export default function DashboardPage() {
           </div>
           {[
             { icon: <PlusCircle size={26} color="#2E5BFF" />, title: tr('sellMyItem', selectedLanguage), desc: tr('sellMyItemDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new' : '/dashboard/setup') },
-            { icon: <Megaphone size={26} color="#2E5BFF" />, title: tr('featSponsorTitle', selectedLanguage), desc: tr('featSponsorDesc', selectedLanguage), onClick: () => router.push('/dashboard/listings?promote=sponsored') },
-            { icon: <Zap size={26} color="#2E5BFF" />, title: tr('flashSaleLabel', selectedLanguage), desc: tr('featFlashDesc', selectedLanguage), onClick: () => router.push('/dashboard/listings?promote=flash_sale') },
+            { icon: <Megaphone size={26} color="#2E5BFF" />, title: tr('featSponsorTitle', selectedLanguage), desc: tr('featSponsorDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new?type=sponsor' : '/dashboard/setup') },
+            { icon: <Zap size={26} color="#2E5BFF" />, title: tr('flashSaleLabel', selectedLanguage), desc: tr('featFlashDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new?type=flash' : '/dashboard/setup') },
             { icon: <Calendar size={26} color="#2E5BFF" />, title: tr('featHappeningsTitle', selectedLanguage), desc: tr('featHappeningsDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/happenings' : '/dashboard/setup') },
             { icon: <Crown size={26} color="#2E5BFF" />, title: tr('featPromotionsTitle', selectedLanguage), desc: tr('featPromotionsDesc', selectedLanguage), onClick: () => router.push('/dashboard/promotions') },
           ].map((t, i, arr) => (

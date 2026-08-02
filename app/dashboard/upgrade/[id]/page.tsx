@@ -5,6 +5,7 @@ import { ArrowLeft, Megaphone, Zap, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
 import { getSellerProfile } from '@/lib/firestore';
+import { getPromoPricing } from '@/lib/adminSettings';
 import { useAppStore } from '@/store';
 import { translate as tr } from '@/lib/i18n';
 import type { SellerProfile } from '@/types';
@@ -57,8 +58,10 @@ export default function UpgradeListingPage() {
   }, [listingId]);
 
   useEffect(() => {
-    // Admin pricing not in Supabase schema — use defaults
-    setAdminPricing({ upgradeToSponsored: {}, upgradeToFlashSale: {} });
+    // Real upgrade prices from the shared backend (same source the app reads).
+    getPromoPricing().then((pp) => {
+      setAdminPricing({ upgradeToSponsored: pp.upgradeToSponsored, upgradeToFlashSale: pp.upgradeToFlashSale });
+    });
   }, []);
 
   const color = upgradeType === 'sponsored' ? '#2F6BFF' : '#E53935';

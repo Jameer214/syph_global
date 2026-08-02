@@ -94,6 +94,43 @@ export async function getSellerPrivilegePercent(uid: string): Promise<number> {
   }
 }
 
+export type PromoCategory =
+  | 'sponsorItem' | 'flashSale' | 'happenings'        // create a NEW promoted listing
+  | 'upgradeToSponsored' | 'upgradeToFlashSale';      // upgrade an EXISTING listing
+
+export type DayPriceMap = { days7: number; days15: number; days30: number };
+
+const PROMO_CATS: PromoCategory[] = ['sponsorItem', 'flashSale', 'happenings', 'upgradeToSponsored', 'upgradeToFlashSale'];
+
+/**
+ * Duration-based promo prices (UGX) per category, from
+ * admin_settings['payment_methods'].pricing — the same source the app reads.
+ */
+export async function getPromoPricing(): Promise<Record<PromoCategory, DayPriceMap>> {
+  const empty = (): DayPriceMap => ({ days7: 0, days15: 0, days30: 0 });
+  const out = Object.fromEntries(PROMO_CATS.map((c) => [c, empty()])) as Record<PromoCategory, DayPriceMap>;
+  try {
+    const { data } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('key', 'payment_methods')
+      .limit(1)
+      .maybeSingle();
+    const value = (data as Record<string, unknown> | null)?.value as Record<string, unknown> | undefined;
+    const pricing = value && typeof value === 'object' ? (value.pricing as Record<string, unknown> | undefined) : undefined;
+    if (!pricing) return out;
+    const num = (v: unknown) => parseFloat(String(v ?? '0').replace(/,/g, '')) || 0;
+    for (const c of PROMO_CATS) {
+      const cat = pricing[c] as Record<string, unknown> | undefined;
+      if (!cat) continue;
+      out[c] = { days7: num(cat.days7), days15: num(cat.days15), days30: num(cat.days30) };
+    }
+  } catch {
+    /* fall back to zeros */
+  }
+  return out;
+}
+
 /**
  * Active (live) + pending listings for this seller — the count that eats into
  * the free quota. Sold/deleted listings don't count, so deleting frees a slot.

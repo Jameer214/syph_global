@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { createListing, getSellerProfile } from '@/lib/firestore';
 import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
-import { getListItemPricing, getSellerPrivilegePercent, getActiveListingCount, type ListItemPricing } from '@/lib/adminSettings';
+import { getListItemPricing, getSellerPrivilegePercent, getActiveListingCount, getPromoPricing, type ListItemPricing } from '@/lib/adminSettings';
 import { CATEGORIES } from '@/data/categories';
 import type { SellerProfile } from '@/types';
 import toast from 'react-hot-toast';
@@ -100,8 +100,11 @@ export default function NewListingForm() {
   }, [typeParam]);
 
   useEffect(() => {
-    // Admin pricing not in Supabase — use defaults
-    setAdminPricing({ upgradeToSponsored: {}, upgradeToFlashSale: {}, happenings: {} });
+    // Real "create a new promoted listing" prices from the shared backend:
+    // sponsor → sponsorItem, flash → flashSale (mapped into the fields this form reads).
+    getPromoPricing().then((pp) => {
+      setAdminPricing({ upgradeToSponsored: pp.sponsorItem, upgradeToFlashSale: pp.flashSale, happenings: pp.happenings });
+    });
   }, []);
 
   const mainCategory = CATEGORIES.find((c) => c.id === selectedMainId);

@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import { createHappening, getSellerProfile, uploadListingImages } from '@/lib/firestore';
+import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
+import { getPromoPricing, getSellerPrivilegePercent, type DayPriceMap } from '@/lib/adminSettings';
 import { CATEGORIES } from '@/data/categories';
 import { useAppStore } from '@/store';
 import { translate as tr, trCategory } from '@/lib/i18n';
@@ -54,6 +56,10 @@ export default function HappeningsPage() {
   const [price, setPrice] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [submitting, setSubmitting] = useState(false);
+  // Happenings are a paid, duration-based promo (parity with the app).
+  const [selectedDays, setSelectedDays] = useState(7);
+  const [pricing, setPricing] = useState<DayPriceMap | null>(null);
+  const [privilegePct, setPrivilegePct] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -64,6 +70,9 @@ export default function HappeningsPage() {
       const sp = await getSellerProfile(u.id).catch(() => null);
       setSeller(sp);
       setLoading(false);
+      const [pp, pct] = await Promise.all([getPromoPricing(), getSellerPrivilegePercent(u.id)]);
+      setPricing(pp.happenings);
+      setPrivilegePct(pct);
     });
   }, []);
 
@@ -112,7 +121,7 @@ export default function HappeningsPage() {
     setSubmitting(true);
     try {
       const priceValue = price ? (parseFloat(price.replace(/[^0-9.]/g, '')) || 0) : 0;
-      await createHappening({
+      const listingId = await createHappening({
         title: safeTitle,
         description: safeDesc,
         imageUrl: '',
@@ -132,6 +141,21 @@ export default function HappeningsPage() {
         isFlashSale: false,
         isTrial: false,
       }, images);
+
+      // Happenings are a paid, duration-based promo — route through payment like the app.
+      const dayKey = selectedDays === 7 ? 'days7' : selectedDays === 15 ? 'days15' : 'days30';
+      const ugx = pricing ? pricing[dayKey] : 0;
+      const effectiveUgx = privilegePct > 0 ? ugx * (1 - privilegePct / 100) : ugx;
+      const sellerCurrency = getCurrencyForCountry(seller.operatingCountry || currency);
+      const amount = Math.round(convertPrice(effectiveUgx, 'UGX', sellerCurrency));
+      if (listingId && amount > 0) {
+        const params = new URLSearchParams({
+          amount: String(amount), currency: sellerCurrency, type: 'happenings',
+          days: String(selectedDays), listingId, listingTitle: safeTitle,
+        });
+        router.push(`/payment/method?${params}`);
+        return;
+      }
       toast.success(tr('happeningSubmitted', lang));
       setShowForm(false);
       setTitle(''); setDescription(''); setLocationText('');
@@ -299,6 +323,26 @@ export default function HappeningsPage() {
                 <ChevronDown size={14} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#6B7A99' }} />
               </div>
               <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={tr('freePricePlaceholder', lang)} type="number" style={{ ...inputStyle, flex: 1 }} />
+            </div>
+          </div>
+
+          {/* Promotion duration (paid — like the app) */}
+          <div style={{ background: '#fff', borderRadius: 20, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 12 }}>{tr('selectDuration', lang)}</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[7, 15, 30].map((d) => {
+                const key = (d === 7 ? 'days7' : d === 15 ? 'days15' : 'days30') as 'days7' | 'days15' | 'days30';
+                const ugx = pricing ? pricing[key] : 0;
+                const sellerCurrency = getCurrencyForCountry(seller?.operatingCountry || '');
+                const disp = ugx > 0 ? `${sellerCurrency} ${Math.round(convertPrice(ugx, 'UGX', sellerCurrency)).toLocaleString()}` : (pricing ? '—' : '...');
+                const sel = selectedDays === d;
+                return (
+                  <button key={d} onClick={() => setSelectedDays(d)} style={{ flex: 1, padding: '14px 8px', borderRadius: 16, border: `${sel ? 2 : 1}px solid ${sel ? '#2E9B55' : 'rgba(0,0,0,0.07)'}`, background: sel ? '#2E9B5514' : '#fff', cursor: 'pointer', textAlign: 'center' }}>
+                    <div style={{ fontWeight: 900, fontSize: 13, color: sel ? '#2E7D32' : '#182033' }}>{d} {tr('daysWord', lang)}</div>
+                    <div style={{ fontWeight: 700, fontSize: 11.5, color: sel ? '#2E7D32' : '#6B7A99', marginTop: 4 }}>{disp}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
