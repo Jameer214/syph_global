@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   Store, FileText,
   Eye, MessageCircle, Bookmark, Package, Edit3, ChevronRight,
-  ArrowLeft, BarChart2, Smartphone,
+  ArrowLeft, BarChart2, Megaphone, Zap, Calendar, Crown, PlusCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -379,46 +379,34 @@ export default function DashboardPage() {
           <ChevronRight size={34} color="#6E7785" />
         </div>
 
-        {/* App-Only Features */}
-        <div style={{
-          background: 'linear-gradient(135deg, #0F2B6E 0%, #1a3a9e 100%)',
-          borderRadius: 22, padding: 20, marginBottom: 16,
-          boxShadow: '0 6px 20px rgba(15,43,110,0.25)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Smartphone size={24} color="#fff" />
+        {/* Seller Tools — actionable request flows (parity with the SYPH app) */}
+        <div style={{ background: '#fff', borderRadius: 22, padding: 16, marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div style={{ background: '#E8F0FF', borderRadius: 12, padding: 8 }}>
+              <Store size={20} color="#2E5BFF" />
             </div>
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 16, color: '#fff' }}>{tr('moreOnSyphApp', selectedLanguage)}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{tr('exclusiveMobileFeatures', selectedLanguage)}</div>
-            </div>
+            <span style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>{tr('sellerTools', selectedLanguage)}</span>
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', fontWeight: 500, lineHeight: 1.65, marginBottom: 16 }}>
-            {tr('appOnlyIntro', selectedLanguage)}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
-            {[
-              { emoji: '⭐', label: tr('featSponsorTitle', selectedLanguage), desc: tr('featSponsorDesc', selectedLanguage) },
-              { emoji: '⚡', label: tr('flashSales', selectedLanguage), desc: tr('featFlashDesc', selectedLanguage) },
-              { emoji: '📅', label: tr('featHappeningsTitle', selectedLanguage), desc: tr('featHappeningsDesc', selectedLanguage) },
-              { emoji: '📈', label: tr('featPromotionsTitle', selectedLanguage), desc: tr('featPromotionsDesc', selectedLanguage) },
-            ].map(f => (
-              <div key={f.label} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 14, padding: '13px 12px', border: '1px solid rgba(255,255,255,0.12)' }}>
-                <div style={{ fontSize: 22, marginBottom: 7 }}>{f.emoji}</div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 5 }}>{f.label}</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4, fontWeight: 500 }}>{f.desc}</div>
+          {[
+            { icon: <PlusCircle size={26} color="#2E5BFF" />, title: tr('sellMyItem', selectedLanguage), desc: tr('sellMyItemDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new' : '/dashboard/setup') },
+            { icon: <Megaphone size={26} color="#2E5BFF" />, title: tr('featSponsorTitle', selectedLanguage), desc: tr('featSponsorDesc', selectedLanguage), onClick: () => router.push('/dashboard/listings?promote=sponsored') },
+            { icon: <Zap size={26} color="#2E5BFF" />, title: tr('flashSaleLabel', selectedLanguage), desc: tr('featFlashDesc', selectedLanguage), onClick: () => router.push('/dashboard/listings?promote=flash_sale') },
+            { icon: <Calendar size={26} color="#2E5BFF" />, title: tr('featHappeningsTitle', selectedLanguage), desc: tr('featHappeningsDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/happenings' : '/dashboard/setup') },
+            { icon: <Crown size={26} color="#2E5BFF" />, title: tr('featPromotionsTitle', selectedLanguage), desc: tr('featPromotionsDesc', selectedLanguage), onClick: () => router.push('/dashboard/promotions') },
+          ].map((t, i, arr) => (
+            <button key={t.title} onClick={t.onClick} className="card-tap" style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px',
+              background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+              borderBottom: i < arr.length - 1 ? '1px solid #F0F4FF' : 'none',
+            }}>
+              <div style={{ width: 52, height: 52, background: '#E9EEFA', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{t.icon}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 14.5, color: '#2E5BFF' }}>{t.title}</div>
+                <div style={{ fontWeight: 500, fontSize: 12.5, color: '#2D3340', marginTop: 3, lineHeight: 1.4 }}>{t.desc}</div>
               </div>
-            ))}
-          </div>
-
-          <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(255,255,255,0.16)' }}>
-            <div style={{ fontWeight: 800, fontSize: 13, color: '#fff', marginBottom: 6 }}>{tr('whyAppOnly', selectedLanguage)}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', lineHeight: 1.6, fontWeight: 500 }}>
-              {tr('whyAppOnlyDesc', selectedLanguage)}
-            </div>
-          </div>
+              <ChevronRight size={24} color="#6E7785" style={{ flexShrink: 0 }} />
+            </button>
+          ))}
         </div>
 
         {/* Download info */}

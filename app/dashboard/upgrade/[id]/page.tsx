@@ -31,6 +31,13 @@ export default function UpgradeListingPage() {
   const [adminPricing, setAdminPricing] = useState<AdminPricing | null>(null);
 
   useEffect(() => {
+    // Preselect the upgrade type when the seller came from the dashboard
+    // "Sponsor" / "Flash Sale" tiles (…?type=sponsored | flash_sale).
+    const t = new URLSearchParams(window.location.search).get('type');
+    if (t === 'sponsored' || t === 'flash_sale') setUpgradeType(t);
+  }, []);
+
+  useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const u = session?.user ?? null;
       if (!u) return;

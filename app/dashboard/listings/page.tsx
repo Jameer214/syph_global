@@ -73,6 +73,14 @@ export default function MyListingsPage() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Listing | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // When arriving from the dashboard "Sponsor" / "Flash Sale" tiles, the seller
+  // is here to pick a listing to promote — carry that intent through to Upgrade.
+  const [promote, setPromote] = useState<'sponsored' | 'flash_sale' | null>(null);
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('promote');
+    if (p === 'sponsored' || p === 'flash_sale') setPromote(p);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -168,6 +176,23 @@ export default function MyListingsPage() {
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
+
+        {/* Promote intent banner — shown when picking a listing to sponsor / flash */}
+        {promote && (
+          <div style={{
+            background: promote === 'flash_sale' ? '#FFF1F0' : '#EAF1FF',
+            border: `1px solid ${promote === 'flash_sale' ? 'rgba(229,57,53,0.3)' : 'rgba(47,107,255,0.3)'}`,
+            borderRadius: 16, padding: '12px 14px', marginBottom: 14,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            {promote === 'flash_sale'
+              ? <Zap size={18} color="#E53935" style={{ flexShrink: 0 }} />
+              : <Crown size={18} color="#2F6BFF" style={{ flexShrink: 0 }} />}
+            <span style={{ fontWeight: 800, fontSize: 13, color: promote === 'flash_sale' ? '#C62828' : '#1D49C6', lineHeight: 1.35 }}>
+              {tr(promote === 'flash_sale' ? 'pickListingToFlash' : 'pickListingToSponsor', lang)}
+            </span>
+          </div>
+        )}
 
         {/* Summary card */}
         {listings.length > 0 && (
@@ -278,7 +303,7 @@ export default function MyListingsPage() {
                               { icon: <Pencil size={15} />, label: tr('editShort', lang), color: '#0F2B6E', action: () => { setMenuOpen(null); router.push(`/dashboard/edit/${l.id}`); } },
                               ...(l.status === 'approved' && !l.isHappening && !l.isSponsored && !l.isFlashSale ? [{
                                 icon: <Rocket size={15} />, label: tr('upgradeLabel', lang), color: '#2F6BFF',
-                                action: () => { setMenuOpen(null); router.push(`/dashboard/upgrade/${l.id}`); },
+                                action: () => { setMenuOpen(null); router.push(`/dashboard/upgrade/${l.id}${promote ? `?type=${promote}` : ''}`); },
                               }] : []),
                               { icon: <Trash2 size={15} />, label: tr('deleteListing', lang), color: '#E53935', action: () => { setMenuOpen(null); setDeleteConfirm(l); } },
                             ].map(({ icon, label, color, action }) => (
