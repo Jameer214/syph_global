@@ -39,7 +39,7 @@ function mapListing(row: Record<string, unknown>): Listing {
     subCategoryId: row.sub_category_id ? String(row.sub_category_id) : undefined,
     openNow: false,
     isSponsored: Boolean(row.is_sponsored) && !isPast(row.sponsored_until),
-    isHappening: false,
+    isHappening: Boolean(row.is_happening),
     isFlashSale: Boolean(row.is_flash_sale) && !isPast(row.flash_sale_until),
     isTrial: false,
     status: String(row.status ?? 'pending'),

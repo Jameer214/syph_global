@@ -501,6 +501,8 @@ export async function updateListing(id: string, updates: Partial<Listing>): Prom
 }
 
 export async function deleteListing(id: string): Promise<void> {
+  // Remove child image rows first (matches the app) so no orphans are left.
+  await supabase.from('listing_images').delete().eq('listing_id', id);
   await supabase.from('listings').delete().eq('id', id);
 }
 
