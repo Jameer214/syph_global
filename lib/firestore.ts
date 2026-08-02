@@ -306,10 +306,11 @@ export async function getSellerListings(uid: string, count = 20): Promise<Listin
     .eq('user_id', uid)
     .single();
   if (!sellerRow) return [];
+  // listings.seller_id holds the seller's auth uid (NOT sellers.id).
   const { data } = await supabase
     .from('listings')
     .select('*, listing_images(url, sort_order)')
-    .eq('seller_id', (sellerRow as Record<string, unknown>).id)
+    .eq('seller_id', uid)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(count);
@@ -423,10 +424,11 @@ export async function getMyListings(
     .single();
   if (!sellerRow) return { listings: [], lastDoc: null };
 
+  // listings.seller_id holds the seller's auth uid (NOT sellers.id).
   const { data } = await supabase
     .from('listings')
     .select('*, listing_images(url, sort_order)')
-    .eq('seller_id', (sellerRow as Record<string, unknown>).id)
+    .eq('seller_id', ownerUid)
     .order('created_at', { ascending: false })
     .limit(pageSize);
   return {

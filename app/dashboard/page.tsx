@@ -106,7 +106,8 @@ export default function DashboardPage() {
       setBlocked(sr.is_blocked === true);
       setBlockMessage(String(sr.block_message ?? ''));
       // Admin-removed listings are hidden from the seller too.
-      const { data } = await supabase.from('listings').select('*').eq('seller_id', sr.id).neq('status', 'removed_by_admin');
+      // listings.seller_id holds the seller's auth uid (NOT sellers.id).
+      const { data } = await supabase.from('listings').select('*').eq('seller_id', uid).neq('status', 'removed_by_admin');
       if (!cancelled) setListings((data ?? []).map(d => mapListing(d as Record<string, unknown>, String((d as Record<string, unknown>).id ?? ''))));
     };
     loadListings();

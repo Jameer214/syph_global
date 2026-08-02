@@ -95,7 +95,8 @@ export default function MyListingsPage() {
     const loadListings = async () => {
       const { data: sellerRow } = await supabase.from('sellers').select('id').eq('user_id', uid).single();
       if (!sellerRow || cancelled) { setLoading(false); return; }
-      const { data } = await supabase.from('listings').select('*').eq('seller_id', (sellerRow as Record<string, unknown>).id);
+      // listings.seller_id holds the seller's auth uid (NOT sellers.id).
+      const { data } = await supabase.from('listings').select('*').eq('seller_id', uid);
       if (!cancelled) {
         setListings((data ?? []).map(d => mapListing(d as Record<string, unknown>, String((d as Record<string, unknown>).id ?? ''))));
         setLoading(false);
