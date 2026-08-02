@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { createListing, getSellerProfile } from '@/lib/firestore';
 import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
+import { getListItemPricing, getSellerPrivilegePercent, getActiveListingCount, type ListItemPricing } from '@/lib/adminSettings';
 import { CATEGORIES } from '@/data/categories';
 import type { SellerProfile } from '@/types';
 import toast from 'react-hot-toast';
@@ -63,6 +64,12 @@ export default function NewListingForm() {
   const [units, setUnits] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Free-15 quota / paid-listing config (normal listings only) — mirrors the app.
+  const [pricing, setPricing] = useState<ListItemPricing | null>(null);
+  const [activeCount, setActiveCount] = useState(0);
+  const [privilegePct, setPrivilegePct] = useState(0);
+  const [countLoaded, setCountLoaded] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -77,8 +84,20 @@ export default function NewListingForm() {
         setRegion(sp.operatingRegion || '');
       }
       setLoading(false);
+      // Normal listings obey the free-quota promo; sponsor/flash are always paid.
+      if (typeParam !== 'sponsor' && typeParam !== 'flash') {
+        const [pr, cnt, pct] = await Promise.all([
+          getListItemPricing(),
+          getActiveListingCount(u.id),
+          getSellerPrivilegePercent(u.id),
+        ]);
+        setPricing(pr);
+        setActiveCount(cnt);
+        setPrivilegePct(pct);
+        setCountLoaded(true);
+      }
     });
-  }, []);
+  }, [typeParam]);
 
   useEffect(() => {
     // Admin pricing not in Supabase — use defaults
@@ -87,6 +106,15 @@ export default function NewListingForm() {
 
   const mainCategory = CATEGORIES.find((c) => c.id === selectedMainId);
   const subCategories = mainCategory?.children ?? [];
+
+  // Free while the promo is on AND the seller is under quota (and not in a
+  // country where the admin switched the free promo off). Otherwise it's paid.
+  const sellerCountryLc = (country || seller?.operatingCountry || '').trim().toLowerCase();
+  const stoppedCountry = !!pricing && pricing.freeStoppedCountries.includes(sellerCountryLc);
+  const promoActive = pricing ? (pricing.promoEnabled && !stoppedCountry) : true;
+  const listingIsFree = pricing ? (promoActive && activeCount < pricing.freeQuota) : true;
+  const perListingUgx = pricing?.perListingUgx ?? 0;
+  const willBePaid = formType === 'listing' && countLoaded && !listingIsFree && perListingUgx > 0;
 
   function handleImagePick(files: FileList | null) {
     if (!files) return;
@@ -173,6 +201,21 @@ export default function NewListingForm() {
           listingTitle: safeTitle,
         });
         router.push(`/payment/method?${params}`);
+      } else if (willBePaid) {
+        // Free quota used up (or promo off) — route the paid listing fee through
+        // the same payment flow the app uses, with any privilege discount applied.
+        const sellerCurrency = getCurrencyForCountry(country || seller.operatingCountry || '');
+        const effectiveUgx = privilegePct > 0 ? perListingUgx * (1 - privilegePct / 100) : perListingUgx;
+        const amount = Math.round(convertPrice(effectiveUgx, 'UGX', sellerCurrency));
+        const params = new URLSearchParams({
+          amount: String(amount),
+          currency: sellerCurrency,
+          type: 'listing',
+          days: '0',
+          listingId,
+          listingTitle: safeTitle,
+        });
+        router.push(`/payment/method?${params}`);
       } else {
         toast.success(tr('listingSubmitted', lang));
         router.push('/dashboard');
@@ -223,6 +266,28 @@ export default function NewListingForm() {
       </div>
 
       <div style={{ padding: '16px 16px 100px' }}>
+
+        {/* Free-15 quota banner (normal listings, while the promo is active) */}
+        {formType === 'listing' && countLoaded && pricing && promoActive && (
+          <div style={{
+            background: listingIsFree ? '#EAF7EE' : '#FFF4E5',
+            border: `1px solid ${listingIsFree ? 'rgba(46,157,85,0.3)' : 'rgba(224,138,0,0.35)'}`,
+            borderRadius: 14, padding: '12px 14px', marginBottom: 14,
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>{listingIsFree ? '🎁' : '💳'}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, fontSize: 13, color: listingIsFree ? '#1F8B4C' : '#8A5A00' }}>
+                {activeCount}/{pricing.freeQuota} {tr('freeListingsUsedLabel', lang)}
+              </div>
+              <div style={{ fontSize: 12, color: listingIsFree ? '#2E7D50' : '#7A5A1E', marginTop: 3, lineHeight: 1.4 }}>
+                {listingIsFree
+                  ? `${Math.max(0, pricing.freeQuota - activeCount)} ${tr('freeSlotsLeftHint', lang)}`
+                  : tr('quotaFullPaidHint', lang)}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Photos */}
         <div style={sectionStyle}>
@@ -371,7 +436,7 @@ export default function NewListingForm() {
           {submitting ? (
             <><div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />{tr('submittingEllipsis', lang)}</>
           ) : (
-            formType === 'listing' ? tr('submitListing', lang) : tr('continueToPayment', lang)
+            (formType === 'listing' && !willBePaid) ? tr('submitListing', lang) : tr('continueToPayment', lang)
           )}
         </button>
       </div>

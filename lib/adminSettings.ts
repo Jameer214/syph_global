@@ -1,0 +1,113 @@
+// Reads seller pricing / free-listing promo config from the shared backend,
+// mirroring the SYPH app (admin_settings key 'payment_methods' -> pricing.listItem)
+// so the website enforces the same free-quota + paid-listing rules.
+import { supabase } from '@/lib/supabase';
+
+/** Default free-listing quota — kept in lockstep with the app (15). */
+export const DEFAULT_FREE_QUOTA = 15;
+
+export interface SellerBanner {
+  enabled: boolean;
+  id: string;
+  title: string;
+  message: string;
+  type: string; // info | warning | success | error
+}
+
+export interface ListItemPricing {
+  freeQuota: number;
+  promoEnabled: boolean;
+  promoBanner: string;
+  perListingUgx: number;
+  freeStoppedCountries: string[]; // lower-cased
+  sellerBanner: SellerBanner;
+}
+
+const FALLBACK: ListItemPricing = {
+  freeQuota: DEFAULT_FREE_QUOTA,
+  promoEnabled: true,
+  promoBanner: '',
+  perListingUgx: 0,
+  freeStoppedCountries: [],
+  sellerBanner: { enabled: false, id: '', title: '', message: '', type: 'info' },
+};
+
+/** admin_settings['payment_methods'].pricing.listItem — the free-quota / fee config. */
+export async function getListItemPricing(): Promise<ListItemPricing> {
+  try {
+    const { data } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('key', 'payment_methods')
+      .limit(1)
+      .maybeSingle();
+    const value = (data as Record<string, unknown> | null)?.value as Record<string, unknown> | undefined;
+    const pricing = value && typeof value === 'object' ? (value.pricing as Record<string, unknown> | undefined) : undefined;
+    const cat = pricing && typeof pricing === 'object' ? (pricing.listItem as Record<string, unknown> | undefined) : undefined;
+    if (!cat) return FALLBACK;
+
+    const quota = parseInt(String(cat.freeQuota ?? ''), 10);
+    const banner = (cat.sellerBanner as Record<string, unknown> | undefined) ?? {};
+    return {
+      freeQuota: Number.isFinite(quota) ? quota : DEFAULT_FREE_QUOTA,
+      promoEnabled: cat.promoEnabled === undefined ? true : cat.promoEnabled === true,
+      promoBanner: String(cat.promoBanner ?? ''),
+      perListingUgx: parseFloat(String(cat.perListing ?? '0').replace(/,/g, '')) || 0,
+      freeStoppedCountries: Array.isArray(cat.freeStoppedCountries)
+        ? (cat.freeStoppedCountries as unknown[]).map((c) => String(c).trim().toLowerCase())
+        : [],
+      sellerBanner: {
+        enabled: banner.enabled === true,
+        id: String(banner.id ?? ''),
+        title: String(banner.title ?? '').trim(),
+        message: String(banner.message ?? '').trim(),
+        type: String(banner.type ?? 'info'),
+      },
+    };
+  } catch {
+    return FALLBACK;
+  }
+}
+
+/** Per-seller platform-fee discount % (user_privileges, else global_privilege). */
+export async function getSellerPrivilegePercent(uid: string): Promise<number> {
+  try {
+    const { data: userRows } = await supabase
+      .from('user_privileges')
+      .select('enabled, discount_percent')
+      .eq('user_id', uid)
+      .limit(1);
+    const u = (userRows ?? [])[0] as Record<string, unknown> | undefined;
+    if (u && u.enabled === true) return parseInt(String(u.discount_percent ?? '0'), 10) || 0;
+
+    const { data: gRows } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('key', 'global_privilege')
+      .limit(1);
+    const g = (gRows ?? [])[0] as Record<string, unknown> | undefined;
+    const val = g?.value as Record<string, unknown> | undefined;
+    if (val && val.enabled === true) return parseInt(String(val.discount_percent ?? '0'), 10) || 0;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Active (live) + pending listings for this seller — the count that eats into
+ * the free quota. Sold/deleted listings don't count, so deleting frees a slot.
+ * listings.seller_id holds the auth uid (see createListing), so we count by uid.
+ */
+export async function getActiveListingCount(uid: string): Promise<number> {
+  try {
+    const { data } = await supabase
+      .from('listings')
+      .select('id')
+      .eq('seller_id', uid)
+      .in('status', ['active', 'pending']);
+    return (data ?? []).length;
+  } catch {
+    return 0;
+  }
+}

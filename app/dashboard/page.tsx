@@ -5,10 +5,13 @@ import {
   Store, FileText,
   Eye, MessageCircle, Bookmark, Package, Edit3, ChevronRight,
   ArrowLeft, BarChart2, Megaphone, Zap, Calendar, Crown, PlusCircle,
+  Star, CreditCard,
 } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getSellerProfile } from '@/lib/firestore';
+import { getListItemPricing, getSellerPrivilegePercent } from '@/lib/adminSettings';
+import SellerFreeListingBanner from '@/components/SellerFreeListingBanner';
 import { useAppStore } from '@/store';
 import { translate as tr } from '@/lib/i18n';
 import type { Listing, SellerProfile } from '@/types';
@@ -69,6 +72,8 @@ export default function DashboardPage() {
   const [showAppModal, setShowAppModal] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [blockMessage, setBlockMessage] = useState('');
+  const [privilegePct, setPrivilegePct] = useState(0);
+  const [freeStopped, setFreeStopped] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -78,6 +83,11 @@ export default function DashboardPage() {
       const sp = await getSellerProfile(u.id);
       setSeller(sp);
       setLoading(false);
+      // Privilege discount + free-promo-stopped banners (parity with the app).
+      const [pr, pct] = await Promise.all([getListItemPricing(), getSellerPrivilegePercent(u.id)]);
+      setPrivilegePct(pct);
+      const c = (sp?.operatingCountry ?? '').trim().toLowerCase();
+      setFreeStopped(!!c && pr.freeStoppedCountries.includes(c));
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const u = session?.user ?? null;
@@ -203,6 +213,38 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Free-listing promo ended in this seller's country */}
+        {freeStopped && (
+          <div style={{ background: '#FFF6E5', border: '1.2px solid #F3D08A', borderRadius: 20, padding: 16, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(183,121,31,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <CreditCard size={20} color="#B7791F" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 900, fontSize: 15, color: '#8A5A00' }}>{tr('freeListingsEnded', selectedLanguage)}</div>
+              <div style={{ color: '#7A5A1E', fontWeight: 600, fontSize: 12.8, lineHeight: 1.4, marginTop: 4 }}>{tr('freeListingsEndedDesc', selectedLanguage)}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Privileged seller — % off all platform fees */}
+        {privilegePct > 0 && (
+          <div style={{ background: 'linear-gradient(135deg, #E6A000, #F7C948)', borderRadius: 20, padding: 16, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 6px 14px rgba(230,160,0,0.32)' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Star size={24} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 900, fontSize: 15, color: '#fff' }}>{tr('privilegedSeller', selectedLanguage)}</div>
+              <div style={{ color: '#fff', fontWeight: 600, fontSize: 12.5, lineHeight: 1.35, marginTop: 3 }}>{privilegePct}% {tr('privilegedSellerDesc', selectedLanguage)}</div>
+            </div>
+            <div style={{ padding: '6px 11px', background: 'rgba(255,255,255,0.22)', borderRadius: 999, flexShrink: 0 }}>
+              <span style={{ color: '#fff', fontWeight: 900, fontSize: 12.5 }}>{privilegePct}% OFF</span>
+            </div>
+          </div>
+        )}
+
+        {/* Admin one-shot notice (Free Listings Control) */}
+        <SellerFreeListingBanner />
 
         {/* Seller profile card or CTA */}
         {seller ? (
