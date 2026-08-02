@@ -292,7 +292,7 @@ export default function SellerShopPage() {
             condition: r.condition ? String(r.condition) : undefined,
             openNow: false,
             isSponsored: Boolean(r.is_sponsored) && !isPast(r.sponsored_until),
-            isHappening: false,
+            isHappening: Boolean(r.is_happening),
             isFlashSale: Boolean(r.is_flash_sale) && !isPast(r.flash_sale_until),
             isTrial: false,
             status: String(r.status ?? 'active'),
@@ -332,10 +332,10 @@ export default function SellerShopPage() {
   const hasHours = shop && (shop.open24Hours || shop.openingTime || shop.closingTime);
 
   const TABS = [
-    `Items${items.length ? ` (${items.length})` : ''}`,
-    `Events${happenings.length ? ` (${happenings.length})` : ''}`,
-    `Flash${flashSales.length ? ` (${flashSales.length})` : ''}`,
-    'About',
+    `${tr('itemsTabLabel', selectedLanguage)}${items.length ? ` (${items.length})` : ''}`,
+    `${tr('eventsTabLabel', selectedLanguage)}${happenings.length ? ` (${happenings.length})` : ''}`,
+    `${tr('flashTabLabel', selectedLanguage)}${flashSales.length ? ` (${flashSales.length})` : ''}`,
+    tr('aboutTabLabel', selectedLanguage),
   ];
 
   return (
@@ -455,10 +455,10 @@ export default function SellerShopPage() {
             {/* Count chips */}
             {(items.length > 0 || happenings.length > 0 || sponsoredCount > 0 || flashSales.length > 0) && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                {items.length > 0 && <span style={{ background: 'rgba(255,255,255,0.16)', borderRadius: 999, padding: '8px 12px', fontSize: 12, fontWeight: 800, color: '#fff' }}>{items.length} Items</span>}
-                {happenings.length > 0 && <span style={{ background: 'rgba(255,255,255,0.16)', borderRadius: 999, padding: '8px 12px', fontSize: 12, fontWeight: 800, color: '#fff' }}>{happenings.length} Events</span>}
-                {sponsoredCount > 0 && <span style={{ background: 'rgba(255,255,255,0.16)', borderRadius: 999, padding: '8px 12px', fontSize: 12, fontWeight: 800, color: '#fff' }}>{sponsoredCount} Sponsored</span>}
-                {flashSales.length > 0 && <span style={{ background: 'rgba(255,255,255,0.16)', borderRadius: 999, padding: '8px 12px', fontSize: 12, fontWeight: 800, color: '#fff' }}>{flashSales.length} Flash Sales</span>}
+                {items.length > 0 && <span style={{ background: 'rgba(255,255,255,0.16)', borderRadius: 999, padding: '8px 12px', fontSize: 12, fontWeight: 800, color: '#fff' }}>{items.length} {tr('itemsTabLabel', selectedLanguage)}</span>}
+                {happenings.length > 0 && <span style={{ background: 'rgba(255,255,255,0.16)', borderRadius: 999, padding: '8px 12px', fontSize: 12, fontWeight: 800, color: '#fff' }}>{happenings.length} {tr('eventsTabLabel', selectedLanguage)}</span>}
+                {sponsoredCount > 0 && <span style={{ background: 'rgba(255,255,255,0.16)', borderRadius: 999, padding: '8px 12px', fontSize: 12, fontWeight: 800, color: '#fff' }}>{sponsoredCount} {tr('sponsored', selectedLanguage)}</span>}
+                {flashSales.length > 0 && <span style={{ background: 'rgba(255,255,255,0.16)', borderRadius: 999, padding: '8px 12px', fontSize: 12, fontWeight: 800, color: '#fff' }}>{flashSales.length} {tr('flashSales', selectedLanguage)}</span>}
               </div>
             )}
 
