@@ -71,8 +71,10 @@ export default function HappeningsPage() {
     if (!uid) return;
     let cancelled = false;
     supabase
-      .from('happenings')
+      .from('listings')
       .select('*')
+      .eq('is_happening', true)
+      .eq('seller_id', uid)
       .order('created_at', { ascending: false })
       .limit(20)
       .then(({ data }) => {

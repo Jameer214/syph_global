@@ -81,35 +81,8 @@ function mapListing(row: Record<string, unknown>): Listing {
   };
 }
 
-function mapHappening(row: Record<string, unknown>): Listing {
-  return {
-    id: String(row.id ?? ''),
-    title: String(row.title ?? ''),
-    description: String(row.description ?? ''),
-    imageUrl: String(row.image_url ?? ''),
-    imageUrls: undefined,
-    sellerName: '',
-    ownerUid: '',
-    country: String(row.country ?? ''),
-    regionOrCity: String(row.region ?? ''),
-    locationText: String(row.location ?? row.region ?? ''),
-    priceText: undefined,
-    priceValue: undefined,
-    currencyCode: 'USD',
-    negotiable: false,
-    mainCategoryId: 'happenings',
-    openNow: false,
-    isSponsored: false,
-    isHappening: true,
-    isFlashSale: false,
-    isTrial: false,
-    status: row.is_active ? 'active' : 'pending',
-    viewsCount: 0,
-    savesCount: 0,
-    messagesCount: 0,
-    createdAt: row.created_at ? String(row.created_at) : undefined,
-  };
-}
+// Happenings now live in the listings table (is_happening = true) and use the
+// shared mapListing — no separate happenings mapper is needed.
 
 // ─── Listings ─────────────────────────────────────────────────────────────────
 
@@ -199,14 +172,15 @@ export async function getFlashSaleListings(count = 12, country?: string): Promis
 
 export async function getHappenings(count = 8, country?: string): Promise<Listing[]> {
   let q = supabase
-    .from('happenings')
-    .select('*')
-    .eq('is_active', true)
-    .order('start_date', { ascending: true })
+    .from('listings')
+    .select('*, listing_images(url, sort_order)')
+    .eq('status', 'active')
+    .eq('is_happening', true)
+    .order('created_at', { ascending: false })
     .limit(count);
   if (country) q = q.eq('country', country);
   const { data } = await q;
-  return (data ?? []).map(r => mapHappening(r as Record<string, unknown>));
+  return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
 }
 
 export async function getNewestListings(count = 20, country?: string): Promise<Listing[]> {
@@ -1069,21 +1043,41 @@ export async function createHappening(
     }
   }
 
-  const { data: newHappening } = await supabase
-    .from('happenings')
+  // Happenings are listings with is_happening = true (parity with the app),
+  // so they share the same table, feed, moderation and seller ownership.
+  const { data: newListing } = await supabase
+    .from('listings')
     .insert({
+      seller_id: data.ownerUid,
+      category_id: data.mainCategoryId || 'happenings',
       title: data.title,
       description: data.description,
-      image_url: imageUrls[0] ?? null,
+      seller_name: data.sellerName ?? null,
+      price: data.priceValue ?? null,
+      price_text: data.priceText ?? null,
+      currency: data.currencyCode ?? 'USD',
       country: data.country ?? null,
       region: data.regionOrCity ?? null,
-      location: data.locationText ?? null,
-      is_active: false, // pending review
+      location_text: data.locationText ?? null,
+      image_url: imageUrls[0] ?? null,
+      status: 'pending', // pending review
+      is_happening: true,
+      is_negotiable: false,
+      is_flash_sale: false,
+      is_sponsored: false,
+      view_count: 0,
+      save_count: 0,
     })
     .select('id')
     .single();
 
-  return String((newHappening as Record<string, unknown>)?.id ?? '');
+  const listingId = String((newListing as Record<string, unknown>)?.id ?? '');
+  if (listingId && imageUrls.length > 0) {
+    await supabase.from('listing_images').insert(
+      imageUrls.map((url, sort_order) => ({ listing_id: listingId, url, sort_order }))
+    );
+  }
+  return listingId;
 }
 
 // ─── Search ───────────────────────────────────────────────────────────────────

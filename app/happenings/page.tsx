@@ -66,9 +66,10 @@ export default function HappeningsPage() {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      let q = supabase.from('happenings')
+      let q = supabase.from('listings')
         .select('*, listing_images(url, sort_order)')
         .eq('status', 'active')
+        .eq('is_happening', true)
         .order('created_at', { ascending: false })
         .limit(40);
       if (selectedCountry) q = q.eq('country', selectedCountry);
