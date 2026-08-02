@@ -294,6 +294,7 @@ export async function getSellerProfile(uid: string): Promise<SellerProfile | nul
     totalReviews: typeof d.review_count === 'number' ? d.review_count : undefined,
     bio: d.shop_description ? String(d.shop_description) : undefined,
     photoUrl: d.shop_logo_url ? String(d.shop_logo_url) : undefined,
+    delivers: Boolean(d.delivers),
     createdAt: d.created_at ? String(d.created_at) : undefined,
   };
 }
@@ -914,6 +915,7 @@ export async function createSellerProfile(
     if (extra.businessLocationAddress !== undefined) row.business_location_address = extra.businessLocationAddress;
     if (extra.businessLatitude !== undefined) row.business_latitude = extra.businessLatitude;
     if (extra.businessLongitude !== undefined) row.business_longitude = extra.businessLongitude;
+    if (extra.delivers !== undefined) row.delivers = extra.delivers;
   }
   await supabase.from('sellers').insert(row);
 }
@@ -937,6 +939,7 @@ export async function updateSellerProfile(uid: string, updates: Partial<SellerPr
   if (u.businessLocationAddress !== undefined) patch.business_location_address = u.businessLocationAddress;
   if (u.businessLatitude !== undefined) patch.business_latitude = u.businessLatitude;
   if (u.businessLongitude !== undefined) patch.business_longitude = u.businessLongitude;
+  if (u.delivers !== undefined) patch.delivers = u.delivers;
   if (Object.keys(patch).length > 0) await supabase.from('sellers').update(patch).eq('user_id', uid);
 }
 

@@ -68,6 +68,7 @@ export interface SellerProfile {
   totalReviews?: number;
   bio?: string;
   photoUrl?: string;
+  delivers?: boolean;
   createdAt?: string;
 }
 

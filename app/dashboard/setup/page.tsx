@@ -34,6 +34,7 @@ export default function SellerSetupPage() {
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
   const [isServiceProvider, setIsServiceProvider] = useState(false);
+  const [delivers, setDelivers] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [address, setAddress] = useState('');
@@ -63,6 +64,7 @@ export default function SellerSetupPage() {
         setSelectedCountry(sp.operatingCountry || '');
         setSelectedRegion(sp.operatingRegion || '');
         setAddress(sp.businessLocationText || '');
+        setDelivers(sp.delivers === true);
       }
       setLoading(false);
     });
@@ -158,6 +160,7 @@ export default function SellerSetupPage() {
         businessLocationAddress: safeAddress || null,
         businessLatitude: businessLat,
         businessLongitude: businessLng,
+        delivers,
       };
 
       if (isEditing) {
@@ -364,6 +367,23 @@ export default function SellerSetupPage() {
               <input type="checkbox" checked={isServiceProvider} onChange={() => setIsServiceProvider(!isServiceProvider)} style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }} />
               <span style={{ position: 'absolute', inset: 0, borderRadius: 999, background: isServiceProvider ? '#2E5BFF' : '#DCE7F5', transition: '0.3s' }} />
               <span style={{ position: 'absolute', left: isServiceProvider ? 22 : 2, top: 2, width: 24, height: 24, borderRadius: '50%', background: '#fff', transition: '0.3s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+            </label>
+          </div>
+
+          {/* Delivery available toggle — surfaced as a chip on the shop for buyers */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: '#F8FAFF', borderRadius: 14, padding: '13px 14px',
+            border: '1px solid #E0E8F0', marginTop: 12,
+          }}>
+            <div>
+              <div style={{ fontWeight: 800, color: '#1E2B45', fontSize: 14 }}>{tr('deliveryAvailableLabel', lang)}</div>
+              <div style={{ color: '#6B7A99', fontSize: 12, marginTop: 2 }}>{tr('deliveryAvailableDesc', lang)}</div>
+            </div>
+            <label style={{ position: 'relative', width: 48, height: 28, cursor: 'pointer', flexShrink: 0 }}>
+              <input type="checkbox" checked={delivers} onChange={() => setDelivers(!delivers)} style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }} />
+              <span style={{ position: 'absolute', inset: 0, borderRadius: 999, background: delivers ? '#2E5BFF' : '#DCE7F5', transition: '0.3s' }} />
+              <span style={{ position: 'absolute', left: delivers ? 22 : 2, top: 2, width: 24, height: 24, borderRadius: '50%', background: '#fff', transition: '0.3s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
             </label>
           </div>
         </div>
