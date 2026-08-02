@@ -5,7 +5,7 @@ import { ArrowLeft, Megaphone, Zap, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
 import { getSellerProfile } from '@/lib/firestore';
-import { getPromoPricing } from '@/lib/adminSettings';
+import { getPromoPricing, getSellerPrivilegePercent } from '@/lib/adminSettings';
 import { useAppStore } from '@/store';
 import { translate as tr } from '@/lib/i18n';
 import type { SellerProfile } from '@/types';
@@ -28,6 +28,7 @@ export default function UpgradeListingPage() {
   const [selectedDays, setSelectedDays] = useState(7);
   const [loading, setLoading] = useState(false);
   const [seller, setSeller] = useState<SellerProfile | null>(null);
+  const [privilegePct, setPrivilegePct] = useState(0);
   const [listingTitle, setListingTitle] = useState('');
   const [adminPricing, setAdminPricing] = useState<AdminPricing | null>(null);
 
@@ -44,6 +45,7 @@ export default function UpgradeListingPage() {
       if (!u) return;
       const sp = await getSellerProfile(u.id);
       setSeller(sp);
+      setPrivilegePct(await getSellerPrivilegePercent(u.id));
     });
   }, []);
 
@@ -82,7 +84,8 @@ export default function UpgradeListingPage() {
     const catKey = upgradeType === 'sponsored' ? 'upgradeToSponsored' : 'upgradeToFlashSale';
     const priceKey = days <= 7 ? 'days7' : days <= 15 ? 'days15' : 'days30';
     const ugx = adminPricing[catKey][priceKey] ?? 0;
-    return Math.round(convertPrice(ugx, 'UGX', sellerCurrency));
+    const effective = privilegePct > 0 ? ugx * (1 - privilegePct / 100) : ugx;
+    return Math.round(convertPrice(effective, 'UGX', sellerCurrency));
   }
 
   function handleProceed() {

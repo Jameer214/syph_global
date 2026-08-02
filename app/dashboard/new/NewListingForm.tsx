@@ -84,16 +84,16 @@ export default function NewListingForm() {
         setRegion(sp.operatingRegion || '');
       }
       setLoading(false);
+      // Privilege discount applies to every paid flow (listing, sponsor, flash).
+      setPrivilegePct(await getSellerPrivilegePercent(u.id));
       // Normal listings obey the free-quota promo; sponsor/flash are always paid.
       if (typeParam !== 'sponsor' && typeParam !== 'flash') {
-        const [pr, cnt, pct] = await Promise.all([
+        const [pr, cnt] = await Promise.all([
           getListItemPricing(),
           getActiveListingCount(u.id),
-          getSellerPrivilegePercent(u.id),
         ]);
         setPricing(pr);
         setActiveCount(cnt);
-        setPrivilegePct(pct);
         setCountLoaded(true);
       }
     });
@@ -191,7 +191,8 @@ export default function NewListingForm() {
       }, images);
 
       if (formType !== 'listing') {
-        const ugx = getPriceUgx();
+        const baseUgx = getPriceUgx();
+        const ugx = privilegePct > 0 ? baseUgx * (1 - privilegePct / 100) : baseUgx;
         const sellerCurrency = getCurrencyForCountry(country || seller.operatingCountry || '');
         const amount = Math.round(convertPrice(ugx, 'UGX', sellerCurrency));
         const listingType = formType === 'sponsor' ? 'sponsored' : 'flashsale';
