@@ -465,7 +465,6 @@ export async function createListing(
       view_count: 0,
       save_count: 0,
       unit_count: data.units ?? null,
-      bio: data.bio ?? null,
       specifications: data.specifications && Object.keys(data.specifications).length > 0 ? data.specifications : null,
       original_price: data.originalPriceValue ?? null,
       original_price_text: data.originalPriceText ?? null,

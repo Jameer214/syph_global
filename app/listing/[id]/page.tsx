@@ -6,7 +6,7 @@ import {
   ArrowLeft, Bookmark, BookmarkCheck, Eye, Share2,
   MessageCircle, Star, Handshake, Zap, Award,
   MapPin, Store, Flag, ChevronRight, Grid3x3,
-  FileText, Info, List, Navigation, X,
+  FileText, List, Navigation, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
@@ -526,13 +526,6 @@ export default function ListingDetailsPage() {
             {sanitizeText(listing.description) || tr('noDescriptionAdded', selectedLanguage)}
           </p>
         </SectionCard>
-
-        {/* Bio — happenings only; regular listings no longer use a bio */}
-        {listing.isHappening && listing.bio?.trim() && (
-          <SectionCard icon={<Info size={20} color="#2E5BFF" />} title={tr('aboutThisItem', selectedLanguage)} marginBottom={14}>
-            <p style={{ margin: 0, fontWeight: 600, lineHeight: 1.6, color: 'rgba(0,0,0,0.85)', fontSize: 14 }}>{sanitizeText(listing.bio)}</p>
-          </SectionCard>
-        )}
 
         {/* Item Details */}
         <SectionCard icon={<List size={20} color="#2E5BFF" />} title={tr('itemDetails', selectedLanguage)} marginBottom={14}>
