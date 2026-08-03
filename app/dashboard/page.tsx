@@ -431,6 +431,7 @@ export default function DashboardPage() {
             <span style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>{tr('sellerTools', selectedLanguage)}</span>
           </div>
           {[
+            { icon: <Package size={26} color="#2E5BFF" />, title: tr('myListings', selectedLanguage), desc: tr('manageListingsDesc', selectedLanguage), onClick: () => router.push('/dashboard/listings') },
             { icon: <PlusCircle size={26} color="#2E5BFF" />, title: tr('sellMyItem', selectedLanguage), desc: tr('sellMyItemDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new' : '/dashboard/setup') },
             { icon: <Megaphone size={26} color="#2E5BFF" />, title: tr('featSponsorTitle', selectedLanguage), desc: tr('featSponsorDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new?type=sponsor' : '/dashboard/setup') },
             { icon: <Zap size={26} color="#2E5BFF" />, title: tr('flashSaleLabel', selectedLanguage), desc: tr('featFlashDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new?type=flash' : '/dashboard/setup') },
