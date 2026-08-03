@@ -139,10 +139,10 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
           </div>
         )}
         {listing.isSponsored && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: '#2F6BFF', borderRadius: 8, padding: '3px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>{tr('sponsored', selectedLanguage)}</div>
+          <div style={{ position: 'absolute', top: 8, right: 8, background: '#F59E0B', borderRadius: 999, padding: '5px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>{tr('adBadge', selectedLanguage)}</div>
         )}
         {listing.isFlashSale && (
-          <div style={{ position: 'absolute', top: 8, right: 8, background: '#E53935', borderRadius: 8, padding: '3px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>{tr('flashWord', selectedLanguage)}</div>
+          <div style={{ position: 'absolute', top: 8, left: 8, background: '#E53935', borderRadius: 999, padding: '5px 8px', fontSize: 10, fontWeight: 900, color: '#fff' }}>{tr('flashWord', selectedLanguage)}</div>
         )}
         <ZigzagEdge color="#fff" />
       </div>
@@ -160,20 +160,7 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
 
 // ── Happening card ─────────────────────────────────────────────────────────────
 
-function HappeningCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
-  function displayPrice(l: Listing): string {
-    if (l.priceValue != null && selectedCurrency && selectedCurrency !== l.currencyCode) {
-      return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
-    }
-    if (l.priceText?.trim()) return l.priceText.trim();
-    if (l.priceValue != null) {
-      return `${getCurrencySymbol(l.currencyCode)}${l.priceValue.toLocaleString()}`;
-    }
-    return '';
-  }
-
-  const price = displayPrice(listing);
-
+function HappeningCard({ listing, onClick }: { listing: Listing; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{ background: '#fff', borderRadius: 18, border: '1px solid rgba(0,0,0,0.06)', overflow: 'hidden', display: 'flex', gap: 0, width: '100%', marginBottom: 12, textAlign: 'left', cursor: 'pointer', padding: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
       <div style={{ width: 90, minHeight: 90, position: 'relative', background: '#EEF2FB', flexShrink: 0 }}>
@@ -187,7 +174,6 @@ function HappeningCard({ listing, onClick, selectedCurrency }: { listing: Listin
       </div>
       <div style={{ flex: 1, padding: 14, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
         <div style={{ fontWeight: 800, fontSize: 14, color: '#182033', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{listing.title}</div>
-        {price && <div style={{ fontWeight: 900, fontSize: 13, color: '#7C3AED' }}>{price}</div>}
         <div style={{ fontWeight: 600, fontSize: 12, color: '#9AA0B2' }}>{listing.locationText}</div>
       </div>
     </button>
@@ -266,8 +252,8 @@ export default function SellerShopPage() {
       const { data } = await supabase.from('listings')
         .select('*, listing_images(url, sort_order)')
         .eq('seller_id', uid)
-        .eq('status', 'active')
-        .order('updated_at', { ascending: false });
+        .in('status', ['active', 'approved'])
+        .order('created_at', { ascending: false });
       if (cancelled) return;
       if (!cancelled && data) {
         const items: Listing[] = data.map((row) => {
@@ -470,7 +456,7 @@ export default function SellerShopPage() {
                 style={{ flex: 1, background: '#fff', border: 'none', borderRadius: 16, padding: '13px 8px', color: '#1A42BB', fontWeight: 900, fontSize: 13.5, cursor: loc ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: loc ? 1 : 0.5 }}
               >
                 <Navigation size={17} />
-                Directions
+                {tr('directionsLabel', selectedLanguage)}
               </button>
               <button
                 onClick={() => shop?.contact && (window.location.href = `tel:${shop.contact}`)}
@@ -478,7 +464,7 @@ export default function SellerShopPage() {
                 style={{ flex: 1, background: 'transparent', border: '1.5px solid rgba(255,255,255,0.50)', borderRadius: 16, padding: '13px 8px', color: '#fff', fontWeight: 900, fontSize: 13.5, cursor: shop?.contact ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: shop?.contact ? 1 : 0.5 }}
               >
                 <Phone size={17} />
-                Call
+                {tr('callLabel', selectedLanguage)}
               </button>
             </div>
           </div>
@@ -520,7 +506,7 @@ export default function SellerShopPage() {
           happenings.length === 0 ? (
             <EmptyState icon={<Calendar size={28} />} title={tr('noListingsYet', selectedLanguage)} subtitle="This seller has no happenings listed." />
           ) : (
-            <div>{happenings.map((l) => <HappeningCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} selectedCurrency={selectedCurrency} />)}</div>
+            <div>{happenings.map((l) => <HappeningCard key={l.id} listing={l} onClick={() => router.push(`/listing/${l.id}`)} />)}</div>
           )
         )}
 
@@ -538,7 +524,7 @@ export default function SellerShopPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* About card */}
             <div style={{ background: '#fff', borderRadius: 22, border: '1px solid rgba(0,0,0,0.05)', padding: 16 }}>
-              <div style={{ fontWeight: 900, fontSize: 16, color: '#1D3D8F', marginBottom: 10 }}>{tr('viewShop', selectedLanguage)}</div>
+              <div style={{ fontWeight: 900, fontSize: 16, color: '#1D3D8F', marginBottom: 10 }}>{tr('aboutThisShop', selectedLanguage)}</div>
               <p style={{ fontWeight: 600, fontSize: 14, color: 'rgba(0,0,0,0.8)', lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
                 {sanitizeText(shop?.description) ||
                   `${sanitizeText(sellerName)} is active on SYPH with ${items.length} item(s), ${happenings.length} happening(s), and ${flashSales.length} flash sale(s) currently visible to users.`}
@@ -579,7 +565,7 @@ export default function SellerShopPage() {
                   style={{ width: '100%', padding: '13px 16px', background: 'transparent', border: '1.5px solid #2F6BFF', borderRadius: 16, color: '#2F6BFF', fontWeight: 900, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                 >
                   <Navigation size={17} />
-                  Get Directions on Maps
+                  {tr('getDirectionsOnMaps', selectedLanguage)}
                 </button>
               )}
             </div>

@@ -46,21 +46,6 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
   };
 }
 
-type ListingTab = 'all' | 'pending' | 'approved' | 'rejected';
-
-const STATUS_COLORS: Record<string, string> = {
-  approved: '#1F8B4C',
-  pending: '#E08A00',
-  rejected: '#D13B3B',
-  blocked: '#D13B3B',
-};
-const STATUS_BG: Record<string, string> = {
-  approved: '#E6F7EC',
-  pending: '#FFF4E5',
-  rejected: '#FFECEC',
-  blocked: '#FFECEC',
-};
-
 export default function DashboardPage() {
   const router = useRouter();
   const { selectedLanguage } = useAppStore();
@@ -68,7 +53,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [seller, setSeller] = useState<SellerProfile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [listingTab, setListingTab] = useState<ListingTab>('all');
   const [showAppModal, setShowAppModal] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [blockMessage, setBlockMessage] = useState('');
@@ -118,10 +102,6 @@ export default function DashboardPage() {
   const totalMessages = listings.reduce((s, l) => s + l.messagesCount, 0);
   const totalSaves = listings.reduce((s, l) => s + l.savesCount, 0);
   const totalListings = listings.length;
-
-  const filteredListings = listingTab === 'all'
-    ? listings
-    : listings.filter((l) => l.status === listingTab);
 
   if (loading) {
     return (
@@ -350,58 +330,6 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* My Listings section */}
-        <div style={{ background: '#fff', borderRadius: 22, padding: 16, marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontWeight: 900, fontSize: 16, color: '#1E2B45' }}>{tr('myListings', selectedLanguage)}</div>
-            <button onClick={() => router.push('/dashboard/new')} style={{
-              background: '#2E5BFF', border: 'none', borderRadius: 10,
-              padding: '6px 14px', color: '#fff', fontWeight: 800, fontSize: 12, cursor: 'pointer',
-            }}>{tr('newListingBtn', selectedLanguage)}</button>
-          </div>
-
-          <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto' }}>
-            {(['all', 'pending', 'approved', 'rejected'] as ListingTab[]).map((tab) => (
-              <button key={tab} onClick={() => setListingTab(tab)} style={{
-                padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                background: listingTab === tab ? '#2E5BFF' : '#F0F4FF',
-                color: listingTab === tab ? '#fff' : '#6B7A99',
-                fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap',
-              }}>{tr(tab === 'all' ? 'tabAll' : tab === 'pending' ? 'tabPending' : tab === 'approved' ? 'tabApproved' : 'tabRejected', selectedLanguage)}</button>
-            ))}
-          </div>
-
-          {filteredListings.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: '#6B7A99', fontSize: 14 }}>
-              {tr('noListingsYet', selectedLanguage)}
-            </div>
-          ) : (
-            filteredListings.map((l, i) => (
-              <div key={l.id} className="anim-fade-up card-zoom" style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F4FF', animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
-                <div className="card-media" style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#E8EDFF' }}>
-                  {l.imageUrl ? (
-                    <Image src={l.imageUrl} alt={l.title} width={56} height={56} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Package size={24} color="#6B7A99" />
-                    </div>
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 13, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    <span style={{ background: STATUS_BG[l.status] ?? '#F2F5F9', color: STATUS_COLORS[l.status] ?? '#6B7A99', fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '2px 8px' }}>{tr(l.status === 'approved' ? 'tabApproved' : l.status === 'pending' ? 'tabPending' : l.status === 'rejected' ? 'tabRejected' : l.status === 'blocked' ? 'statusBlocked' : 'tabPending', selectedLanguage)}</span>
-                    <span style={{ color: '#9AA0B2', fontSize: 11 }}>👁 {l.viewsCount}</span>
-                  </div>
-                </div>
-                <button onClick={() => router.push(`/dashboard/edit/${l.id}`)} style={{ background: '#F0F4FF', border: 'none', borderRadius: 10, padding: '7px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: '#2E5BFF', fontWeight: 700, fontSize: 12 }}>
-                  <Edit3 size={13} /> {tr('editShort', selectedLanguage)}
-                </button>
-              </div>
-            ))
-          )}
         </div>
 
         {/* Listing Policies */}
