@@ -48,6 +48,10 @@ function SectionLabel({ text, optional, lang }: { text: string; optional?: boole
 }
 
 const MAX_IMAGES = 3;
+// Happenings are always under "Events & Tickets" — sellers only pick the event
+// type (a subcategory), like the app. No other categories are shown.
+const EVENTS_CATEGORY_ID = 'events_tickets';
+const EVENT_TYPES = CATEGORIES.find((c) => c.id === EVENTS_CATEGORY_ID)?.children ?? [];
 
 export default function HappeningsPage() {
   const router = useRouter();
@@ -166,7 +170,8 @@ export default function HappeningsPage() {
         priceValue: priceValue || undefined,
         currencyCode: currency,
         negotiable: false,
-        mainCategoryId: selectedMainId || 'happenings',
+        mainCategoryId: EVENTS_CATEGORY_ID,
+        subCategoryId: selectedMainId || undefined,
         openNow: false,
         isSponsored: false,
         isHappening: true,
@@ -304,14 +309,21 @@ export default function HappeningsPage() {
       {showForm && (
         <div style={{ padding: '16px 16px 100px' }}>
 
-          {/* Event Category */}
+          {/* Event Category — fixed to Events & Tickets; only pick the event type */}
           <div style={{ marginBottom: 20 }}>
             <SectionLabel text={tr('eventCategory', lang)} lang={lang} />
             <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(46,157,85,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>🎟️</div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#1E2B45' }}>{trCategory(EVENTS_CATEGORY_ID, 'Events & Tickets', lang)}</div>
+                  <div style={{ fontWeight: 600, fontSize: 12, color: '#9ca3af' }}>{tr('chooseEventTypeOptional', lang)}</div>
+                </div>
+              </div>
               <div style={{ position: 'relative' }}>
                 <select value={selectedMainId} onChange={(e) => setSelectedMainId(e.target.value)} style={{ ...inputStyle, paddingRight: 28, appearance: 'none' }}>
-                  <option value="">{tr('selectCategory', lang)}</option>
-                  {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{trCategory(c.id, c.title, lang)}</option>)}
+                  <option value="">{tr('selectEventType', lang)}</option>
+                  {EVENT_TYPES.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
                 </select>
                 <ChevronDown size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#6B7A99' }} />
               </div>

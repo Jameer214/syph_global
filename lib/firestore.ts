@@ -1069,6 +1069,7 @@ export async function createHappening(
     .insert({
       seller_id: data.ownerUid,
       category_id: data.mainCategoryId || 'happenings',
+      sub_category_id: data.subCategoryId ?? null,
       title: data.title,
       description: data.description,
       seller_name: data.sellerName ?? null,
