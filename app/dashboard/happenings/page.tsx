@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Camera, X, ChevronDown, MapPin, Plus, Video } from 'lucide-react';
+import { ArrowLeft, Camera, X, ChevronDown, MapPin, Plus, Video, ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
@@ -36,6 +36,18 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
 
 const STATUS_COLORS: Record<string, string> = { approved: '#2E9B55', pending: '#F39C12', rejected: '#E53935' };
 const STATUS_BG: Record<string, string> = { approved: '#E8F5E9', pending: '#FFF8EE', rejected: '#FFECEC' };
+
+// Section label with the app's blue accent bar, above each section.
+function SectionLabel({ text, optional, lang }: { text: string; optional?: boolean; lang: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <div style={{ width: 4, height: 18, background: '#2E5BFF', borderRadius: 4 }} />
+      <span style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>{text}{optional ? ` (${tr('optionalLabel', lang)})` : ''}</span>
+    </div>
+  );
+}
+
+const MAX_IMAGES = 3;
 
 export default function HappeningsPage() {
   const router = useRouter();
@@ -114,7 +126,7 @@ export default function HappeningsPage() {
 
   function handleImagePick(files: FileList | null) {
     if (!files) return;
-    const toAdd = Array.from(files).slice(0, 8 - images.length);
+    const toAdd = Array.from(files).slice(0, MAX_IMAGES - images.length);
     setImages((prev) => [...prev, ...toAdd]);
     toAdd.forEach((f) => setImagePreviews((prev) => [...prev, URL.createObjectURL(f)]));
   }
@@ -194,12 +206,15 @@ export default function HappeningsPage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '12px 16px', border: '1.5px solid #E0E8F0',
-    borderRadius: 14, fontSize: 15, outline: 'none', background: '#F8FAFF',
+    width: '100%', padding: '13px 16px', border: '1px solid #D7DEE8',
+    borderRadius: 14, fontSize: 15, outline: 'none', background: '#F5F8FD',
     boxSizing: 'border-box', fontFamily: 'inherit',
   };
   const labelStyle: React.CSSProperties = {
     display: 'block', fontWeight: 800, fontSize: 13, color: '#4A5878', marginBottom: 6,
+  };
+  const cardStyle: React.CSSProperties = {
+    background: '#fff', borderRadius: 18, border: '1px solid #E6ECF5', padding: 16, boxShadow: '0 3px 8px rgba(0,0,0,0.03)',
   };
 
   if (loading) {
@@ -289,93 +304,121 @@ export default function HappeningsPage() {
       {showForm && (
         <div style={{ padding: '16px 16px 100px' }}>
 
-          {/* Photos */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <label style={labelStyle}>{tr('photosLabel', lang)} ({images.length}/8)</label>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {imagePreviews.map((url, i) => (
-                <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
-                  <Image src={url} alt="" fill style={{ objectFit: 'cover', borderRadius: 12 }} />
-                  <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#E53935', border: '2px solid #fff', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                    <X size={11} color="#fff" />
+          {/* Event Category */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('eventCategory', lang)} lang={lang} />
+            <div style={cardStyle}>
+              <div style={{ position: 'relative' }}>
+                <select value={selectedMainId} onChange={(e) => setSelectedMainId(e.target.value)} style={{ ...inputStyle, paddingRight: 28, appearance: 'none' }}>
+                  <option value="">{tr('selectCategory', lang)}</option>
+                  {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{trCategory(c.id, c.title, lang)}</option>)}
+                </select>
+                <ChevronDown size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#6B7A99' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Event Images */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('eventImages', lang)} lang={lang} />
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                <ImageIcon size={20} color="#2E5BFF" />
+                <span style={{ fontWeight: 900, fontSize: 14.5, color: '#1E2B45', marginLeft: 8, flex: 1 }}>{tr('eventImagesUpTo3', lang)}</span>
+                {images.length < MAX_IMAGES && (
+                  <button onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}><Plus size={16} /> {tr('addLabel', lang)}</button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {imagePreviews.map((url, i) => (
+                  <div key={i} style={{ position: 'relative', width: 82, height: 82 }}>
+                    <Image src={url} alt="" fill style={{ objectFit: 'cover', borderRadius: 12 }} />
+                    <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#E53935', border: '2px solid #fff', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}><X size={11} color="#fff" /></button>
+                  </div>
+                ))}
+                {images.length < MAX_IMAGES && (
+                  <button onClick={() => fileInputRef.current?.click()} style={{ width: 82, height: 82, background: '#F5F8FD', border: '1.5px dashed #A0B4E0', borderRadius: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                    <Camera size={22} color="#6B7A99" />
+                    <span style={{ fontSize: 10, color: '#6B7A99', fontWeight: 700 }}>{tr('addLabel', lang)}</span>
                   </button>
+                )}
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleImagePick(e.target.files)} />
+            </div>
+          </div>
+
+          {/* Event Video */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('eventVideo', lang)} optional lang={lang} />
+            <div style={cardStyle}>
+              {video ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F5F8FD', borderRadius: 12, padding: '10px 12px' }}>
+                  <Video size={20} color="#2E9B55" />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video.name}</span>
+                  <button onClick={() => setVideo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E53935', display: 'flex' }}><X size={18} /></button>
                 </div>
-              ))}
-              {images.length < 8 && (
-                <button onClick={() => fileInputRef.current?.click()} style={{ width: 80, height: 80, background: '#F0F4FF', border: '2px dashed #A0B4E0', borderRadius: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                  <Camera size={22} color="#6B7A99" />
-                  <span style={{ fontSize: 10, color: '#6B7A99', fontWeight: 700 }}>{tr('addLabel', lang)}</span>
+              ) : (
+                <button onClick={() => videoInputRef.current?.click()} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#F5F8FD', border: '1.5px dashed #A0B4E0', borderRadius: 12, padding: '14px', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                  <Video size={18} /> {tr('addVideo', lang)}
                 </button>
               )}
+              <input ref={videoInputRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => handleVideoPick(e.target.files)} />
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleImagePick(e.target.files)} />
           </div>
 
-          {/* Promo video (optional) */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 10 }}>{tr('promoVideoLabel', lang)} <span style={{ fontWeight: 600, color: '#9ca3af', fontSize: 13 }}>({tr('optionalLabel', lang)})</span></div>
-            {video ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F0F4FF', borderRadius: 12, padding: '10px 12px' }}>
-                <Video size={20} color="#2E9B55" />
-                <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video.name}</span>
-                <button onClick={() => setVideo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E53935', display: 'flex' }}><X size={18} /></button>
-              </div>
-            ) : (
-              <button onClick={() => videoInputRef.current?.click()} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#F0F4FF', border: '2px dashed #A0B4E0', borderRadius: 12, padding: '14px', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-                <Video size={18} /> {tr('addVideo', lang)}
-              </button>
-            )}
-            <input ref={videoInputRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => handleVideoPick(e.target.files)} />
-          </div>
-
-          {/* Info */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('happeningDetails', lang)}</div>
-            <label style={labelStyle}>{tr('listingTitle', lang)} *</label>
+          {/* Event Name */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('eventName', lang)} lang={lang} />
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('eventTitlePlaceholder', lang)} style={inputStyle} />
-            <label style={{ ...labelStyle, marginTop: 14 }}>{tr('listingDescription', lang)} *</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr('describeEventPlaceholder', lang)} rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
-            <label style={{ ...labelStyle, marginTop: 14 }}>{tr('venueLocation', lang)} *</label>
-            <div style={{ position: 'relative' }}>
-              <MapPin size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
-              <input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder={tr('venuePlaceholder', lang)} style={{ ...inputStyle, paddingLeft: 40 }} />
-            </div>
-            <label style={{ ...labelStyle, marginTop: 14 }}>{tr('eventDateLabel', lang)} <span style={{ fontWeight: 600, color: '#9ca3af' }}>({tr('optionalLabel', lang)})</span></label>
-            <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} style={inputStyle} />
-            <button type="button" onClick={useCurrentVenue} style={{ marginTop: 12, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: venueLat !== null ? 'rgba(46,157,85,0.08)' : '#F0F4FF', border: `1.5px solid ${venueLat !== null ? '#2E9B55' : '#DCE7F5'}`, borderRadius: 14, padding: '12px 14px', color: venueLat !== null ? '#2E7D32' : '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-              <MapPin size={16} /> {venueLat !== null ? tr('venueGpsSet', lang) : tr('setVenueGps', lang)}
-            </button>
           </div>
 
-          {/* Category */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 12 }}>{tr('category', lang)}</div>
-            <div style={{ position: 'relative' }}>
-              <select value={selectedMainId} onChange={(e) => setSelectedMainId(e.target.value)} style={{ ...inputStyle, paddingRight: 28, appearance: 'none' }}>
-                <option value="">{tr('selectCategory', lang)}</option>
-                {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{trCategory(c.id, c.title, lang)}</option>)}
-              </select>
-              <ChevronDown size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#6B7A99' }} />
-            </div>
-          </div>
-
-          {/* Price (optional) */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 12 }}>{tr('ticketEntryPrice', lang)} ({tr('optionalLabel', lang)})</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, paddingRight: 28, appearance: 'none' }}>
-                  {['USD', 'UGX', 'KES', 'TZS', 'GHS', 'NGN', 'ZAR'].map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <ChevronDown size={14} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#6B7A99' }} />
+          {/* Ticket Price / Entry */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('ticketEntryPrice', lang)} optional lang={lang} />
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, paddingRight: 28, appearance: 'none' }}>
+                    {['USD', 'UGX', 'KES', 'TZS', 'GHS', 'NGN', 'ZAR'].map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <ChevronDown size={14} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#6B7A99' }} />
+                </div>
+                <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={tr('freePricePlaceholder', lang)} type="number" style={{ ...inputStyle, flex: 1 }} />
               </div>
-              <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={tr('freePricePlaceholder', lang)} type="number" style={{ ...inputStyle, flex: 1 }} />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('descriptionLabel', lang)} lang={lang} />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr('describeEventPlaceholder', lang)} rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
+          </div>
+
+          {/* Event Date */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('eventDateLabel', lang)} optional lang={lang} />
+            <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} style={inputStyle} />
+          </div>
+
+          {/* Venue */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('venueSectionLabel', lang)} lang={lang} />
+            <div style={cardStyle}>
+              <label style={labelStyle}>{tr('venueLocation', lang)} *</label>
+              <div style={{ position: 'relative' }}>
+                <MapPin size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                <input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder={tr('venuePlaceholder', lang)} style={{ ...inputStyle, paddingLeft: 40 }} />
+              </div>
+              <button type="button" onClick={useCurrentVenue} style={{ marginTop: 12, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: venueLat !== null ? 'rgba(46,157,85,0.08)' : '#F5F8FD', border: `1.5px solid ${venueLat !== null ? '#2E9B55' : '#DCE7F5'}`, borderRadius: 14, padding: '12px 14px', color: venueLat !== null ? '#2E7D32' : '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                <MapPin size={16} /> {venueLat !== null ? tr('venueGpsSet', lang) : tr('setVenueGps', lang)}
+              </button>
             </div>
           </div>
 
           {/* Promotion duration (paid — like the app) */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 12 }}>{tr('selectDuration', lang)}</div>
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('selectDuration', lang)} lang={lang} />
+            <div style={cardStyle}>
             <div style={{ display: 'flex', gap: 8 }}>
               {[7, 15, 30].map((d) => {
                 const key = (d === 7 ? 'days7' : d === 15 ? 'days15' : 'days30') as 'days7' | 'days15' | 'days30';
@@ -392,6 +435,7 @@ export default function HappeningsPage() {
               })}
             </div>
           </div>
+        </div>
         </div>
       )}
 
