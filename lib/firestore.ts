@@ -1039,6 +1039,7 @@ export async function markSupportRead(_uid: string): Promise<void> {
 export async function createHappening(
   data: Omit<Listing, 'id' | 'viewsCount' | 'savesCount' | 'messagesCount' | 'status'>,
   imageFiles: File[],
+  videoFile?: File | null,
 ): Promise<string> {
   const imageUrls: string[] = [];
   for (const rawFile of imageFiles) {
@@ -1050,6 +1051,15 @@ export async function createHappening(
       const { data: { publicUrl } } = supabase.storage.from('listing-images').getPublicUrl(uploadData.path);
       imageUrls.push(publicUrl);
     }
+  }
+
+  // Optional promo video (happenings only) — uploaded raw to the shared bucket.
+  let videoUrl: string | null = null;
+  if (videoFile) {
+    const ext = (videoFile.name.split('.').pop() || 'mp4').toLowerCase();
+    const vpath = `${data.ownerUid}/${Date.now()}_video.${ext}`;
+    const { data: vUp } = await supabase.storage.from('listing-images').upload(vpath, videoFile);
+    if (vUp) videoUrl = supabase.storage.from('listing-images').getPublicUrl(vUp.path).data.publicUrl;
   }
 
   // Happenings are listings with is_happening = true (parity with the app),
@@ -1079,6 +1089,7 @@ export async function createHappening(
       event_date: data.eventDate ?? null,
       venue_latitude: data.venueLatitude ?? null,
       venue_longitude: data.venueLongitude ?? null,
+      video_url: videoUrl,
     })
     .select('id')
     .single();

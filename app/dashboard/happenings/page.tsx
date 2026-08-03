@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Camera, X, ChevronDown, MapPin, Plus } from 'lucide-react';
+import { ArrowLeft, Camera, X, ChevronDown, MapPin, Plus, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
@@ -63,7 +63,16 @@ export default function HappeningsPage() {
   const [eventDate, setEventDate] = useState('');
   const [venueLat, setVenueLat] = useState<number | null>(null);
   const [venueLng, setVenueLng] = useState<number | null>(null);
+  const [video, setVideo] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  function handleVideoPick(files: FileList | null) {
+    const f = files?.[0];
+    if (!f) return;
+    if (f.size > 60 * 1024 * 1024) { toast.error(tr('videoTooLarge', lang)); return; }
+    setVideo(f);
+  }
 
   function useCurrentVenue() {
     if (!navigator.geolocation) { toast.error(tr('failedGetLocation', lang)); return; }
@@ -154,7 +163,7 @@ export default function HappeningsPage() {
         eventDate: eventDate ? new Date(eventDate).toISOString() : undefined,
         venueLatitude: venueLat ?? undefined,
         venueLongitude: venueLng ?? undefined,
-      }, images);
+      }, images, video);
 
       // Happenings are a paid, duration-based promo — route through payment like the app.
       const dayKey = selectedDays === 7 ? 'days7' : selectedDays === 15 ? 'days15' : 'days30';
@@ -175,6 +184,7 @@ export default function HappeningsPage() {
       setTitle(''); setDescription(''); setLocationText('');
       setSelectedMainId(''); setPrice('');
       setEventDate(''); setVenueLat(null); setVenueLng(null);
+      setVideo(null);
       setImages([]); setImagePreviews([]);
     } catch {
       toast.error(tr('failedSubmitRetry', lang));
@@ -299,6 +309,23 @@ export default function HappeningsPage() {
               )}
             </div>
             <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleImagePick(e.target.files)} />
+          </div>
+
+          {/* Promo video (optional) */}
+          <div style={{ background: '#fff', borderRadius: 20, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 10 }}>{tr('promoVideoLabel', lang)} <span style={{ fontWeight: 600, color: '#9ca3af', fontSize: 13 }}>({tr('optionalLabel', lang)})</span></div>
+            {video ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F0F4FF', borderRadius: 12, padding: '10px 12px' }}>
+                <Video size={20} color="#2E9B55" />
+                <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: '#1E2B45', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video.name}</span>
+                <button onClick={() => setVideo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E53935', display: 'flex' }}><X size={18} /></button>
+              </div>
+            ) : (
+              <button onClick={() => videoInputRef.current?.click()} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#F0F4FF', border: '2px dashed #A0B4E0', borderRadius: 12, padding: '14px', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                <Video size={18} /> {tr('addVideo', lang)}
+              </button>
+            )}
+            <input ref={videoInputRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => handleVideoPick(e.target.files)} />
           </div>
 
           {/* Info */}

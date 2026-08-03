@@ -491,6 +491,13 @@ export default function ListingDetailsPage() {
           </div>
         )}
 
+        {/* Promo video (happenings) */}
+        {listing.videoUrl && (
+          <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 14, background: '#000', boxShadow: '0 6px 12px rgba(0,0,0,0.15)' }}>
+            <video src={listing.videoUrl} controls playsInline style={{ width: '100%', display: 'block', maxHeight: 360, background: '#000' }} />
+          </div>
+        )}
+
         {/* Seller shop access card (non-happenings) */}
         {!listing.isHappening && listing.ownerUid && (
           <div onClick={() => router.push(`/shop/${listing.ownerUid}`)} style={{ background: 'linear-gradient(135deg, #1D49C6, #2E67F5)', borderRadius: 20, padding: 16, marginBottom: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 6px 12px rgba(36,83,212,0.22)' }}>
