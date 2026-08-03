@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   Store, FileText,
   Eye, MessageCircle, Bookmark, Package, Edit3, ChevronRight,
-  ArrowLeft, BarChart2, Megaphone, Zap, Calendar, Crown, PlusCircle,
+  ArrowLeft, BarChart2, Megaphone, Zap, Calendar, PlusCircle,
   Star, CreditCard,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -364,7 +364,6 @@ export default function DashboardPage() {
             { icon: <Megaphone size={26} color="#2E5BFF" />, title: tr('featSponsorTitle', selectedLanguage), desc: tr('featSponsorDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new?type=sponsor' : '/dashboard/setup') },
             { icon: <Zap size={26} color="#2E5BFF" />, title: tr('flashSaleLabel', selectedLanguage), desc: tr('featFlashDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new?type=flash' : '/dashboard/setup') },
             { icon: <Calendar size={26} color="#2E5BFF" />, title: tr('featHappeningsTitle', selectedLanguage), desc: tr('featHappeningsDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/happenings' : '/dashboard/setup') },
-            { icon: <Crown size={26} color="#2E5BFF" />, title: tr('featPromotionsTitle', selectedLanguage), desc: tr('featPromotionsDesc', selectedLanguage), onClick: () => router.push('/dashboard/promotions') },
           ].map((t, i, arr) => (
             <button key={t.title} onClick={t.onClick} className="card-tap" style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px',
