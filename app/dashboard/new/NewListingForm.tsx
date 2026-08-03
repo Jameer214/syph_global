@@ -57,6 +57,7 @@ export default function NewListingForm() {
   const [condition, setCondition] = useState('New');
   const [selectedMainId, setSelectedMainId] = useState('');
   const [selectedSubId, setSelectedSubId] = useState('');
+  // Country/region come from the seller profile (matching the app — not asked here).
   const [country, setCountry] = useState('');
   const [region, setRegion] = useState('');
   const [locationText, setLocationText] = useState('');
@@ -150,9 +151,9 @@ export default function NewListingForm() {
 
   async function handleSubmit() {
     if (!uid || !seller) { toast.error(tr('completeSetupFirst', lang)); router.push('/dashboard/setup'); return; }
-    if (!title.trim()) { toast.error(tr('enterTitleToast', lang)); return; }
     if (!selectedMainId) { toast.error(tr('selectCategoryToast', lang)); return; }
-    if (!description.trim()) { toast.error(tr('enterDescToast', lang)); return; }
+    if (images.length === 0) { toast.error(tr('addOneImageToast', lang)); return; }
+    if (!title.trim()) { toast.error(tr('enterTitleToast', lang)); return; }
     if (!price.trim()) { toast.error(tr('enterPriceToast', lang)); return; }
     if (formType === 'flash') {
       const flashV = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
@@ -160,7 +161,7 @@ export default function NewListingForm() {
       if (!originalPrice.trim() || origV <= 0) { toast.error(tr('enterPriceToast', lang)); return; }
       if (origV <= flashV) { toast.error(tr('origMustExceedFlash', lang)); return; }
     }
-    if (images.length === 0) { toast.error(tr('addOneImageToast', lang)); return; }
+    if (!description.trim()) { toast.error(tr('enterDescToast', lang)); return; }
     if (!locationText.trim()) { toast.error(tr('enterLocationToast', lang)); return; }
 
     const safeTitle = sanitizeText(title, 100);
@@ -309,87 +310,7 @@ export default function NewListingForm() {
           </div>
         )}
 
-        {/* Photos */}
-        <div style={sectionStyle}>
-          <label style={labelStyle}>{tr('photosLabel', lang)} ({images.length}/8)</label>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {imagePreviewUrls.map((url, i) => (
-              <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
-                <Image src={url} alt="" fill style={{ objectFit: 'cover', borderRadius: 12 }} />
-                <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#E53935', border: '2px solid #fff', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                  <X size={11} color="#fff" />
-                </button>
-              </div>
-            ))}
-            {images.length < 8 && (
-              <button onClick={() => fileInputRef.current?.click()} style={{ width: 80, height: 80, background: '#F0F4FF', border: '2px dashed #A0B4E0', borderRadius: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                <Camera size={22} color="#6B7A99" />
-                <span style={{ fontSize: 10, color: '#6B7A99', fontWeight: 700 }}>{tr('addLabel', lang)}</span>
-              </button>
-            )}
-          </div>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleImagePick(e.target.files)} />
-        </div>
-
-        {/* Item info */}
-        <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('itemInformation', lang)}</div>
-          <label style={labelStyle}>{tr('listingTitle', lang)} *</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('titlePlaceholder', lang)} style={inputStyle} />
-          <label style={{ ...labelStyle, marginTop: 14 }}>{tr('listingDescription', lang)} *</label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr('descPlaceholder', lang)} rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
-          <label style={{ ...labelStyle, marginTop: 14 }}>{tr('messageForBuyers', lang)}</label>
-          <textarea value={messageForBuyers} onChange={(e) => setMessageForBuyers(e.target.value)} placeholder={tr('specialInstructions', lang)} rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
-          <label style={{ ...labelStyle, marginTop: 14 }}>{tr('unitsAvailable', lang)} <span style={{ fontWeight: 600, color: '#9ca3af' }}>({tr('optionalLabel', lang)})</span></label>
-          <input value={units} onChange={(e) => setUnits(e.target.value)} placeholder="e.g. 10" type="number" min="1" style={inputStyle} />
-        </div>
-
-        {/* Price */}
-        <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('pricingSection', lang)}</div>
-          {formType === 'flash' && (
-            <>
-              <label style={labelStyle}>{tr('originalPriceLabel', lang)} *</label>
-              <input value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, marginBottom: 12 }} />
-              <label style={labelStyle}>{tr('flashSalePriceLabel', lang)} *</label>
-            </>
-          )}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, flexShrink: 0 }}>
-              {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, flex: 1 }} />
-          </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, cursor: 'pointer' }}>
-            <input type="checkbox" checked={negotiable} onChange={() => setNegotiable(!negotiable)} style={{ width: 18, height: 18, accentColor: '#2E5BFF', cursor: 'pointer' }} />
-            <span style={{ fontWeight: 700, color: '#4A5878', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
-          </label>
-        </div>
-
-        {/* Condition */}
-        <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 12 }}>{tr('listingCondition', lang)}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {CONDITIONS.map((c) => (
-              <button key={c} onClick={() => setCondition(c)} style={{ flex: 1, padding: '10px 0', borderRadius: 14, border: 'none', background: condition === c ? '#2E5BFF' : '#F0F4FF', color: condition === c ? '#fff' : '#4A5878', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{tr(CONDITION_KEYS[c], lang)}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Specifications (optional) */}
-        <div style={sectionStyle}>
-          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 4 }}>{tr('specifications', lang)} <span style={{ fontWeight: 600, color: '#9ca3af', fontSize: 13 }}>({tr('optionalLabel', lang)})</span></div>
-          {specs.map((s, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <input value={s.label} onChange={(e) => setSpecs((p) => p.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r))} placeholder={tr('specLabelPlaceholder', lang)} style={{ ...inputStyle, flex: 1 }} />
-              <input value={s.value} onChange={(e) => setSpecs((p) => p.map((r, idx) => idx === i ? { ...r, value: e.target.value } : r))} placeholder={tr('specValuePlaceholder', lang)} style={{ ...inputStyle, flex: 1 }} />
-              {specs.length > 1 && <button onClick={() => setSpecs((p) => p.filter((_, idx) => idx !== i))} style={{ background: '#FFECEC', border: 'none', borderRadius: 12, width: 44, flexShrink: 0, cursor: 'pointer', color: '#E53935', fontWeight: 900, fontSize: 18 }}>×</button>}
-            </div>
-          ))}
-          <button onClick={() => setSpecs((p) => [...p, { label: '', value: '' }])} style={{ marginTop: 10, background: '#F0F4FF', border: 'none', borderRadius: 12, padding: '10px 14px', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>+ {tr('addSpecification', lang)}</button>
-        </div>
-
-        {/* Category */}
+        {/* 1. Category */}
         <div style={sectionStyle}>
           <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('category', lang)}</div>
           <label style={labelStyle}>{tr('mainCategoryLabel', lang)} *</label>
@@ -414,18 +335,105 @@ export default function NewListingForm() {
           )}
         </div>
 
-        {/* Location */}
+        {/* 2. Images */}
+        <div style={sectionStyle}>
+          <label style={labelStyle}>{tr('photosLabel', lang)} ({images.length}/8)</label>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {imagePreviewUrls.map((url, i) => (
+              <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
+                <Image src={url} alt="" fill style={{ objectFit: 'cover', borderRadius: 12 }} />
+                <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#E53935', border: '2px solid #fff', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                  <X size={11} color="#fff" />
+                </button>
+              </div>
+            ))}
+            {images.length < 8 && (
+              <button onClick={() => fileInputRef.current?.click()} style={{ width: 80, height: 80, background: '#F0F4FF', border: '2px dashed #A0B4E0', borderRadius: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <Camera size={22} color="#6B7A99" />
+                <span style={{ fontSize: 10, color: '#6B7A99', fontWeight: 700 }}>{tr('addLabel', lang)}</span>
+              </button>
+            )}
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleImagePick(e.target.files)} />
+        </div>
+
+        {/* 3. Item Name */}
+        <div style={sectionStyle}>
+          <label style={labelStyle}>{tr('listingTitle', lang)} *</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('titlePlaceholder', lang)} style={inputStyle} />
+        </div>
+
+        {/* 4. Price */}
+        <div style={sectionStyle}>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('pricingSection', lang)}</div>
+          {formType === 'flash' && (
+            <>
+              <label style={labelStyle}>{tr('originalPriceLabel', lang)} *</label>
+              <input value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, marginBottom: 12 }} />
+              <label style={labelStyle}>{tr('flashSalePriceLabel', lang)} *</label>
+            </>
+          )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, flexShrink: 0 }}>
+              {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, flex: 1 }} />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={negotiable} onChange={() => setNegotiable(!negotiable)} style={{ width: 18, height: 18, accentColor: '#2E5BFF', cursor: 'pointer' }} />
+            <span style={{ fontWeight: 700, color: '#4A5878', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
+          </label>
+        </div>
+
+        {/* 5. Item Condition */}
+        <div style={sectionStyle}>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 12 }}>{tr('listingCondition', lang)}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {CONDITIONS.map((c) => (
+              <button key={c} onClick={() => setCondition(c)} style={{ flex: 1, padding: '10px 0', borderRadius: 14, border: 'none', background: condition === c ? '#2E5BFF' : '#F0F4FF', color: condition === c ? '#fff' : '#4A5878', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{tr(CONDITION_KEYS[c], lang)}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* 6. Specifications (optional) */}
+        <div style={sectionStyle}>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 4 }}>{tr('specifications', lang)} <span style={{ fontWeight: 600, color: '#9ca3af', fontSize: 13 }}>({tr('optionalLabel', lang)})</span></div>
+          {specs.map((s, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <input value={s.label} onChange={(e) => setSpecs((p) => p.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r))} placeholder={tr('specLabelPlaceholder', lang)} style={{ ...inputStyle, flex: 1 }} />
+              <input value={s.value} onChange={(e) => setSpecs((p) => p.map((r, idx) => idx === i ? { ...r, value: e.target.value } : r))} placeholder={tr('specValuePlaceholder', lang)} style={{ ...inputStyle, flex: 1 }} />
+              {specs.length > 1 && <button onClick={() => setSpecs((p) => p.filter((_, idx) => idx !== i))} style={{ background: '#FFECEC', border: 'none', borderRadius: 12, width: 44, flexShrink: 0, cursor: 'pointer', color: '#E53935', fontWeight: 900, fontSize: 18 }}>×</button>}
+            </div>
+          ))}
+          <button onClick={() => setSpecs((p) => [...p, { label: '', value: '' }])} style={{ marginTop: 10, background: '#F0F4FF', border: 'none', borderRadius: 12, padding: '10px 14px', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>+ {tr('addSpecification', lang)}</button>
+        </div>
+
+        {/* 7. Description */}
+        <div style={sectionStyle}>
+          <label style={labelStyle}>{tr('listingDescription', lang)} *</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr('descPlaceholder', lang)} rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
+        </div>
+
+        {/* 8. Location */}
         <div style={sectionStyle}>
           <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('locationLabel', lang)}</div>
-          <label style={labelStyle}>{tr('countryField', lang)}</label>
-          <input value={country} onChange={(e) => setCountry(e.target.value)} placeholder={tr('countryPlaceholder', lang)} style={inputStyle} />
-          <label style={{ ...labelStyle, marginTop: 12 }}>{tr('regionCity', lang)}</label>
-          <input value={region} onChange={(e) => setRegion(e.target.value)} placeholder={tr('cityPlaceholder', lang)} style={inputStyle} />
-          <label style={{ ...labelStyle, marginTop: 12 }}>{tr('exactLocation', lang)} *</label>
+          <label style={labelStyle}>{tr('exactLocation', lang)} *</label>
           <div style={{ position: 'relative' }}>
             <MapPin size={16} color="#6B7A99" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
             <input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder={tr('locationPlaceholder', lang)} style={{ ...inputStyle, paddingLeft: 40 }} />
           </div>
+        </div>
+
+        {/* 9. Units Available (optional) */}
+        <div style={sectionStyle}>
+          <label style={labelStyle}>{tr('unitsAvailable', lang)} <span style={{ fontWeight: 600, color: '#9ca3af' }}>({tr('optionalLabel', lang)})</span></label>
+          <input value={units} onChange={(e) => setUnits(e.target.value)} placeholder="e.g. 10" type="number" min="1" style={inputStyle} />
+        </div>
+
+        {/* 10. Message about goods (optional) */}
+        <div style={sectionStyle}>
+          <label style={labelStyle}>{tr('messageForBuyers', lang)} <span style={{ fontWeight: 600, color: '#9ca3af' }}>({tr('optionalLabel', lang)})</span></label>
+          <textarea value={messageForBuyers} onChange={(e) => setMessageForBuyers(e.target.value)} placeholder={tr('specialInstructions', lang)} rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
         </div>
 
         {/* Promotion duration + pricing (sponsor/flash only) */}
