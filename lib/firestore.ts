@@ -76,8 +76,9 @@ function mapListing(row: Record<string, unknown>): Listing {
     lastInteraction: undefined,
     createdAt: row.created_at ? String(row.created_at) : undefined,
     flashSaleEndsAt: row.flash_sale_until ? String(row.flash_sale_until) : undefined,
-    originalPriceValue: typeof row.flash_sale_price === 'number' ? row.flash_sale_price : undefined,
-    originalPriceText: undefined,
+    originalPriceValue: typeof row.original_price === 'number' ? row.original_price
+      : (typeof row.flash_sale_price === 'number' ? row.flash_sale_price : undefined),
+    originalPriceText: row.original_price_text ? String(row.original_price_text) : undefined,
     units: typeof row.unit_count === 'number' ? row.unit_count : undefined,
   };
 }
