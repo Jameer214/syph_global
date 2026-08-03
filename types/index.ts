@@ -7,6 +7,7 @@ export interface Listing {
   videoUrl?: string;
   bio?: string;
   specifications?: Record<string, string>;
+  eventDate?: string;
   venueLatitude?: number;
   venueLongitude?: number;
   sellerName: string;

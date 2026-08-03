@@ -60,7 +60,18 @@ export default function HappeningsPage() {
   const [selectedDays, setSelectedDays] = useState(7);
   const [pricing, setPricing] = useState<DayPriceMap | null>(null);
   const [privilegePct, setPrivilegePct] = useState(0);
+  const [eventDate, setEventDate] = useState('');
+  const [venueLat, setVenueLat] = useState<number | null>(null);
+  const [venueLng, setVenueLng] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function useCurrentVenue() {
+    if (!navigator.geolocation) { toast.error(tr('failedGetLocation', lang)); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setVenueLat(pos.coords.latitude); setVenueLng(pos.coords.longitude); toast.success(tr('venueGpsSet', lang)); },
+      () => toast.error(tr('failedGetLocation', lang)),
+    );
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -140,6 +151,9 @@ export default function HappeningsPage() {
         isHappening: true,
         isFlashSale: false,
         isTrial: false,
+        eventDate: eventDate ? new Date(eventDate).toISOString() : undefined,
+        venueLatitude: venueLat ?? undefined,
+        venueLongitude: venueLng ?? undefined,
       }, images);
 
       // Happenings are a paid, duration-based promo — route through payment like the app.
@@ -160,6 +174,7 @@ export default function HappeningsPage() {
       setShowForm(false);
       setTitle(''); setDescription(''); setLocationText('');
       setSelectedMainId(''); setPrice('');
+      setEventDate(''); setVenueLat(null); setVenueLng(null);
       setImages([]); setImagePreviews([]);
     } catch {
       toast.error(tr('failedSubmitRetry', lang));
@@ -298,6 +313,11 @@ export default function HappeningsPage() {
               <MapPin size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
               <input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder={tr('venuePlaceholder', lang)} style={{ ...inputStyle, paddingLeft: 40 }} />
             </div>
+            <label style={{ ...labelStyle, marginTop: 14 }}>{tr('eventDateLabel', lang)} <span style={{ fontWeight: 600, color: '#9ca3af' }}>({tr('optionalLabel', lang)})</span></label>
+            <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} style={inputStyle} />
+            <button type="button" onClick={useCurrentVenue} style={{ marginTop: 12, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: venueLat !== null ? 'rgba(46,157,85,0.08)' : '#F0F4FF', border: `1.5px solid ${venueLat !== null ? '#2E9B55' : '#DCE7F5'}`, borderRadius: 14, padding: '12px 14px', color: venueLat !== null ? '#2E7D32' : '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+              <MapPin size={16} /> {venueLat !== null ? tr('venueGpsSet', lang) : tr('setVenueGps', lang)}
+            </button>
           </div>
 
           {/* Category */}

@@ -47,6 +47,7 @@ function mapListing(row: Record<string, unknown>): Listing {
               .map(([k, v]) => [k, String(v)]),
           )
         : undefined,
+    eventDate: row.event_date ? String(row.event_date) : undefined,
     venueLatitude: typeof row.venue_latitude === 'number' ? row.venue_latitude : undefined,
     venueLongitude: typeof row.venue_longitude === 'number' ? row.venue_longitude : undefined,
     sellerName: String(row.seller_name ?? ''),
@@ -463,6 +464,12 @@ export async function createListing(
       view_count: 0,
       save_count: 0,
       unit_count: data.units ?? null,
+      bio: data.bio ?? null,
+      specifications: data.specifications && Object.keys(data.specifications).length > 0 ? data.specifications : null,
+      original_price: data.originalPriceValue ?? null,
+      original_price_text: data.originalPriceText ?? null,
+      venue_latitude: data.venueLatitude ?? null,
+      venue_longitude: data.venueLongitude ?? null,
     })
     .select('id')
     .single();
@@ -1069,6 +1076,9 @@ export async function createHappening(
       is_sponsored: false,
       view_count: 0,
       save_count: 0,
+      event_date: data.eventDate ?? null,
+      venue_latitude: data.venueLatitude ?? null,
+      venue_longitude: data.venueLongitude ?? null,
     })
     .select('id')
     .single();

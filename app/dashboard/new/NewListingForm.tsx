@@ -62,6 +62,8 @@ export default function NewListingForm() {
   const [locationText, setLocationText] = useState('');
   const [duration, setDuration] = useState(7);
   const [units, setUnits] = useState('');
+  const [originalPrice, setOriginalPrice] = useState(''); // flash sale only
+  const [specs, setSpecs] = useState<{ label: string; value: string }[]>([{ label: '', value: '' }]);
   const [submitting, setSubmitting] = useState(false);
 
   // Free-15 quota / paid-listing config (normal listings only) — mirrors the app.
@@ -152,6 +154,12 @@ export default function NewListingForm() {
     if (!selectedMainId) { toast.error(tr('selectCategoryToast', lang)); return; }
     if (!description.trim()) { toast.error(tr('enterDescToast', lang)); return; }
     if (!price.trim()) { toast.error(tr('enterPriceToast', lang)); return; }
+    if (formType === 'flash') {
+      const flashV = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
+      const origV = parseFloat(originalPrice.replace(/[^0-9.]/g, '')) || 0;
+      if (!originalPrice.trim() || origV <= 0) { toast.error(tr('enterPriceToast', lang)); return; }
+      if (origV <= flashV) { toast.error(tr('origMustExceedFlash', lang)); return; }
+    }
     if (images.length === 0) { toast.error(tr('addOneImageToast', lang)); return; }
     if (!locationText.trim()) { toast.error(tr('enterLocationToast', lang)); return; }
 
@@ -165,6 +173,11 @@ export default function NewListingForm() {
     setSubmitting(true);
     try {
       const priceValue = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
+      const specifications: Record<string, string> = {};
+      for (const s of specs) { const l = s.label.trim(); const v = s.value.trim(); if (l && v) specifications[l] = v; }
+      const origVal = formType === 'flash' && originalPrice.trim()
+        ? (parseFloat(originalPrice.replace(/[^0-9.]/g, '')) || undefined)
+        : undefined;
       const listingId = await createListing({
         title: safeTitle,
         description: safeDesc,
@@ -176,6 +189,9 @@ export default function NewListingForm() {
         locationText: safeLocation,
         priceText: `${currency} ${price}`,
         priceValue,
+        specifications: Object.keys(specifications).length ? specifications : undefined,
+        originalPriceValue: origVal,
+        originalPriceText: origVal !== undefined ? `${currency} ${originalPrice}` : undefined,
         currencyCode: currency,
         negotiable,
         messageAboutGoods: safeMessage || undefined,
@@ -331,6 +347,13 @@ export default function NewListingForm() {
         {/* Price */}
         <div style={sectionStyle}>
           <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 16 }}>{tr('pricingSection', lang)}</div>
+          {formType === 'flash' && (
+            <>
+              <label style={labelStyle}>{tr('originalPriceLabel', lang)} *</label>
+              <input value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, marginBottom: 12 }} />
+              <label style={labelStyle}>{tr('flashSalePriceLabel', lang)} *</label>
+            </>
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, flexShrink: 0 }}>
               {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -351,6 +374,19 @@ export default function NewListingForm() {
               <button key={c} onClick={() => setCondition(c)} style={{ flex: 1, padding: '10px 0', borderRadius: 14, border: 'none', background: condition === c ? '#2E5BFF' : '#F0F4FF', color: condition === c ? '#fff' : '#4A5878', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{tr(CONDITION_KEYS[c], lang)}</button>
             ))}
           </div>
+        </div>
+
+        {/* Specifications (optional) */}
+        <div style={sectionStyle}>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45', marginBottom: 4 }}>{tr('specifications', lang)} <span style={{ fontWeight: 600, color: '#9ca3af', fontSize: 13 }}>({tr('optionalLabel', lang)})</span></div>
+          {specs.map((s, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <input value={s.label} onChange={(e) => setSpecs((p) => p.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r))} placeholder={tr('specLabelPlaceholder', lang)} style={{ ...inputStyle, flex: 1 }} />
+              <input value={s.value} onChange={(e) => setSpecs((p) => p.map((r, idx) => idx === i ? { ...r, value: e.target.value } : r))} placeholder={tr('specValuePlaceholder', lang)} style={{ ...inputStyle, flex: 1 }} />
+              {specs.length > 1 && <button onClick={() => setSpecs((p) => p.filter((_, idx) => idx !== i))} style={{ background: '#FFECEC', border: 'none', borderRadius: 12, width: 44, flexShrink: 0, cursor: 'pointer', color: '#E53935', fontWeight: 900, fontSize: 18 }}>×</button>}
+            </div>
+          ))}
+          <button onClick={() => setSpecs((p) => [...p, { label: '', value: '' }])} style={{ marginTop: 10, background: '#F0F4FF', border: 'none', borderRadius: 12, padding: '10px 14px', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>+ {tr('addSpecification', lang)}</button>
         </div>
 
         {/* Category */}
