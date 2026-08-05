@@ -143,8 +143,9 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
         )}
       </div>
 
-      {/* Countdown banner */}
-      <div style={{
+      {/* Countdown banner — diagonal light sweep sells the flash-sale urgency
+          (reuses the reduce-motion-aware .sweep banner shine). */}
+      <div className="sweep" style={{
         background: '#D32F2F', padding: '5px 8px', marginTop: 6,
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
       }}>
