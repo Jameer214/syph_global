@@ -12,6 +12,8 @@ import { COUNTRIES, COUNTRY_FLAGS } from '@/data/countries';
 import { CATEGORIES as REAL_CATEGORIES } from '@/data/categories';
 import MenuDrawer from '@/components/MenuDrawer';
 import Reveal from '@/components/Reveal';
+import ShopSuggestions from '@/components/ShopSuggestions';
+import { searchSellers, type ShopHit } from '@/lib/firestore';
 
 // Canonical English values stored to the profile — only the display is translated.
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern'];
@@ -52,6 +54,17 @@ export default function LocationPage() {
   const [gpsDetectedCountry, setGpsDetectedCountry] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [goodsSearch, setGoodsSearch] = useState('');
+  // Matching seller shops for the goods query — shown as a live dropdown under
+  // the search bar so buyers can open a storefront directly. Additive.
+  const [shopResults, setShopResults] = useState<ShopHit[]>([]);
+  useEffect(() => {
+    const q = goodsSearch.trim();
+    if (!q) { setShopResults([]); return; }
+    const t = setTimeout(() => {
+      searchSellers(q, homeCountry || storedCountry || undefined).then(setShopResults);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [goodsSearch, homeCountry, storedCountry]);
   const [showAppModal, setShowAppModal] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -321,6 +334,21 @@ export default function LocationPage() {
                 boxSizing: 'border-box',
               }}
             />
+            {/* Live shop suggestions — open a storefront directly from here. */}
+            {goodsSearch.trim() !== '' && shopResults.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 40,
+                background: '#fff', borderRadius: 14, border: '1.5px solid #e2e8f0',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.18)', marginTop: 6,
+                maxHeight: 300, overflowY: 'auto',
+              }}>
+                <ShopSuggestions
+                  shops={shopResults}
+                  label={tr('shopsSectionLabel', selectedLanguage)}
+                  onNavigate={() => setGoodsSearch('')}
+                />
+              </div>
+            )}
           </div>
           <button
             type="button"

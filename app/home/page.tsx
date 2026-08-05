@@ -26,7 +26,8 @@ import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
 import { readListingsCache, writeListingsCache, isCacheFresh, HOT_SELLING_TTL_MS } from '@/lib/listingsCache';
 import { getRecentlyViewed, clearRecentlyViewed } from '@/lib/recentlyViewed';
-import { addSavedSearch } from '@/lib/firestore';
+import { addSavedSearch, searchSellers, type ShopHit } from '@/lib/firestore';
+import ShopSuggestions from '@/components/ShopSuggestions';
 import { isPast, isEventExpired, startOfTodayISO } from '@/lib/promo';
 import { mainCategoryForQuery, getCategoryById } from '@/data/categories';
 
@@ -600,6 +601,9 @@ export default function HomePage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Listing[]>([]);
+  // Matching seller shops for the same query — shown above product hits so
+  // buyers can open a storefront directly. Additive to the listing search.
+  const [shopResults, setShopResults] = useState<ShopHit[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -872,6 +876,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
+      setShopResults([]);
       setShowSearch(false);
       return;
     }
@@ -879,6 +884,9 @@ export default function HomePage() {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async () => {
       const term = sanitizeText(searchQuery.trim(), 100);
+      // Shop search runs in parallel with the product search (additive; never
+      // throws). Country-scoped when a country of interest is selected.
+      searchSellers(term, selectedCountry || undefined).then(setShopResults);
       // 24h per-term cache: show saved results instantly; only re-query when
       // the cache is missing or stale (>24h).
       const searchCacheKey = `search_${term.toLowerCase()}`;
@@ -1202,10 +1210,17 @@ export default function HomePage() {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: 4, maxHeight: 320, overflowY: 'auto',
                 animationDuration: '0.25s',
               }}>
+                <ShopSuggestions
+                  shops={shopResults}
+                  label={tr('shopsSectionLabel', selectedLanguage)}
+                  onNavigate={() => { setSearchQuery(''); setShowSearch(false); }}
+                />
                 {searchLoading ? (
                   <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('searchingDots', selectedLanguage)}</div>
                 ) : searchResults.length === 0 ? (
-                  <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('noResults', selectedLanguage)}</div>
+                  shopResults.length === 0 ? (
+                    <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('noResults', selectedLanguage)}</div>
+                  ) : null
                 ) : (
                   searchResults.map((item) => {
                     const inCountry = !selectedCountry || item.country === selectedCountry;

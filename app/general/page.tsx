@@ -14,6 +14,8 @@ import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
 import VerifiedTick from '@/components/VerifiedTick';
+import ShopSuggestions from '@/components/ShopSuggestions';
+import { searchSellers, type ShopHit } from '@/lib/firestore';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -71,6 +73,18 @@ export default function GeneralPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // Matching seller shops for the same query — shown above the grid so buyers
+  // can open a storefront directly. Additive to the listing search.
+  const [shopResults, setShopResults] = useState<ShopHit[]>([]);
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) { setShopResults([]); return; }
+    const t = setTimeout(() => {
+      // General browses all countries — no country scoping.
+      searchSellers(q).then(setShopResults);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
   const [sort, setSort] = useState<SortMode>('random');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const offsetRef = useRef<number>(0);
@@ -228,6 +242,17 @@ export default function GeneralPage() {
 
       {/* Listings grid */}
       <div style={{ padding: '16px 16px 90px' }}>
+        {searchQuery.trim() !== '' && shopResults.length > 0 && (
+          <div style={{
+            background: '#fff', borderRadius: 14, border: '1px solid #eef2f7',
+            overflow: 'hidden', marginBottom: 16,
+          }}>
+            <ShopSuggestions
+              shops={shopResults}
+              label={tr('shopsSectionLabel', selectedLanguage)}
+            />
+          </div>
+        )}
         {loading && (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}>
             <div style={{ width: 36, height: 36, border: '3px solid #E8EDFF', borderTop: '3px solid #2E5BFF', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />

@@ -248,6 +248,50 @@ export async function getListingReviews(listingId: string): Promise<Review[]> {
 
 // ─── Sellers ──────────────────────────────────────────────────────────────────
 
+/** Lightweight seller-shop hit for the search suggestion dropdowns — just
+ * enough to render a row and open the storefront (/shop/:uid). */
+export interface ShopHit {
+  uid: string; // sellers.user_id (auth uid)
+  name: string;
+  logoUrl?: string;
+  isVerified: boolean;
+  country: string;
+  region: string;
+}
+
+/** Shop search — lets the search dropdowns surface matching seller storefronts
+ * (by shop name or description) alongside product/service hits, so a buyer can
+ * jump straight to a shop. Additive and self-contained: swallows any error and
+ * returns [] so it can never break the existing listing search. */
+export async function searchSellers(keyword: string, country?: string, limit = 6): Promise<ShopHit[]> {
+  const k = keyword.trim();
+  if (!k) return [];
+  // Sanitize for the PostgREST or()-filter: commas/parentheses/percent/star
+  // would otherwise be parsed as filter syntax.
+  const safe = k.replace(/[,()%*]/g, ' ').trim();
+  if (!safe) return [];
+  try {
+    let q = supabase
+      .from('sellers')
+      .select('user_id, shop_name, shop_logo_url, is_verified, country, region')
+      .or(`shop_name.ilike.%${safe}%,shop_description.ilike.%${safe}%`);
+    if (country && country.trim()) q = q.eq('country', country.trim());
+    const { data } = await q.limit(limit);
+    return (data ?? [])
+      .map((d: Record<string, unknown>) => ({
+        uid: String(d.user_id ?? ''),
+        name: String(d.shop_name ?? ''),
+        logoUrl: d.shop_logo_url ? String(d.shop_logo_url) : undefined,
+        isVerified: Boolean(d.is_verified),
+        country: String(d.country ?? ''),
+        region: String(d.region ?? ''),
+      }))
+      .filter((s) => s.uid !== '' && s.name.trim() !== '');
+  } catch {
+    return [];
+  }
+}
+
 export async function getSellerProfile(uid: string): Promise<SellerProfile | null> {
   const { data } = await supabase
     .from('sellers')
