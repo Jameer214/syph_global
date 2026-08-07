@@ -600,7 +600,7 @@ export default function LocationPage() {
               {[
                 { value: '50+', label: tr('countriesLabel', selectedLanguage) },
                 { value: '17+', label: tr('categories', selectedLanguage) },
-                { value: '100%', label: tr('freeLabel', selectedLanguage) },
+                { value: '100%', label: tr('heroFreeToJoin', selectedLanguage) },
                 { value: '24/7', label: tr('availableLabel', selectedLanguage) },
               ].map((s, i) => (
                 <Reveal key={s.label} delay={0.15 + i * 0.08} className="reveal-pop" style={{ flex: 1 }}>
