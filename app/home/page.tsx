@@ -986,12 +986,34 @@ export default function HomePage() {
     () => [
       ...flashSales, ...trending, ...happenings, ...sponsored,
       ...railPool, ...hotSelling, ...exploreItems,
+      // Search hits included so Near Me can sort the dropdown by true distance.
+      ...searchResults,
     ],
-    [flashSales, trending, happenings, sponsored, railPool, hotSelling, exploreItems],
+    [flashSales, trending, happenings, sponsored, railPool, hotSelling, exploreItems, searchResults],
   );
   const distanceById = useDistances(allShownListings, userCoords);
   // Which sellers on screen are verified → drives the tick on each card.
   const verifiedSellers = useVerifiedSellers(allShownListings);
+
+  // The active filters must shape the search dropdown too — e.g. Open Now has
+  // to hide closed shops in results, not just in the browse grid below. Mirrors
+  // the exploreItems filter/sort order so search and browse behave identically.
+  const filteredSearchResults = useMemo(() => {
+    let items = [...searchResults];
+    if (filters.openNow) items = items.filter((l) => l.openNow);
+    if (filters.rating !== 'any') {
+      const min = parseInt(filters.rating);
+      items = items.filter((l) => (l.rating ?? 0) >= min);
+    }
+    if (filters.nearMe && userCoords) {
+      items.sort((a, b) => (distanceById.get(a.id) ?? Infinity) - (distanceById.get(b.id) ?? Infinity));
+    } else {
+      if (filters.priceSort === 'low') items.sort((a, b) => (a.priceValue ?? 0) - (b.priceValue ?? 0));
+      if (filters.priceSort === 'high') items.sort((a, b) => (b.priceValue ?? 0) - (a.priceValue ?? 0));
+      if (filters.timeSort === 'oldest') items.reverse();
+    }
+    return items;
+  }, [searchResults, filters, userCoords, distanceById]);
 
   function saveSearch(term: string) {
     if (!term.trim()) return;
@@ -1217,12 +1239,12 @@ export default function HomePage() {
                 />
                 {searchLoading ? (
                   <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('searchingDots', selectedLanguage)}</div>
-                ) : searchResults.length === 0 ? (
+                ) : filteredSearchResults.length === 0 ? (
                   shopResults.length === 0 ? (
                     <div style={{ padding: 16, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tr('noResults', selectedLanguage)}</div>
                   ) : null
                 ) : (
-                  searchResults.map((item) => {
+                  filteredSearchResults.map((item) => {
                     const inCountry = !selectedCountry || item.country === selectedCountry;
                     return (
                       <div
