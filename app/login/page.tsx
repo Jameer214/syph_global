@@ -9,6 +9,7 @@ import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { createOrUpdateUserProfile } from '@/lib/firestore';
+import { sanitizeEmail } from '@/lib/sanitize';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -85,7 +86,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: sanitizeEmail(email), password });
       if (error || !data.user) {
         if (error?.message?.toLowerCase().includes('invalid')) {
           toast.error(tr('incorrectEmailPassword', selectedLanguage));
@@ -120,7 +121,7 @@ export default function LoginPage() {
     }
     setResetLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim());
+      const { error } = await supabase.auth.resetPasswordForEmail(sanitizeEmail(resetEmail));
       if (error) {
         toast.error(tr('failedResetEmail', selectedLanguage));
       } else {

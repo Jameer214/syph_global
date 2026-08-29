@@ -312,7 +312,7 @@ export default function ProfilePage() {
               }}>
               <Camera size={12} color="#fff" />
             </button>
-            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" style={{ display: 'none' }}
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f); }} />
           </div>
 

@@ -243,7 +243,7 @@ export default function EditListingPage() {
               </button>
             )}
           </div>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleImagePick(e.target.files)} />
+          <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" multiple style={{ display: 'none' }} onChange={(e) => handleImagePick(e.target.files)} />
         </div>
 
         {/* Item info */}

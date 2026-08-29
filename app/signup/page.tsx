@@ -9,6 +9,7 @@ import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { createOrUpdateUserProfile } from '@/lib/firestore';
+import { sanitizeText, sanitizeEmail } from '@/lib/sanitize';
 import { COUNTRIES } from '@/data/countries';
 
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western', 'Southern', 'Other'];
@@ -106,9 +107,9 @@ export default function SignupPage() {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: sanitizeEmail(email),
         password,
-        options: { data: { full_name: fullName.trim() } },
+        options: { data: { full_name: sanitizeText(fullName, 60) } },
       });
       if (error) {
         if (error.message?.toLowerCase().includes('already registered') || error.message?.toLowerCase().includes('already in use')) {

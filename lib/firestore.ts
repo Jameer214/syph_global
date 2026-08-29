@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { sanitizeText } from '@/lib/sanitize';
+import { sanitizeText, sanitizeEmail, likeContains } from '@/lib/sanitize';
 import { compressImage } from '@/lib/imageCompress';
 import type { Listing, SellerProfile, Review, SellerHoursInfo, ChatThread, ChatMessage, Report, PromotionRequest, UserProfile } from '@/types';
 
@@ -412,8 +412,8 @@ export async function subscribeNewsletter(email: string): Promise<'ok' | 'exists
 export async function createOrUpdateUserProfile(profile: UserProfile): Promise<void> {
   await supabase.from('profiles').upsert({
     id: profile.uid,
-    email: profile.email,
-    display_name: profile.displayName,
+    email: sanitizeEmail(profile.email),
+    display_name: sanitizeText(profile.displayName, 60),
     avatar_url: profile.photoUrl ?? null,
     country: profile.country ?? null,
     region: profile.regionOrCity ?? null,
@@ -1167,7 +1167,7 @@ export async function searchListings(searchTerm: string, count = 24): Promise<Li
     .from('listings')
     .select('*, listing_images(url, sort_order)')
     .eq('status', 'active')
-    .ilike('title', `%${term}%`)
+    .ilike('title', likeContains(term))
     .limit(count);
   return (data ?? []).map(r => mapListing(r as Record<string, unknown>));
 }
