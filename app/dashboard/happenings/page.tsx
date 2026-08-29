@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Camera, X, ChevronDown, MapPin, Plus, Video, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Camera, X, ChevronDown, MapPin, Plus, Video, ImageIcon, PartyPopper, Link2, CreditCard, Info, CalendarDays, CalendarCheck, CalendarClock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
@@ -37,11 +37,11 @@ function mapListing(data: Record<string, unknown>, id: string): Listing {
 const STATUS_COLORS: Record<string, string> = { approved: '#2E9B55', pending: '#F39C12', rejected: '#E53935' };
 const STATUS_BG: Record<string, string> = { approved: '#E8F5E9', pending: '#FFF8EE', rejected: '#FFECEC' };
 
-// Section label with the app's blue accent bar, above each section.
+// Section label with the happenings green accent bar (matches syph's green _sectionLabel).
 function SectionLabel({ text, optional, lang }: { text: string; optional?: boolean; lang: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <div style={{ width: 4, height: 18, background: '#2E5BFF', borderRadius: 4 }} />
+      <div style={{ width: 4, height: 18, background: '#2E9B55', borderRadius: 4 }} />
       <span style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>{text}{optional ? ` (${tr('optionalLabel', lang)})` : ''}</span>
     </div>
   );
@@ -70,7 +70,8 @@ export default function HappeningsPage() {
   const [locationText, setLocationText] = useState('');
   const [selectedMainId, setSelectedMainId] = useState('');
   const [price, setPrice] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const [bio, setBio] = useState('');
+  const [negotiable, setNegotiable] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   // Happenings are a paid, duration-based promo (parity with the app).
   const [selectedDays, setSelectedDays] = useState(7);
@@ -143,33 +144,40 @@ export default function HappeningsPage() {
 
   async function handleSubmit() {
     if (!uid || !seller) { toast.error(tr('completeSetupFirst', lang)); return; }
+    // Validation order mirrors syph: title → description → event date → venue → images → valid price.
     if (!title.trim()) { toast.error(tr('enterTitleToast', lang)); return; }
     if (!description.trim()) { toast.error(tr('enterDescToast', lang)); return; }
+    if (!eventDate) { toast.error(tr('selectEventDateToast', lang)); return; }
     if (!locationText.trim()) { toast.error(tr('enterVenueToast', lang)); return; }
     if (images.length === 0) { toast.error(tr('addOneImageToast', lang)); return; }
+    const priceParsed = price.trim() ? parseFloat(price.replace(/[^0-9.]/g, '')) : NaN;
+    if (!price.trim() || Number.isNaN(priceParsed)) { toast.error(tr('enterValidPrice', lang)); return; }
 
     const safeTitle = sanitizeText(title, 100);
     const safeDesc = sanitizeText(description, 1000);
     const safeLocation = sanitizeText(locationText, 200);
+    const safeBio = sanitizeText(bio, 500);
     if (!safeTitle) { toast.error(tr('titleEmptyToast', lang)); return; }
     if (!safeDesc) { toast.error(tr('descEmptyToast', lang)); return; }
 
     setSubmitting(true);
     try {
-      const priceValue = price ? (parseFloat(price.replace(/[^0-9.]/g, '')) || 0) : 0;
+      // Price currency is the seller-country currency (fixed prefix), matching syph.
+      const happeningCurrency = getCurrencyForCountry(seller.operatingCountry || '') || 'USD';
       const listingId = await createHappening({
         title: safeTitle,
         description: safeDesc,
+        bio: safeBio || undefined,
         imageUrl: '',
         sellerName: seller.businessName || 'Organiser',
         ownerUid: uid,
         country: seller.operatingCountry,
         regionOrCity: seller.operatingRegion,
         locationText: safeLocation,
-        priceText: price ? `${currency} ${price}` : undefined,
-        priceValue: priceValue || undefined,
-        currencyCode: currency,
-        negotiable: false,
+        priceText: `${happeningCurrency} ${price.trim()}`,
+        priceValue: priceParsed,
+        currencyCode: happeningCurrency,
+        negotiable,
         mainCategoryId: EVENTS_CATEGORY_ID,
         subCategoryId: selectedMainId || undefined,
         openNow: false,
@@ -186,7 +194,7 @@ export default function HappeningsPage() {
       const dayKey = selectedDays === 7 ? 'days7' : selectedDays === 15 ? 'days15' : 'days30';
       const ugx = pricing ? pricing[dayKey] : 0;
       const effectiveUgx = privilegePct > 0 ? ugx * (1 - privilegePct / 100) : ugx;
-      const sellerCurrency = getCurrencyForCountry(seller.operatingCountry || currency);
+      const sellerCurrency = getCurrencyForCountry(seller.operatingCountry || '') || 'USD';
       const amount = Math.round(convertPrice(effectiveUgx, 'UGX', sellerCurrency));
       if (listingId && amount > 0) {
         const params = new URLSearchParams({
@@ -199,7 +207,7 @@ export default function HappeningsPage() {
       toast.success(tr('happeningSubmitted', lang));
       setShowForm(false);
       setTitle(''); setDescription(''); setLocationText('');
-      setSelectedMainId(''); setPrice('');
+      setSelectedMainId(''); setPrice(''); setBio(''); setNegotiable(false);
       setEventDate(''); setVenueLat(null); setVenueLng(null);
       setVideo(null);
       setImages([]); setImagePreviews([]);
@@ -210,6 +218,8 @@ export default function HappeningsPage() {
     }
   }
 
+  // Price currency = seller-country currency (fixed prefix), matching syph.
+  const happeningCurrency = getCurrencyForCountry(seller?.operatingCountry || '') || 'USD';
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '13px 16px', border: '1px solid #D7DEE8',
     borderRadius: 14, fontSize: 15, outline: 'none', background: '#F5F8FD',
@@ -309,6 +319,15 @@ export default function HappeningsPage() {
       {showForm && (
         <div style={{ padding: '16px 16px 100px' }}>
 
+          {/* Celebration hero banner (mirrors syph's green gradient card). */}
+          <div style={{ background: 'linear-gradient(135deg, #1A7A3A, #2E9B55)', borderRadius: 20, padding: '18px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 6px 16px rgba(46,157,85,0.35)' }}>
+            <PartyPopper size={40} color="#fff" style={{ flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: '#fff', fontWeight: 900, fontSize: 16 }}>{tr('happeningHeroTitle', lang)}</div>
+              <div style={{ color: 'rgba(255,255,255,0.72)', fontWeight: 600, fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>{tr('happeningHeroBody', lang)}</div>
+            </div>
+          </div>
+
           {/* Event Category — fixed to Events & Tickets; only pick the event type */}
           <div style={{ marginBottom: 20 }}>
             <SectionLabel text={tr('eventCategory', lang)} lang={lang} />
@@ -345,6 +364,9 @@ export default function HappeningsPage() {
                 {imagePreviews.map((url, i) => (
                   <div key={i} style={{ position: 'relative', width: 82, height: 82 }}>
                     <Image src={url} alt="" fill style={{ objectFit: 'cover', borderRadius: 12 }} />
+                    {i === 0 && (
+                      <span style={{ position: 'absolute', bottom: 4, left: 4, background: '#2E9B55', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 6 }}>{tr('coverBadge', lang)}</span>
+                    )}
                     <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#E53935', border: '2px solid #fff', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}><X size={11} color="#fff" /></button>
                   </div>
                 ))}
@@ -384,18 +406,20 @@ export default function HappeningsPage() {
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('eventTitlePlaceholder', lang)} style={inputStyle} />
           </div>
 
-          {/* Ticket Price / Entry */}
+          {/* Ticket Price / Entry — required, fixed currency prefix from seller country. */}
           <div style={{ marginBottom: 20 }}>
-            <SectionLabel text={tr('ticketEntryPrice', lang)} optional lang={lang} />
+            <SectionLabel text={tr('ticketEntryPrice', lang)} lang={lang} />
             <div style={cardStyle}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, paddingRight: 28, appearance: 'none' }}>
-                    {['USD', 'UGX', 'KES', 'TZS', 'GHS', 'NGN', 'ZAR'].map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <ChevronDown size={14} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#6B7A99' }} />
-                </div>
-                <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={tr('freePricePlaceholder', lang)} type="number" style={{ ...inputStyle, flex: 1 }} />
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, fontSize: 15, color: '#4A5878', pointerEvents: 'none' }}>{happeningCurrency}</span>
+                <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={tr('freePricePlaceholder', lang)} type="number" style={{ ...inputStyle, paddingLeft: 16 + happeningCurrency.length * 9 + 8 }} />
+              </div>
+              {/* Negotiable toggle (SwitchListTile in the app). */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12, border: '1px solid #D7DEE8', borderRadius: 14, padding: '10px 14px' }}>
+                <span style={{ fontWeight: 700, color: '#182033', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
+                <button type="button" onClick={() => setNegotiable((v) => !v)} aria-pressed={negotiable} style={{ width: 46, height: 26, borderRadius: 999, border: 'none', flexShrink: 0, background: negotiable ? '#2E9B55' : '#C7D0E0', cursor: 'pointer', position: 'relative', transition: 'background 0.15s', padding: 0 }}>
+                  <span style={{ position: 'absolute', top: 3, left: negotiable ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+                </button>
               </div>
             </div>
           </div>
@@ -406,16 +430,30 @@ export default function HappeningsPage() {
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr('describeEventPlaceholder', lang)} rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
           </div>
 
-          {/* Event Date */}
+          {/* Event Date — captures date + time (syph uses date + time pickers). */}
           <div style={{ marginBottom: 20 }}>
-            <SectionLabel text={tr('eventDateLabel', lang)} optional lang={lang} />
-            <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} style={inputStyle} />
+            <SectionLabel text={tr('eventDateLabel', lang)} lang={lang} />
+            <input type="datetime-local" value={eventDate} onChange={(e) => setEventDate(e.target.value)} style={inputStyle} />
+          </div>
+
+          {/* Contact / Payment (bio) — sits between Event Date and Venue (syph order). */}
+          <div style={{ marginBottom: 20 }}>
+            <SectionLabel text={tr('contactPaymentLabel', lang)} lang={lang} />
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Link2 size={18} color="#2E5BFF" style={{ flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, fontSize: 13, color: '#1E2B45' }}>{tr('contactPaymentHeading', lang)}</span>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', marginTop: 6, lineHeight: 1.4 }}>{tr('contactPaymentBody', lang)}</div>
+              <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder={tr('contactPaymentHint', lang)} rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5, marginTop: 12 }} />
+            </div>
           </div>
 
           {/* Venue */}
           <div style={{ marginBottom: 20 }}>
             <SectionLabel text={tr('venueSectionLabel', lang)} lang={lang} />
             <div style={cardStyle}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', marginBottom: 10, lineHeight: 1.4 }}>{tr('venueHelper', lang)}</div>
               <label style={labelStyle}>{tr('venueLocation', lang)} *</label>
               <div style={{ position: 'relative' }}>
                 <MapPin size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
@@ -435,19 +473,33 @@ export default function HappeningsPage() {
               {[7, 15, 30].map((d) => {
                 const key = (d === 7 ? 'days7' : d === 15 ? 'days15' : 'days30') as 'days7' | 'days15' | 'days30';
                 const ugx = pricing ? pricing[key] : 0;
-                const sellerCurrency = getCurrencyForCountry(seller?.operatingCountry || '');
-                const disp = ugx > 0 ? `${sellerCurrency} ${Math.round(convertPrice(ugx, 'UGX', sellerCurrency)).toLocaleString()}` : (pricing ? '—' : '...');
+                const cur = getCurrencyForCountry(seller?.operatingCountry || '') || 'USD';
+                const hasDiscount = privilegePct > 0 && ugx > 0;
+                const fmt = (u: number) => `${cur} ${Math.round(convertPrice(u, 'UGX', cur)).toLocaleString()}`;
+                const origDisp = ugx > 0 ? fmt(ugx) : (pricing ? '—' : '...');
+                const discDisp = hasDiscount ? fmt(ugx * (1 - privilegePct / 100)) : origDisp;
                 const sel = selectedDays === d;
+                const Icon = d === 7 ? CalendarDays : d === 15 ? CalendarCheck : CalendarClock;
                 return (
-                  <button key={d} onClick={() => setSelectedDays(d)} style={{ flex: 1, padding: '14px 8px', borderRadius: 16, border: `${sel ? 2 : 1}px solid ${sel ? '#2E9B55' : 'rgba(0,0,0,0.07)'}`, background: sel ? '#2E9B5514' : '#fff', cursor: 'pointer', textAlign: 'center' }}>
-                    <div style={{ fontWeight: 900, fontSize: 13, color: sel ? '#2E7D32' : '#182033' }}>{d} {tr('daysWord', lang)}</div>
-                    <div style={{ fontWeight: 700, fontSize: 11.5, color: sel ? '#2E7D32' : '#6B7A99', marginTop: 4 }}>{disp}</div>
+                  <button key={d} onClick={() => setSelectedDays(d)} style={{ flex: 1, padding: '18px 10px', borderRadius: 18, border: `${sel ? 2 : 1}px solid ${sel ? '#2E9B55' : '#DCE7F5'}`, background: sel ? 'rgba(46,157,85,0.10)' : '#fff', cursor: 'pointer', textAlign: 'center', boxShadow: sel ? '0 4px 10px rgba(46,157,85,0.22)' : 'none' }}>
+                    <Icon size={22} color={sel ? '#2E9B55' : '#8A97B0'} style={{ marginBottom: 6 }} />
+                    <div style={{ fontWeight: 900, fontSize: 15, color: sel ? '#2E7D32' : '#182033' }}>{d} {tr('daysWord', lang)}</div>
+                    {hasDiscount && (
+                      <div style={{ fontWeight: 600, fontSize: 10, color: '#8A97B0', textDecoration: 'line-through', marginTop: 4 }}>{origDisp}</div>
+                    )}
+                    <div style={{ fontWeight: 700, fontSize: 12, marginTop: hasDiscount ? 1 : 4, color: hasDiscount ? '#2E9B55' : (sel ? '#2E7D32' : '#6B7A99') }}>{discDisp}</div>
                   </button>
                 );
               })}
             </div>
           </div>
         </div>
+
+          {/* Footer note — mirrors syph's info card below Pay Now. */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#fff', border: '1px solid #E6ECF5', borderRadius: 14, padding: 14 }}>
+            <Info size={20} color="#8A97B0" style={{ flexShrink: 0 }} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#6B7A99', lineHeight: 1.4 }}>{tr('happeningFooterNote', lang)}</span>
+          </div>
         </div>
       )}
 
@@ -458,7 +510,7 @@ export default function HappeningsPage() {
             style={{ width: '100%', height: 52, borderRadius: 26, border: 'none', background: submitting ? '#9ca3af' : '#2E9B55', color: '#fff', fontWeight: 900, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             {submitting ? (
               <><span style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> {tr('submittingEllipsis', lang)}</>
-            ) : tr('postHappening', lang)}
+            ) : (<><CreditCard size={18} /> {tr('payNowSubmit', lang)}</>)}
           </button>
         </div>
       )}

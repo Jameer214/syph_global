@@ -1125,6 +1125,7 @@ export async function createHappening(
       sub_category_id: data.subCategoryId ?? null,
       title: data.title,
       description: data.description,
+      bio: data.bio ?? null,
       seller_name: data.sellerName ?? null,
       price: data.priceValue ?? null,
       price_text: data.priceText ?? null,
@@ -1135,7 +1136,7 @@ export async function createHappening(
       image_url: imageUrls[0] ?? null,
       status: 'pending', // pending review
       is_happening: true,
-      is_negotiable: false,
+      is_negotiable: data.negotiable ?? false,
       is_flash_sale: false,
       is_sponsored: false,
       view_count: 0,

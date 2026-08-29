@@ -780,6 +780,18 @@ const T: Record<string, TranslationMap> = {
   ticketEntryPrice:    { en:'Ticket / Entry Price', fr:'Prix du billet / d\'entrée', pt:'Preço do ingresso / entrada', ar:'سعر التذكرة / الدخول', sw:'Bei ya Tiketi / Kuingia', zh:'门票/入场价格', hi:'टिकट / प्रवेश मूल्य', id:'Harga Tiket / Masuk', bn:'টিকিট / প্রবেশ মূল্য', ur:'ٹکٹ / داخلہ قیمت', ja:'チケット/入場料', ko:'티켓/입장 가격' },
   freePricePlaceholder:{ en:'0 (leave blank for free)', fr:'0 (laisser vide si gratuit)', pt:'0 (deixe em branco se for grátis)', ar:'0 (اتركه فارغاً إذا كان مجانياً)', sw:'0 (acha wazi ikiwa ni bure)', zh:'0（免费请留空）', hi:'0 (मुफ़्त के लिए खाली छोड़ें)', id:'0 (kosongkan jika gratis)', bn:'0 (বিনামূল্যে হলে খালি রাখুন)', ur:'0 (مفت کے لیے خالی چھوڑیں)', ja:'0（無料の場合は空欄）', ko:'0 (무료면 비워두세요)' },
   happeningSubmitted:  { en:'Happening submitted for review!', fr:'Événement soumis pour révision !', pt:'Acontecimento enviado para revisão!', ar:'تم إرسال الفعالية للمراجعة!', sw:'Tukio limewasilishwa kwa ukaguzi!', zh:'活动已提交审核！', hi:'इवेंट समीक्षा के लिए सबमिट हो गया!', id:'Acara dikirim untuk ditinjau!', bn:'ঘটনা পর্যালোচনার জন্য জমা হয়েছে!', ur:'واقعہ جائزے کے لیے جمع ہو گیا!', ja:'イベントを審査に提出しました！', ko:'행사가 검토를 위해 제출되었습니다!' },
+  // Happenings parity with syph post_happenings_screen (English-only for now).
+  happeningHeroTitle:  { en:'Post Your Happening' },
+  happeningHeroBody:   { en:'Fill in the details, choose your promotion duration, then pay to submit for admin review.' },
+  contactPaymentLabel: { en:'Contact / Payment' },
+  contactPaymentHeading: { en:'How should people pay or reach you?' },
+  contactPaymentBody:  { en:'Add a WhatsApp number, payment link, or booking contact — shown on your event card.' },
+  contactPaymentHint:  { en:'e.g., WhatsApp: +256700000000 · tickets.africa/my-event' },
+  venueHelper:         { en:'Type the venue address or tap the icon to use your current location as the happenings venue.' },
+  happeningFooterNote: { en:'After payment is confirmed and admin approves, your Happening will appear in the Happenings section.' },
+  enterValidPrice:     { en:'Please enter a valid price.' },
+  selectEventDateToast:{ en:'Please select the event date.' },
+  coverBadge:          { en:'Cover' },
   enterVenueToast:     { en:'Enter the venue location.', fr:'Saisissez le lieu de l\'événement.', pt:'Insira o local do evento.', ar:'أدخل موقع المكان.', sw:'Weka mahali pa tukio.', zh:'请输入活动地点。', hi:'स्थल का स्थान दर्ज करें।', id:'Masukkan lokasi tempat.', bn:'ভেন্যুর অবস্থান দিন।', ur:'مقام درج کریں۔', ja:'会場の場所を入力してください。', ko:'행사 장소를 입력해주세요.' },
 
   // ── Promotions (dashboard) ──────────────────────────────────────────────────
