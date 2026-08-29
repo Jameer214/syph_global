@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Camera, X, ChevronDown, MapPin, ImageIcon, Plus } from 'lucide-react';
+import { ArrowLeft, Camera, X, ChevronDown, ChevronRight, MapPin, ImageIcon, Plus, Store, Grid, Info, BadgeCheck, History, Search } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { createListing, getSellerProfile } from '@/lib/firestore';
@@ -30,7 +30,7 @@ interface AdminPricing {
 }
 
 const HEADERS: Record<FormType, { gradient: string; titleKey: string; subtitleKey: string }> = {
-  listing: { gradient: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', titleKey: 'newListing', subtitleKey: 'listItemSubtitle' },
+  listing: { gradient: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', titleKey: 'listNewItemTitle', subtitleKey: '' },
   sponsor: { gradient: 'linear-gradient(135deg, #C67200, #E89A00)', titleKey: 'featSponsorTitle', subtitleKey: 'boostVisibilitySub' },
   flash:   { gradient: 'linear-gradient(135deg, #C62828, #E53935)', titleKey: 'flashSaleLabel', subtitleKey: 'flashSaleSubtitle' },
 };
@@ -65,9 +65,15 @@ export default function NewListingForm() {
   const [currency, setCurrency] = useState('USD');
   const [price, setPrice] = useState('');
   const [negotiable, setNegotiable] = useState(false);
-  const [condition, setCondition] = useState('New');
+  // Listing: condition is optional and starts unset (tap again clears).
+  // Sponsor/flash keep their previous default of 'New'.
+  const [condition, setCondition] = useState(formType === 'listing' ? '' : 'New');
   const [selectedMainId, setSelectedMainId] = useState('');
   const [selectedSubId, setSelectedSubId] = useState('');
+  // Category bottom-sheet (listing variant): which pane is showing.
+  const [catSheetOpen, setCatSheetOpen] = useState(false);
+  const [catSheetMainId, setCatSheetMainId] = useState<string | null>(null);
+  const [catSearch, setCatSearch] = useState('');
   // Country/region come from the seller profile (matching the app — not asked here).
   const [country, setCountry] = useState('');
   const [region, setRegion] = useState('');
@@ -123,6 +129,20 @@ export default function NewListingForm() {
 
   const mainCategory = CATEGORIES.find((c) => c.id === selectedMainId);
   const subCategories = mainCategory?.children ?? [];
+
+  // Listing price currency is a fixed prefix derived from the seller's country
+  // (matches the app — no currency dropdown for the free listing variant).
+  const listingCurrency = getCurrencyForCountry(country || seller?.operatingCountry || '') || 'USD';
+
+  // Titles for the chosen category (used by the tile + sheet).
+  const selectedMainTitle = mainCategory ? trCategory(mainCategory.id, mainCategory.title, lang) : '';
+  const selectedSubTitle = subCategories.find((s) => s.id === selectedSubId)?.title ?? '';
+  const catSheetMain = CATEGORIES.find((c) => c.id === catSheetMainId) ?? null;
+
+  function clearCategory() {
+    setSelectedMainId('');
+    setSelectedSubId('');
+  }
 
   // Free while the promo is on AND the seller is under quota (and not in a
   // country where the admin switched the free promo off). Otherwise it's paid.
@@ -190,6 +210,9 @@ export default function NewListingForm() {
       const origVal = formType === 'flash' && originalPrice.trim()
         ? (parseFloat(originalPrice.replace(/[^0-9.]/g, '')) || undefined)
         : undefined;
+      // Listing uses the seller-country currency (fixed prefix, no dropdown);
+      // sponsor/flash keep the currency the seller picked.
+      const effCurrency = formType === 'listing' ? listingCurrency : currency;
       const listingId = await createListing({
         title: safeTitle,
         description: safeDesc,
@@ -199,18 +222,18 @@ export default function NewListingForm() {
         country: country || seller.operatingCountry,
         regionOrCity: region || seller.operatingRegion,
         locationText: safeLocation,
-        priceText: `${currency} ${price}`,
+        priceText: `${effCurrency} ${price}`,
         priceValue,
         specifications: Object.keys(specifications).length ? specifications : undefined,
         originalPriceValue: origVal,
-        originalPriceText: origVal !== undefined ? `${currency} ${originalPrice}` : undefined,
-        currencyCode: currency,
+        originalPriceText: origVal !== undefined ? `${effCurrency} ${originalPrice}` : undefined,
+        currencyCode: effCurrency,
         negotiable,
         messageAboutGoods: safeMessage || undefined,
         units: units.trim() ? (parseInt(units.trim(), 10) || undefined) : undefined,
         mainCategoryId: selectedMainId,
         subCategoryId: selectedSubId || undefined,
-        condition,
+        condition: condition || undefined,
         openNow: false,
         isSponsored: formType === 'sponsor',
         isHappening: false,
@@ -295,7 +318,9 @@ export default function NewListingForm() {
         </button>
         <div>
           <div style={{ color: '#fff', fontWeight: 900, fontSize: 20 }}>{tr(hdr.titleKey, lang)}</div>
-          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}>{tr(hdr.subtitleKey, lang)}</div>
+          {hdr.subtitleKey && (
+            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}>{tr(hdr.subtitleKey, lang)}</div>
+          )}
         </div>
       </div>
 
@@ -323,31 +348,79 @@ export default function NewListingForm() {
           </div>
         )}
 
+        {/* Info banner (listing only) */}
+        {formType === 'listing' && (
+          <div style={{
+            background: 'linear-gradient(135deg, #1D49C6, #2E67F5)',
+            borderRadius: 20, padding: '18px 18px', marginBottom: 12,
+            display: 'flex', alignItems: 'center', gap: 14,
+            boxShadow: '0 6px 16px rgba(46,103,245,0.35)',
+          }}>
+            <Store size={40} color="#fff" style={{ flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: '#fff', fontWeight: 900, fontSize: 16 }}>{tr('listItemInfoTitle', lang)}</div>
+              <div style={{ color: 'rgba(255,255,255,0.72)', fontWeight: 600, fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>{tr('listItemInfoBody', lang)}</div>
+            </div>
+          </div>
+        )}
+
         {/* Category */}
         <div style={sectionWrap}>
           <SectionLabel text={tr('category', lang)} />
-          <div style={cardStyle}>
-            <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', marginBottom: 6 }}>{tr('mainCategoryLabel', lang)} *</label>
-            <div style={{ position: 'relative' }}>
-              <select value={selectedMainId} onChange={(e) => { setSelectedMainId(e.target.value); setSelectedSubId(''); }} style={{ ...inputStyle, appearance: 'none' }}>
-                <option value="">{tr('selectCategory', lang)}...</option>
-                {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{trCategory(c.id, c.title, lang)}</option>)}
-              </select>
-              <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-            </div>
-            {subCategories.length > 0 && (
-              <>
-                <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', margin: '12px 0 6px' }}>{tr('subcategoryField', lang)}</label>
-                <div style={{ position: 'relative' }}>
-                  <select value={selectedSubId} onChange={(e) => setSelectedSubId(e.target.value)} style={{ ...inputStyle, appearance: 'none' }}>
-                    <option value="">{tr('selectSubcategory', lang)}...</option>
-                    {subCategories.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-                  </select>
-                  <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          {formType === 'listing' ? (
+            /* Tappable tile → searchable bottom-sheet (matches the app). */
+            <div
+              onClick={() => { if (!submitting) { setCatSheetMainId(null); setCatSearch(''); setCatSheetOpen(true); } }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: 14,
+                background: '#fff', borderRadius: 14, cursor: submitting ? 'default' : 'pointer',
+                border: `${selectedMainId ? 1.5 : 1}px solid ${selectedMainId ? '#2E5BFF' : '#DDE3EC'}`,
+              }}>
+              <div style={{ padding: 8, background: 'rgba(46,91,255,0.1)', borderRadius: 10, display: 'flex', flexShrink: 0 }}>
+                <Grid size={20} color="#2E5BFF" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: selectedMainId ? '#182033' : '#6B7A99' }}>
+                  {selectedMainId ? selectedMainTitle : tr('selectCategory', lang)}
                 </div>
-              </>
-            )}
-          </div>
+                <div style={{ fontWeight: 600, fontSize: 12, marginTop: 2, color: selectedMainId && selectedSubTitle ? '#2E5BFF' : '#8A97B0' }}>
+                  {selectedMainId && selectedSubTitle ? selectedSubTitle : tr('tapToChooseCategory', lang)}
+                </div>
+              </div>
+              {selectedMainId ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (!submitting) clearCategory(); }}
+                  style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', display: 'flex', flexShrink: 0 }}>
+                  <X size={20} color="#8A97B0" />
+                </button>
+              ) : (
+                <ChevronRight size={22} color="#8A97B0" style={{ flexShrink: 0 }} />
+              )}
+            </div>
+          ) : (
+            <div style={cardStyle}>
+              <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', marginBottom: 6 }}>{tr('mainCategoryLabel', lang)} *</label>
+              <div style={{ position: 'relative' }}>
+                <select value={selectedMainId} onChange={(e) => { setSelectedMainId(e.target.value); setSelectedSubId(''); }} style={{ ...inputStyle, appearance: 'none' }}>
+                  <option value="">{tr('selectCategory', lang)}...</option>
+                  {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{trCategory(c.id, c.title, lang)}</option>)}
+                </select>
+                <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+              {subCategories.length > 0 && (
+                <>
+                  <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', margin: '12px 0 6px' }}>{tr('subcategoryField', lang)}</label>
+                  <div style={{ position: 'relative' }}>
+                    <select value={selectedSubId} onChange={(e) => setSelectedSubId(e.target.value)} style={{ ...inputStyle, appearance: 'none' }}>
+                      <option value="">{tr('selectSubcategory', lang)}...</option>
+                      {subCategories.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+                    </select>
+                    <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Images */}
@@ -400,16 +473,46 @@ export default function NewListingForm() {
                 <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', marginBottom: 6 }}>{tr('flashSalePriceLabel', lang)} *</label>
               </>
             )}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, flexShrink: 0 }}>
-                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, flex: 1 }} />
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12, cursor: 'pointer', border: '1px solid #D7DEE8', borderRadius: 14, padding: '10px 14px' }}>
-              <span style={{ fontWeight: 700, color: '#182033', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
-              <input type="checkbox" checked={negotiable} onChange={() => setNegotiable(!negotiable)} style={{ width: 18, height: 18, accentColor: '#2E5BFF', cursor: 'pointer' }} />
-            </label>
+            {formType === 'listing' ? (
+              /* Fixed currency prefix from the seller's country (no dropdown). */
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, fontSize: 15, color: '#4A5878', pointerEvents: 'none' }}>{listingCurrency}</span>
+                <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, paddingLeft: 16 + listingCurrency.length * 9 + 8 }} />
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, flexShrink: 0 }}>
+                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, flex: 1 }} />
+              </div>
+            )}
+            {formType === 'listing' ? (
+              /* Negotiable = on/off switch (SwitchListTile in the app). */
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12, border: '1px solid #D7DEE8', borderRadius: 14, padding: '10px 14px' }}>
+                <span style={{ fontWeight: 700, color: '#182033', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
+                <button
+                  type="button"
+                  onClick={() => setNegotiable((v) => !v)}
+                  aria-pressed={negotiable}
+                  style={{
+                    width: 46, height: 26, borderRadius: 999, border: 'none', flexShrink: 0,
+                    background: negotiable ? '#2E5BFF' : '#C7D0E0', cursor: 'pointer',
+                    position: 'relative', transition: 'background 0.15s', padding: 0,
+                  }}>
+                  <span style={{
+                    position: 'absolute', top: 3, left: negotiable ? 23 : 3, width: 20, height: 20,
+                    borderRadius: '50%', background: '#fff', transition: 'left 0.15s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                  }} />
+                </button>
+              </div>
+            ) : (
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12, cursor: 'pointer', border: '1px solid #D7DEE8', borderRadius: 14, padding: '10px 14px' }}>
+                <span style={{ fontWeight: 700, color: '#182033', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
+                <input type="checkbox" checked={negotiable} onChange={() => setNegotiable(!negotiable)} style={{ width: 18, height: 18, accentColor: '#2E5BFF', cursor: 'pointer' }} />
+              </label>
+            )}
           </div>
         </div>
 
@@ -417,11 +520,43 @@ export default function NewListingForm() {
         <div style={sectionWrap}>
           <SectionLabel text={tr('itemConditionOptional', lang)} />
           <div style={cardStyle}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {CONDITIONS.map((c) => (
-                <button key={c} onClick={() => setCondition(c)} style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: `1px solid ${condition === c ? '#2E5BFF' : '#D7DEE8'}`, background: condition === c ? '#2E5BFF' : '#F5F8FD', color: condition === c ? '#fff' : '#4A5878', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{tr(CONDITION_KEYS[c], lang)}</button>
-              ))}
-            </div>
+            {formType === 'listing' ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <Info size={20} color="#2E5BFF" />
+                  <span style={{ fontWeight: 900, fontSize: 14.5, color: '#1E2B45' }}>{tr('itemConditionOptional', lang)}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {([
+                    { val: 'New', color: '#2E9B55', bg: '#E8F5E9', Icon: BadgeCheck },
+                    { val: 'Used', color: '#FF9800', bg: '#FFF3E0', Icon: History },
+                  ] as const).map(({ val, color, bg, Icon }) => {
+                    const selected = condition === val;
+                    return (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setCondition((prev) => (prev === val ? '' : val))}
+                        style={{
+                          flex: 1, padding: '14px 0', borderRadius: 14, cursor: 'pointer',
+                          background: selected ? bg : '#F7FAFF',
+                          border: `${selected ? 2 : 1}px solid ${selected ? color : '#DCE7F5'}`,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                        }}>
+                        <Icon size={26} color={selected ? color : '#8A97B0'} />
+                        <span style={{ fontWeight: 900, fontSize: 14, color: selected ? color : '#8A97B0' }}>{tr(CONDITION_KEYS[val], lang)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {CONDITIONS.map((c) => (
+                  <button key={c} onClick={() => setCondition(c)} style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: `1px solid ${condition === c ? '#2E5BFF' : '#D7DEE8'}`, background: condition === c ? '#2E5BFF' : '#F5F8FD', color: condition === c ? '#fff' : '#4A5878', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{tr(CONDITION_KEYS[c], lang)}</button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -512,10 +647,76 @@ export default function NewListingForm() {
           {submitting ? (
             <><div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />{tr('submittingEllipsis', lang)}</>
           ) : (
-            (formType === 'listing' && !willBePaid) ? tr('submitListing', lang) : tr('continueToPayment', lang)
+            (formType === 'listing' && !willBePaid) ? tr('submitForReview', lang) : tr('continueToPayment', lang)
           )}
         </button>
       </div>
+
+      {/* Category picker bottom-sheet (listing only) */}
+      {catSheetOpen && (
+        <div
+          onClick={() => setCatSheetOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 480, maxHeight: '80vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Sheet header */}
+            <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #EEF1F6', display: 'flex', alignItems: 'center', gap: 10 }}>
+              {catSheetMain && (
+                <button onClick={() => setCatSheetMainId(null)} style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', display: 'flex' }}>
+                  <ArrowLeft size={20} color="#1E2B45" />
+                </button>
+              )}
+              <span style={{ flex: 1, fontWeight: 900, fontSize: 16, color: '#1E2B45' }}>
+                {catSheetMain ? trCategory(catSheetMain.id, catSheetMain.title, lang) : tr('selectCategory', lang)}
+              </span>
+              <button onClick={() => setCatSheetOpen(false)} style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', display: 'flex' }}>
+                <X size={20} color="#6B7A99" />
+              </button>
+            </div>
+            {/* Search */}
+            <div style={{ padding: '12px 16px', position: 'relative' }}>
+              <Search size={16} color="#6B7A99" style={{ position: 'absolute', left: 28, top: '50%', transform: 'translateY(-50%)' }} />
+              <input
+                value={catSearch}
+                onChange={(e) => setCatSearch(e.target.value)}
+                placeholder={tr('search', lang)}
+                autoFocus
+                style={{ ...inputStyle, paddingLeft: 40 }}
+              />
+            </div>
+            {/* List */}
+            <div style={{ overflowY: 'auto', padding: '0 8px 16px' }}>
+              {!catSheetMain
+                ? CATEGORIES
+                    .filter((c) => trCategory(c.id, c.title, lang).toLowerCase().includes(catSearch.trim().toLowerCase()))
+                    .map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => { setCatSheetMainId(c.id); setCatSearch(''); }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 12px', background: 'none', border: 'none', borderRadius: 12, cursor: 'pointer', textAlign: 'left' }}>
+                        <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: '#1E2B45' }}>{trCategory(c.id, c.title, lang)}</span>
+                        <ChevronRight size={18} color="#8A97B0" />
+                      </button>
+                    ))
+                : (catSheetMain.children ?? [])
+                    .filter((s) => s.title.toLowerCase().includes(catSearch.trim().toLowerCase()))
+                    .map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          setSelectedMainId(catSheetMain.id);
+                          setSelectedSubId(s.id);
+                          setCatSheetOpen(false);
+                        }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 12px', background: 'none', border: 'none', borderRadius: 12, cursor: 'pointer', textAlign: 'left' }}>
+                        <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: '#1E2B45' }}>{s.title}</span>
+                      </button>
+                    ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
