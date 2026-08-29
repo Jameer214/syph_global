@@ -71,6 +71,15 @@ export default function SellerSetupPage() {
         setSelectedRegion(REGIONS.includes(sp.operatingRegion || '') ? sp.operatingRegion! : '');
         setAddress(sp.businessLocationText || '');
         setDelivers(sp.delivers === true);
+        // syph parity (didChangeDependencies): rehydrate ALL fields on edit, so an
+        // existing seller keeps their toggles/hours/days and isn't re-blocked on GPS.
+        setIsServiceProvider(sp.isServiceProvider === true);
+        setOpen24Hours(sp.open24Hours === true);
+        setOpeningTime(sp.openingTime || '');
+        setClosingTime(sp.closingTime || '');
+        setWorkingDays(Array.isArray(sp.workingDays) ? sp.workingDays : []);
+        if (typeof sp.businessLatitude === 'number') setBusinessLat(sp.businessLatitude);
+        if (typeof sp.businessLongitude === 'number') setBusinessLng(sp.businessLongitude);
       }
       setLoading(false);
     });
@@ -112,7 +121,7 @@ export default function SellerSetupPage() {
       ].filter(Boolean);
       const resolved = parts.join(', ');
       setAddress(resolved || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-      if (!selectedCountry && data.address?.country) setSelectedCountry(data.address.country);
+      // syph parity: location capture only sets lat/lng/address — it never touches country.
       toast.success(tr('locationDetected', lang));
     } catch {
       toast.error(tr('failedDetectLocation', lang));

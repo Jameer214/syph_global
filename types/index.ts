@@ -71,6 +71,14 @@ export interface SellerProfile {
   photoUrl?: string;
   delivers?: boolean;
   createdAt?: string;
+  // Availability + location extras (surfaced for seller-setup edit rehydration).
+  isServiceProvider?: boolean;
+  open24Hours?: boolean;
+  openingTime?: string;
+  closingTime?: string;
+  workingDays?: number[];
+  businessLatitude?: number;
+  businessLongitude?: number;
 }
 
 export interface UserProfile {

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Camera, X, ChevronDown, ChevronRight, MapPin, ImageIcon, Plus, Store, Grid, Info, BadgeCheck, History, Search } from 'lucide-react';
+import { ArrowLeft, Camera, X, ChevronRight, MapPin, ImageIcon, Plus, Store, Grid, Info, BadgeCheck, History, Search, SlidersHorizontal, Receipt, Send, CreditCard, Megaphone, Zap, Star, Flame, Trophy, Tag } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { createListing, getSellerProfile } from '@/lib/firestore';
@@ -14,10 +14,14 @@ import { sanitizeText } from '@/lib/sanitize';
 import { useAppStore } from '@/store';
 import { translate as tr, trCategory } from '@/lib/i18n';
 
-const CURRENCIES = ['USD', 'UGX', 'KES', 'TZS', 'RWF', 'ETB', 'GHS', 'NGN', 'ZAR'];
 // Canonical English values stored to DB — only the display is translated.
-const CONDITIONS = ['New', 'Used', 'Refurbished'];
-const CONDITION_KEYS: Record<string, string> = { New: 'conditionNew', Used: 'conditionUsed', Refurbished: 'conditionRefurbished' };
+// Reference (app) has only New/Used everywhere; Refurbished removed.
+const CONDITION_KEYS: Record<string, string> = { New: 'conditionNew', Used: 'conditionUsed' };
+// New=green / Used=orange condition tiles, shared by all form types.
+const CONDITION_OPTS = [
+  { val: 'New', color: '#2E9B55', bg: '#E8F5E9' },
+  { val: 'Used', color: '#FF9800', bg: '#FFF3E0' },
+] as const;
 const DURATION_OPTS = [7, 15, 30];
 const MAX_IMAGES = 3;
 
@@ -31,15 +35,18 @@ interface AdminPricing {
 
 const HEADERS: Record<FormType, { gradient: string; titleKey: string; subtitleKey: string }> = {
   listing: { gradient: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', titleKey: 'listNewItemTitle', subtitleKey: '' },
-  sponsor: { gradient: 'linear-gradient(135deg, #C67200, #E89A00)', titleKey: 'featSponsorTitle', subtitleKey: 'boostVisibilitySub' },
-  flash:   { gradient: 'linear-gradient(135deg, #C62828, #E53935)', titleKey: 'flashSaleLabel', subtitleKey: 'flashSaleSubtitle' },
+  // Sponsor mirrors syph's SyphGradientAppBar (blue), title "Sponsor My Item".
+  sponsor: { gradient: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', titleKey: 'sponsorInfoTitle', subtitleKey: '' },
+  // Flash app bar mirrors syph's SyphGradientAppBar (blue); the red hero lives in-body.
+  flash:   { gradient: 'linear-gradient(135deg, #0F2B6E, #1E4DD9)', titleKey: 'flashInfoTitle', subtitleKey: '' },
 };
 
-// Section label with the app's blue accent bar, sitting above each section.
-function SectionLabel({ text }: { text: string }) {
+// Section label with the app's accent bar, sitting above each section.
+// Accent is type-aware (flash = red) — matches syph's per-screen accent color.
+function SectionLabel({ text, color = '#2E5BFF' }: { text: string; color?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <div style={{ width: 4, height: 18, background: '#2E5BFF', borderRadius: 4 }} />
+      <div style={{ width: 4, height: 18, background: color, borderRadius: 4 }} />
       <span style={{ fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>{text}</span>
     </div>
   );
@@ -61,8 +68,8 @@ export default function NewListingForm() {
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [bio, setBio] = useState('');
   const [messageForBuyers, setMessageForBuyers] = useState('');
-  const [currency, setCurrency] = useState('USD');
   const [price, setPrice] = useState('');
   const [negotiable, setNegotiable] = useState(false);
   // Listing: condition is optional and starts unset (tap again clears).
@@ -130,8 +137,8 @@ export default function NewListingForm() {
   const mainCategory = CATEGORIES.find((c) => c.id === selectedMainId);
   const subCategories = mainCategory?.children ?? [];
 
-  // Listing price currency is a fixed prefix derived from the seller's country
-  // (matches the app — no currency dropdown for the free listing variant).
+  // Price currency is a fixed prefix derived from the seller's country
+  // (matches the app — no currency dropdown for any variant).
   const listingCurrency = getCurrencyForCountry(country || seller?.operatingCountry || '') || 'USD';
 
   // Titles for the chosen category (used by the tile + sheet).
@@ -172,19 +179,13 @@ export default function NewListingForm() {
     return adminPricing[catKey][priceKey] ?? 0;
   }
 
-  function getDisplayPrice(): string {
-    const ugx = getPriceUgx();
-    if (ugx <= 0) return adminPricing ? tr('contactSupport', lang) : tr('loading', lang);
-    const sellerCurrency = getCurrencyForCountry(country || seller?.operatingCountry || '');
-    const converted = convertPrice(ugx, 'UGX', sellerCurrency);
-    return `${sellerCurrency} ${Math.round(converted).toLocaleString()}`;
-  }
-
   async function handleSubmit() {
     if (!uid || !seller) { toast.error(tr('completeSetupFirst', lang)); router.push('/dashboard/setup'); return; }
-    if (!selectedMainId) { toast.error(tr('selectCategoryToast', lang)); return; }
-    if (images.length === 0) { toast.error(tr('addOneImageToast', lang)); return; }
+    // Validation order mirrors syph: title → category → description → images → price.
     if (!title.trim()) { toast.error(tr('enterTitleToast', lang)); return; }
+    if (!selectedMainId) { toast.error(tr('selectCategoryToast', lang)); return; }
+    if (!description.trim()) { toast.error(tr('enterDescToast', lang)); return; }
+    if (images.length === 0) { toast.error(tr('addOneImageToast', lang)); return; }
     if (!price.trim()) { toast.error(tr('enterPriceToast', lang)); return; }
     if (formType === 'flash') {
       const flashV = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
@@ -192,11 +193,12 @@ export default function NewListingForm() {
       if (!originalPrice.trim() || origV <= 0) { toast.error(tr('enterPriceToast', lang)); return; }
       if (origV <= flashV) { toast.error(tr('origMustExceedFlash', lang)); return; }
     }
-    if (!description.trim()) { toast.error(tr('enterDescToast', lang)); return; }
-    if (!locationText.trim()) { toast.error(tr('enterLocationToast', lang)); return; }
+    // Location is optional for sponsor (matches the app); required for listing/flash.
+    if (formType !== 'sponsor' && !locationText.trim()) { toast.error(tr('enterLocationToast', lang)); return; }
 
     const safeTitle = sanitizeText(title, 100);
     const safeDesc = sanitizeText(description, 1000);
+    const safeBio = sanitizeText(bio, 500);
     const safeLocation = sanitizeText(locationText, 200);
     const safeMessage = sanitizeText(messageForBuyers, 500);
     if (!safeTitle) { toast.error(tr('titleEmptyToast', lang)); return; }
@@ -210,12 +212,13 @@ export default function NewListingForm() {
       const origVal = formType === 'flash' && originalPrice.trim()
         ? (parseFloat(originalPrice.replace(/[^0-9.]/g, '')) || undefined)
         : undefined;
-      // Listing uses the seller-country currency (fixed prefix, no dropdown);
-      // sponsor/flash keep the currency the seller picked.
-      const effCurrency = formType === 'listing' ? listingCurrency : currency;
+      // All variants use the seller-country currency as a fixed prefix
+      // (no dropdown), matching the app.
+      const effCurrency = listingCurrency;
       const listingId = await createListing({
         title: safeTitle,
         description: safeDesc,
+        bio: safeBio || undefined,
         imageUrl: '',
         sellerName: seller.businessName || 'Seller',
         ownerUid: uid,
@@ -301,6 +304,8 @@ export default function NewListingForm() {
   }
 
   const hdr = HEADERS[formType];
+  // Per-screen accent (flash = red like syph's flash screen; others = blue).
+  const accent = formType === 'flash' ? '#E53935' : '#2E5BFF';
   // Bare filled input — matches the app's _inputField (fill, radius 14, grey border).
   const inputStyle: React.CSSProperties = { width: '100%', padding: '13px 16px', border: '1px solid #D7DEE8', borderRadius: 14, fontSize: 15, outline: 'none', background: '#F5F8FD', boxSizing: 'border-box', fontFamily: 'inherit' };
   // White card wrapping richer sections (Images, Price, Condition, Specifications, Category).
@@ -326,6 +331,36 @@ export default function NewListingForm() {
 
       <div style={{ padding: '16px 16px 100px' }}>
 
+        {/* Info hero banner (all variants). Listing/sponsor = blue brand gradient;
+            flash = red hero. syph order: banner FIRST, then the free-quota banner.
+            Listing copy swaps to the paid-path wording once the free quota is used. */}
+        <div style={{
+          background: formType === 'flash'
+            ? 'linear-gradient(135deg, #B71C1C, #E53935)'
+            : 'linear-gradient(135deg, #1D49C6, #2E67F5)',
+          borderRadius: 20, padding: '18px 18px', marginBottom: 12,
+          display: 'flex', alignItems: 'center', gap: 14,
+          boxShadow: formType === 'flash'
+            ? '0 6px 16px rgba(229,57,53,0.30)'
+            : '0 6px 16px rgba(46,103,245,0.35)',
+        }}>
+          {formType === 'sponsor'
+            ? <Megaphone size={40} color="#fff" style={{ flexShrink: 0 }} />
+            : formType === 'flash'
+              ? <Zap size={40} color="#fff" style={{ flexShrink: 0 }} />
+              : <Store size={40} color="#fff" style={{ flexShrink: 0 }} />}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: '#fff', fontWeight: 900, fontSize: 16 }}>{tr(
+              formType === 'sponsor' ? 'sponsorInfoTitle'
+                : formType === 'flash' ? 'flashInfoTitle'
+                  : willBePaid ? 'listItemInfoTitlePaid' : 'listItemInfoTitle', lang)}</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)', fontWeight: 600, fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>{tr(
+              formType === 'sponsor' ? 'sponsorInfoBody'
+                : formType === 'flash' ? 'flashInfoBody'
+                  : willBePaid ? 'listItemInfoBodyPaid' : 'listItemInfoBody', lang)}</div>
+          </div>
+        </div>
+
         {/* Free-15 quota banner (normal listings, while the promo is active) */}
         {formType === 'listing' && countLoaded && pricing && promoActive && (
           <div style={{
@@ -348,42 +383,26 @@ export default function NewListingForm() {
           </div>
         )}
 
-        {/* Info banner (listing only) */}
-        {formType === 'listing' && (
-          <div style={{
-            background: 'linear-gradient(135deg, #1D49C6, #2E67F5)',
-            borderRadius: 20, padding: '18px 18px', marginBottom: 12,
-            display: 'flex', alignItems: 'center', gap: 14,
-            boxShadow: '0 6px 16px rgba(46,103,245,0.35)',
-          }}>
-            <Store size={40} color="#fff" style={{ flexShrink: 0 }} />
-            <div style={{ minWidth: 0 }}>
-              <div style={{ color: '#fff', fontWeight: 900, fontSize: 16 }}>{tr('listItemInfoTitle', lang)}</div>
-              <div style={{ color: 'rgba(255,255,255,0.72)', fontWeight: 600, fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>{tr('listItemInfoBody', lang)}</div>
-            </div>
-          </div>
-        )}
-
         {/* Category */}
         <div style={sectionWrap}>
-          <SectionLabel text={tr('category', lang)} />
-          {formType === 'listing' ? (
-            /* Tappable tile → searchable bottom-sheet (matches the app). */
+          <SectionLabel color={accent} text={tr('category', lang)} />
+          {/* Tappable tile → searchable bottom-sheet (matches the app), all variants. */}
+          {
             <div
               onClick={() => { if (!submitting) { setCatSheetMainId(null); setCatSearch(''); setCatSheetOpen(true); } }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: 14,
                 background: '#fff', borderRadius: 14, cursor: submitting ? 'default' : 'pointer',
-                border: `${selectedMainId ? 1.5 : 1}px solid ${selectedMainId ? '#2E5BFF' : '#DDE3EC'}`,
+                border: `${selectedMainId ? 1.5 : 1}px solid ${selectedMainId ? accent : '#DDE3EC'}`,
               }}>
-              <div style={{ padding: 8, background: 'rgba(46,91,255,0.1)', borderRadius: 10, display: 'flex', flexShrink: 0 }}>
-                <Grid size={20} color="#2E5BFF" />
+              <div style={{ padding: 8, background: `${accent}1A`, borderRadius: 10, display: 'flex', flexShrink: 0 }}>
+                <Grid size={20} color={accent} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: 14, color: selectedMainId ? '#182033' : '#6B7A99' }}>
                   {selectedMainId ? selectedMainTitle : tr('selectCategory', lang)}
                 </div>
-                <div style={{ fontWeight: 600, fontSize: 12, marginTop: 2, color: selectedMainId && selectedSubTitle ? '#2E5BFF' : '#8A97B0' }}>
+                <div style={{ fontWeight: 600, fontSize: 12, marginTop: 2, color: selectedMainId && selectedSubTitle ? accent : '#8A97B0' }}>
                   {selectedMainId && selectedSubTitle ? selectedSubTitle : tr('tapToChooseCategory', lang)}
                 </div>
               </div>
@@ -397,41 +416,18 @@ export default function NewListingForm() {
                 <ChevronRight size={22} color="#8A97B0" style={{ flexShrink: 0 }} />
               )}
             </div>
-          ) : (
-            <div style={cardStyle}>
-              <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', marginBottom: 6 }}>{tr('mainCategoryLabel', lang)} *</label>
-              <div style={{ position: 'relative' }}>
-                <select value={selectedMainId} onChange={(e) => { setSelectedMainId(e.target.value); setSelectedSubId(''); }} style={{ ...inputStyle, appearance: 'none' }}>
-                  <option value="">{tr('selectCategory', lang)}...</option>
-                  {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{trCategory(c.id, c.title, lang)}</option>)}
-                </select>
-                <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              </div>
-              {subCategories.length > 0 && (
-                <>
-                  <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', margin: '12px 0 6px' }}>{tr('subcategoryField', lang)}</label>
-                  <div style={{ position: 'relative' }}>
-                    <select value={selectedSubId} onChange={(e) => setSelectedSubId(e.target.value)} style={{ ...inputStyle, appearance: 'none' }}>
-                      <option value="">{tr('selectSubcategory', lang)}...</option>
-                      {subCategories.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-                    </select>
-                    <ChevronDown size={16} color="#6B7A99" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+          }
         </div>
 
         {/* Images */}
         <div style={sectionWrap}>
-          <SectionLabel text={tr('imagesLabel', lang)} />
+          <SectionLabel color={accent} text={tr('imagesLabel', lang)} />
           <div style={cardStyle}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-              <ImageIcon size={20} color="#2E5BFF" />
+              <ImageIcon size={20} color={accent} />
               <span style={{ fontWeight: 900, fontSize: 14.5, color: '#1E2B45', marginLeft: 8, flex: 1 }}>{tr('itemImagesUpTo3', lang)}</span>
               {images.length < MAX_IMAGES && (
-                <button onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                <button onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: accent, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
                   <Plus size={16} /> {tr('addLabel', lang)}
                 </button>
               )}
@@ -458,201 +454,252 @@ export default function NewListingForm() {
 
         {/* Item Name */}
         <div style={sectionWrap}>
-          <SectionLabel text={tr('itemNameLabel', lang)} />
+          <SectionLabel color={accent} text={tr('itemNameLabel', lang)} />
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('itemNameHint', lang)} style={inputStyle} />
         </div>
 
         {/* Price */}
         <div style={sectionWrap}>
-          <SectionLabel text={tr('priceLabel', lang)} />
+          <SectionLabel color={accent} text={tr(formType === 'flash' ? 'flashSalePriceLabel' : 'priceLabel', lang)} />
           <div style={cardStyle}>
             {formType === 'flash' && (
               <>
-                <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', marginBottom: 6 }}>{tr('originalPriceLabel', lang)} *</label>
+                <label style={{ display: 'block', fontWeight: 700, fontSize: 12, color: '#888888', marginBottom: 6 }}>{tr('originalPriceLabel', lang)} *</label>
                 <input value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, marginBottom: 12 }} />
-                <label style={{ display: 'block', fontWeight: 800, fontSize: 12.5, color: '#4A5878', marginBottom: 6 }}>{tr('flashSalePriceLabel', lang)} *</label>
+                <label style={{ display: 'block', fontWeight: 700, fontSize: 12, color: '#E53935', marginBottom: 6 }}>{tr('flashSalePriceLabel', lang)} *</label>
               </>
             )}
-            {formType === 'listing' ? (
-              /* Fixed currency prefix from the seller's country (no dropdown). */
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, fontSize: 15, color: '#4A5878', pointerEvents: 'none' }}>{listingCurrency}</span>
-                <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, paddingLeft: 16 + listingCurrency.length * 9 + 8 }} />
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ ...inputStyle, width: 100, flexShrink: 0 }}>
-                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, flex: 1 }} />
-              </div>
-            )}
-            {formType === 'listing' ? (
-              /* Negotiable = on/off switch (SwitchListTile in the app). */
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12, border: '1px solid #D7DEE8', borderRadius: 14, padding: '10px 14px' }}>
-                <span style={{ fontWeight: 700, color: '#182033', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
-                <button
-                  type="button"
-                  onClick={() => setNegotiable((v) => !v)}
-                  aria-pressed={negotiable}
-                  style={{
-                    width: 46, height: 26, borderRadius: 999, border: 'none', flexShrink: 0,
-                    background: negotiable ? '#2E5BFF' : '#C7D0E0', cursor: 'pointer',
-                    position: 'relative', transition: 'background 0.15s', padding: 0,
-                  }}>
-                  <span style={{
-                    position: 'absolute', top: 3, left: negotiable ? 23 : 3, width: 20, height: 20,
-                    borderRadius: '50%', background: '#fff', transition: 'left 0.15s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                  }} />
-                </button>
-              </div>
-            ) : (
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12, cursor: 'pointer', border: '1px solid #D7DEE8', borderRadius: 14, padding: '10px 14px' }}>
-                <span style={{ fontWeight: 700, color: '#182033', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
-                <input type="checkbox" checked={negotiable} onChange={() => setNegotiable(!negotiable)} style={{ width: 18, height: 18, accentColor: '#2E5BFF', cursor: 'pointer' }} />
-              </label>
-            )}
+            {/* Fixed currency prefix from the seller's country (no dropdown), all variants. */}
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, fontSize: 15, color: '#4A5878', pointerEvents: 'none' }}>{listingCurrency}</span>
+              <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" type="number" style={{ ...inputStyle, paddingLeft: 16 + listingCurrency.length * 9 + 8 }} />
+            </div>
+            {/* Live discount badge (flash) — mirrors syph's _itemDiscountPercent chip. */}
+            {formType === 'flash' && (() => {
+              const o = parseFloat(originalPrice.replace(/[^0-9.]/g, '')) || 0;
+              const s = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
+              if (!(o > 0 && s > 0 && s < o)) return null;
+              const pct = Math.round(((o - s) / o) * 100);
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(229,57,53,0.10)', border: '1px solid rgba(229,57,53,0.35)' }}>
+                  <Tag size={16} color="#E53935" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#E53935' }}>{pct}% OFF — buyers see {listingCurrency} {originalPrice.trim()} crossed out</span>
+                </div>
+              );
+            })()}
+            {/* Negotiable = on/off switch (SwitchListTile in the app), all variants. */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12, border: '1px solid #D7DEE8', borderRadius: 14, padding: '10px 14px' }}>
+              <span style={{ fontWeight: 700, color: '#182033', fontSize: 14 }}>{tr('negotiableLabel', lang)}</span>
+              <button
+                type="button"
+                onClick={() => setNegotiable((v) => !v)}
+                aria-pressed={negotiable}
+                style={{
+                  width: 46, height: 26, borderRadius: 999, border: 'none', flexShrink: 0,
+                  background: negotiable ? '#2E5BFF' : '#C7D0E0', cursor: 'pointer',
+                  position: 'relative', transition: 'background 0.15s', padding: 0,
+                }}>
+                <span style={{
+                  position: 'absolute', top: 3, left: negotiable ? 23 : 3, width: 20, height: 20,
+                  borderRadius: '50%', background: '#fff', transition: 'left 0.15s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }} />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Item Condition */}
         <div style={sectionWrap}>
-          <SectionLabel text={tr('itemConditionOptional', lang)} />
+          {/* Listing = optional label; sponsor/flash = plain "Item Condition". */}
+          <SectionLabel color={accent} text={tr(formType === 'listing' ? 'itemConditionOptional' : 'itemConditionLabel', lang)} />
           <div style={cardStyle}>
-            {formType === 'listing' ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <Info size={20} color="#2E5BFF" />
-                  <span style={{ fontWeight: 900, fontSize: 14.5, color: '#1E2B45' }}>{tr('itemConditionOptional', lang)}</span>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {([
-                    { val: 'New', color: '#2E9B55', bg: '#E8F5E9', Icon: BadgeCheck },
-                    { val: 'Used', color: '#FF9800', bg: '#FFF3E0', Icon: History },
-                  ] as const).map(({ val, color, bg, Icon }) => {
-                    const selected = condition === val;
-                    return (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => setCondition((prev) => (prev === val ? '' : val))}
-                        style={{
-                          flex: 1, padding: '14px 0', borderRadius: 14, cursor: 'pointer',
-                          background: selected ? bg : '#F7FAFF',
-                          border: `${selected ? 2 : 1}px solid ${selected ? color : '#DCE7F5'}`,
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                        }}>
-                        <Icon size={26} color={selected ? color : '#8A97B0'} />
-                        <span style={{ fontWeight: 900, fontSize: 14, color: selected ? color : '#8A97B0' }}>{tr(CONDITION_KEYS[val], lang)}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <div style={{ display: 'flex', gap: 8 }}>
-                {CONDITIONS.map((c) => (
-                  <button key={c} onClick={() => setCondition(c)} style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: `1px solid ${condition === c ? '#2E5BFF' : '#D7DEE8'}`, background: condition === c ? '#2E5BFF' : '#F5F8FD', color: condition === c ? '#fff' : '#4A5878', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{tr(CONDITION_KEYS[c], lang)}</button>
-                ))}
-              </div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Info size={20} color={accent} />
+              <span style={{ fontWeight: 900, fontSize: 14.5, color: '#1E2B45' }}>{tr(formType === 'listing' ? 'itemConditionOptional' : 'itemConditionLabel', lang)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {CONDITION_OPTS.map(({ val, color, bg }) => {
+                const Icon = val === 'New' ? BadgeCheck : History;
+                const selected = condition === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    // Listing is optional + tap-to-clear; sponsor/flash are non-clearing.
+                    onClick={() => setCondition((prev) => (formType === 'listing' && prev === val ? '' : val))}
+                    style={{
+                      flex: 1, padding: '14px 0', borderRadius: 14, cursor: 'pointer',
+                      background: selected ? bg : '#F7FAFF',
+                      border: `${selected ? 2 : 1}px solid ${selected ? color : '#DCE7F5'}`,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    }}>
+                    <Icon size={26} color={selected ? color : '#8A97B0'} />
+                    <span style={{ fontWeight: 900, fontSize: 14, color: selected ? color : '#8A97B0' }}>{tr(CONDITION_KEYS[val], lang)}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
         {/* Specifications */}
         <div style={sectionWrap}>
-          <SectionLabel text={tr('specifications', lang)} />
+          <SectionLabel color={accent} text={tr('specifications', lang)} />
           <div style={cardStyle}>
+            {/* In-card header: tune icon + title + Add (matches syph _specificationsSection). */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <SlidersHorizontal size={20} color={accent} />
+              <span style={{ flex: 1, fontWeight: 900, fontSize: 15, color: '#1E2B45' }}>{tr('specifications', lang)}</span>
+              <button onClick={() => setSpecs((p) => [...p, { label: '', value: '' }])} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: accent, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}><Plus size={16} /> {tr('addLabel', lang)}</button>
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#9AA5B8', marginBottom: 12 }}>{tr('specsHelperExample', lang)}</div>
             {specs.map((s, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, marginBottom: i === specs.length - 1 ? 0 : 10 }}>
                 <input value={s.label} onChange={(e) => setSpecs((p) => p.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r))} placeholder={tr('specLabelPlaceholder', lang)} style={{ ...inputStyle, flex: 1 }} />
                 <input value={s.value} onChange={(e) => setSpecs((p) => p.map((r, idx) => idx === i ? { ...r, value: e.target.value } : r))} placeholder={tr('specValuePlaceholder', lang)} style={{ ...inputStyle, flex: 1 }} />
-                {specs.length > 1 && <button onClick={() => setSpecs((p) => p.filter((_, idx) => idx !== i))} style={{ background: '#FFECEC', border: 'none', borderRadius: 12, width: 44, flexShrink: 0, cursor: 'pointer', color: '#E53935', fontWeight: 900, fontSize: 18 }}>×</button>}
+                {specs.length > 1 && <button onClick={() => setSpecs((p) => p.filter((_, idx) => idx !== i))} style={{ background: '#FFE9E7', border: 'none', borderRadius: 12, width: 44, flexShrink: 0, cursor: 'pointer', color: '#E53935', fontWeight: 900, fontSize: 18 }}>×</button>}
               </div>
             ))}
-            <button onClick={() => setSpecs((p) => [...p, { label: '', value: '' }])} style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#2E5BFF', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}><Plus size={16} /> {tr('addSpecification', lang)}</button>
           </div>
         </div>
 
         {/* Description */}
         <div style={sectionWrap}>
-          <SectionLabel text={tr('descriptionLabel', lang)} />
+          <SectionLabel color={accent} text={tr('descriptionLabel', lang)} />
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr('describeYourItem', lang)} rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
         </div>
 
-        {/* Location */}
+        {/* Bio (sponsor + flash) — sits after Description, before Location (matches the app). */}
+        {formType !== 'listing' && (
+          <div style={sectionWrap}>
+            <SectionLabel color={accent} text={tr('bioLabel', lang)} />
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder={tr('bioHint', lang)} rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
+          </div>
+        )}
+
+        {/* Location — optional (label) for sponsor; required for listing/flash. */}
         <div style={sectionWrap}>
-          <SectionLabel text={tr('locationLabel', lang)} />
+          <SectionLabel color={accent} text={tr(formType === 'sponsor' ? 'locationOptionalLabel' : 'locationLabel', lang)} />
           <div style={{ position: 'relative' }}>
             <MapPin size={16} color="#6B7A99" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
             <input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder={tr('exactAreaStreet', lang)} style={{ ...inputStyle, paddingLeft: 40 }} />
           </div>
         </div>
 
-        {/* Units Available (optional) */}
-        <div style={sectionWrap}>
-          <SectionLabel text={tr('unitsAvailableOptional', lang)} />
-          <input value={units} onChange={(e) => setUnits(e.target.value)} placeholder={tr('unitsHint', lang)} type="number" min="1" style={inputStyle} />
-        </div>
+        {/* Message + Units. Listing (app): Units then Message; sponsor & flash: Message then Units. */}
+        {(() => {
+          const messageBlock = (
+            <div key="msg" style={sectionWrap}>
+              <SectionLabel color={accent} text={tr('messageAboutGoodsOptional', lang)} />
+              <textarea value={messageForBuyers} onChange={(e) => setMessageForBuyers(e.target.value)} placeholder={tr('extraMessageForBuyers', lang)} rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
+            </div>
+          );
+          const unitsBlock = (
+            <div key="units" style={sectionWrap}>
+              <SectionLabel color={accent} text={tr('unitsAvailableOptional', lang)} />
+              <input value={units} onChange={(e) => setUnits(e.target.value)} placeholder={tr('unitsHint', lang)} type="number" min="1" style={inputStyle} />
+            </div>
+          );
+          return formType === 'listing' ? [unitsBlock, messageBlock] : [messageBlock, unitsBlock];
+        })()}
 
-        {/* Message about goods (optional) */}
-        <div style={sectionWrap}>
-          <SectionLabel text={tr('messageAboutGoodsOptional', lang)} />
-          <textarea value={messageForBuyers} onChange={(e) => setMessageForBuyers(e.target.value)} placeholder={tr('extraMessageForBuyers', lang)} rows={2} style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }} />
-        </div>
-
-        {/* Promotion duration + pricing (sponsor/flash only) */}
+        {/* Promotion duration (sponsor/flash only). Tiles carry the per-duration
+            price with privilege-discount strikethrough — mirrors syph _durationTile. */}
         {formType !== 'listing' && (
           <div style={sectionWrap}>
-            <SectionLabel text={formType === 'sponsor' ? tr('sponsorshipDuration', lang) : tr('flashSaleDuration', lang)} />
+            <SectionLabel color={accent} text={formType === 'sponsor' ? tr('selectPromotionDuration', lang) : tr('flashSaleDuration', lang)} />
             <div style={cardStyle}>
               <div style={{ display: 'flex', gap: 8 }}>
                 {DURATION_OPTS.map((d) => {
                   const priceKey = d <= 7 ? 'days7' : d <= 15 ? 'days15' : 'days30';
                   const catKey = formType === 'sponsor' ? 'upgradeToSponsored' : 'upgradeToFlashSale';
                   const ugx = adminPricing ? (adminPricing[catKey][priceKey] ?? 0) : 0;
-                  const sellerCurrency = getCurrencyForCountry(country || seller?.operatingCountry || '');
-                  const displayAmt = ugx > 0
-                    ? `${sellerCurrency} ${Math.round(convertPrice(ugx, 'UGX', sellerCurrency)).toLocaleString()}`
-                    : adminPricing ? '—' : '...';
+                  const cur = getCurrencyForCountry(country || seller?.operatingCountry || '');
+                  const hasDiscount = privilegePct > 0 && ugx > 0;
+                  const fmt = (u: number) => `${cur} ${Math.round(convertPrice(u, 'UGX', cur)).toLocaleString()}`;
+                  const origDisp = ugx > 0 ? fmt(ugx) : (adminPricing ? '—' : '...');
+                  const discDisp = hasDiscount ? fmt(ugx * (1 - privilegePct / 100)) : origDisp;
                   const selected = duration === d;
                   const color = formType === 'sponsor' ? '#2F6BFF' : '#E53935';
+                  // syph tile icons: sponsor 7/15=lightning, 30=star; flash 7=flash, 15=flame, 30=trophy.
+                  const Icon = formType === 'flash'
+                    ? (d === 7 ? Zap : d === 15 ? Flame : Trophy)
+                    : (d === 30 ? Star : Zap);
+                  const selBg = formType === 'flash' ? '#FFEBEE' : '#EAF0FF';
                   return (
-                    <button key={d} onClick={() => setDuration(d)} style={{ flex: 1, padding: '14px 8px', borderRadius: 14, border: `${selected ? 2 : 1}px solid ${selected ? color : '#D7DEE8'}`, background: selected ? `${color}14` : '#F5F8FD', cursor: 'pointer', textAlign: 'center' }}>
-                      <div style={{ fontWeight: 900, fontSize: 13, color: selected ? color : '#182033' }}>{d} {tr('daysWord', lang)}</div>
-                      <div style={{ fontWeight: 700, fontSize: 11.5, color: selected ? color : '#6B7A99', marginTop: 4 }}>{displayAmt}</div>
+                    <button key={d} onClick={() => setDuration(d)} style={{ flex: 1, padding: '18px 10px', borderRadius: 18, border: `${selected ? 2 : 1}px solid ${selected ? color : '#DCE7F5'}`, background: selected ? selBg : '#F5F8FD', cursor: 'pointer', textAlign: 'center', boxShadow: selected ? `0 4px 10px ${color}26` : 'none' }}>
+                      <Icon size={22} color={selected ? color : '#8A97B0'} style={{ marginBottom: 6 }} />
+                      <div style={{ fontWeight: 900, fontSize: 15, color: selected ? color : '#182033' }}>{d} {tr('daysWord', lang)}</div>
+                      {hasDiscount && (
+                        <div style={{ fontWeight: 600, fontSize: 10, color: '#8A97B0', textDecoration: 'line-through', marginTop: 4 }}>{origDisp}</div>
+                      )}
+                      <div style={{ fontWeight: 700, fontSize: 12, marginTop: hasDiscount ? 1 : 4, color: hasDiscount ? '#2E9B55' : (selected ? color : '#8A97B0') }}>{discDisp}</div>
                     </button>
                   );
                 })}
-              </div>
-              <div style={{ background: formType === 'sponsor' ? '#EEF3FF' : '#FFF0F0', borderRadius: 14, padding: 14, marginTop: 14, border: `1px solid ${formType === 'sponsor' ? '#C0D0FF' : '#FFCDD2'}` }}>
-                {[
-                  { label: tr('typeWord', lang), value: formType === 'sponsor' ? tr('sponsored', lang) : tr('flashSaleLabel', lang) },
-                  { label: tr('durationWord', lang), value: `${duration} ${tr('daysWord', lang)}` },
-                  { label: tr('listingPrice', lang), value: getDisplayPrice() },
-                ].map(({ label, value }) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13 }}>{label}</span>
-                    <span style={{ fontWeight: 900, fontSize: 13, color: formType === 'sponsor' ? '#2F6BFF' : '#E53935' }}>{value}</span>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Submit */}
-        <button onClick={handleSubmit} disabled={submitting} style={{ width: '100%', padding: 16, marginTop: 8, background: submitting ? '#A0B4E0' : 'linear-gradient(90deg, #1D49C6, #2E67F5)', border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer', boxShadow: '0 6px 14px rgba(46,103,245,0.38)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        {/* Listing Fee card (normal listing, quota used up) — mirrors syph
+            list_item_payment_screen so the seller sees the fee before paying. */}
+        {formType === 'listing' && willBePaid && (() => {
+          const cur = listingCurrency;
+          const hasDiscount = privilegePct > 0;
+          const origAmt = Math.round(convertPrice(perListingUgx, 'UGX', cur));
+          const discAmt = hasDiscount
+            ? Math.round(convertPrice(perListingUgx * (1 - privilegePct / 100), 'UGX', cur))
+            : origAmt;
+          const fmt = (n: number) => `${cur} ${n.toLocaleString()}`;
+          return (
+            <div style={sectionWrap}>
+              <SectionLabel color={accent} text={tr('listingFeeLabel', lang)} />
+              <div style={{ background: '#EAF0FF', borderRadius: 18, border: '1.5px solid #2E5BFF', padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ padding: 12, background: 'rgba(46,91,255,0.12)', borderRadius: 14, display: 'flex', flexShrink: 0 }}>
+                  <Receipt size={24} color="#2E5BFF" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 900, fontSize: 14, color: '#1E2B45' }}>{tr('perListingFee', lang)}</div>
+                  <div style={{ fontWeight: 600, fontSize: 12, color: '#6B7A99', marginTop: 2 }}>{tr('oneTimeListingFee', lang)}</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  {hasDiscount && (
+                    <span style={{ fontWeight: 700, fontSize: 12, color: '#8A97B0', textDecoration: 'line-through' }}>{fmt(origAmt)}</span>
+                  )}
+                  <span style={{ fontWeight: 900, fontSize: 18, color: hasDiscount ? '#2E9B55' : '#2E5BFF' }}>{fmt(discAmt)}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Submit — flash gets the red gradient + flash icon to match syph. */}
+        <button onClick={handleSubmit} disabled={submitting} style={{ width: '100%', padding: 16, marginTop: 8, background: submitting ? '#A0B4E0' : (formType === 'flash' ? 'linear-gradient(90deg, #B71C1C, #E53935)' : 'linear-gradient(90deg, #1D49C6, #2E67F5)'), border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer', boxShadow: formType === 'flash' ? '0 6px 14px rgba(229,57,53,0.38)' : '0 6px 14px rgba(46,103,245,0.38)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {submitting ? (
             <><div style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />{tr('submittingEllipsis', lang)}</>
+          ) : formType === 'sponsor' ? (
+            <><CreditCard size={18} /> {tr('payNowSubmit', lang)}</>
+          ) : formType === 'flash' ? (
+            <><Zap size={18} /> {tr('payNowSubmit', lang)}</>
+          ) : willBePaid ? (
+            <><CreditCard size={18} /> {tr('payListingFeeSubmit', lang)}</>
           ) : (
-            (formType === 'listing' && !willBePaid) ? tr('submitForReview', lang) : tr('continueToPayment', lang)
+            <><Send size={18} /> {tr('submitForReview', lang)}</>
           )}
         </button>
+
+        {/* Footer note (sponsor + flash) — mirrors syph's info card below Pay Now. */}
+        {formType !== 'listing' && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 12, background: '#fff', border: '1px solid #E6ECF5', borderRadius: 14, padding: 14 }}>
+            <Info size={20} color="#8A97B0" style={{ flexShrink: 0 }} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#6B7A99', lineHeight: 1.4 }}>{tr(formType === 'flash' ? 'flashFooterNote' : 'sponsorFooterNote', lang)}</span>
+          </div>
+        )}
       </div>
 
-      {/* Category picker bottom-sheet (listing only) */}
+      {/* Category picker bottom-sheet (all variants) */}
       {catSheetOpen && (
         <div
           onClick={() => setCatSheetOpen(false)}

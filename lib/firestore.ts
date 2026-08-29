@@ -316,6 +316,14 @@ export async function getSellerProfile(uid: string): Promise<SellerProfile | nul
     photoUrl: d.shop_logo_url ? String(d.shop_logo_url) : undefined,
     delivers: Boolean(d.delivers),
     createdAt: d.created_at ? String(d.created_at) : undefined,
+    // Availability + location extras (for seller-setup edit rehydration).
+    isServiceProvider: Boolean(d.is_service_provider),
+    open24Hours: Boolean(d.open_24_hours),
+    openingTime: d.opening_time ? String(d.opening_time) : undefined,
+    closingTime: d.closing_time ? String(d.closing_time) : undefined,
+    workingDays: Array.isArray(d.working_days) ? (d.working_days as number[]) : undefined,
+    businessLatitude: typeof d.business_latitude === 'number' ? d.business_latitude : undefined,
+    businessLongitude: typeof d.business_longitude === 'number' ? d.business_longitude : undefined,
   };
 }
 
@@ -493,6 +501,7 @@ export async function createListing(
       sub_category_id: data.subCategoryId ?? null,
       title: data.title,
       description: data.description,
+      bio: data.bio ?? null,
       seller_name: data.sellerName ?? null,
       price: data.priceValue ?? null,
       price_text: data.priceText ?? null,
