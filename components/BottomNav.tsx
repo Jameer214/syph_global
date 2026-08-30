@@ -37,7 +37,7 @@ export default function BottomNav() {
   );
 
   return (
-    <nav style={{
+    <nav className="mobile-bottomnav" style={{
       position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
       width: '100%', maxWidth: 480, backgroundColor: '#fff',
       borderTop: '1px solid #f1f5f9', zIndex: 50, height: 60,

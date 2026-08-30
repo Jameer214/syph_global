@@ -99,7 +99,7 @@ function CategoriesBrowser() {
   const mainColor = CATEGORY_COLORS[selectedMain.id] ?? '#2E5BFF';
 
   return (
-    <div className="app-shell" style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', backgroundColor: '#D6ECFF' }} dir={getDir(selectedLanguage)}>
+    <div className="app-shell wide-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--desktop-nav-h))', overflow: 'hidden', backgroundColor: '#D6ECFF' }} dir={getDir(selectedLanguage)}>
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
@@ -184,12 +184,8 @@ function CategoriesBrowser() {
 
             <div style={{ height: 14 }} />
 
-            {/* 3-col subcategory grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '16px 8px',
-            }}>
+            {/* subcategory grid — 3 cols on phone, more on wider screens */}
+            <div className="subcat-grid">
               {/* View all — everything in this category */}
               <button
                 onClick={() => router.push(`/category/${selectedMain.id}`)}

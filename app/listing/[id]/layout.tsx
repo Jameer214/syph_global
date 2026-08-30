@@ -1,15 +1,21 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { cache } from 'react';
 import { supabase } from '@/lib/supabase';
+import JsonLd from '@/components/JsonLd';
 
 export const revalidate = 3600;
 
-async function fetchListingMeta(id: string): Promise<{
+// cache() dedupes the query so generateMetadata + the JSON-LD block below hit
+// the DB only once per request.
+const fetchListingMeta = cache(async function fetchListingMeta(id: string): Promise<{
   title: string;
   description: string;
   imageUrl: string;
   locationText: string;
   price: string;
+  priceValue: number | null;
+  currency: string;
 } | null> {
   try {
     const { data } = await supabase
@@ -32,7 +38,7 @@ async function fetchListingMeta(id: string): Promise<{
 
     const currency = String(row.currency ?? 'USD');
     const priceText = String(row.price_text ?? '');
-    const priceValue = typeof row.price === 'number' ? row.price : undefined;
+    const priceValue = typeof row.price === 'number' ? row.price : null;
     const price = priceText || (priceValue != null ? `${currency} ${priceValue.toLocaleString()}` : '');
 
     return {
@@ -41,11 +47,13 @@ async function fetchListingMeta(id: string): Promise<{
       imageUrl,
       locationText: String(row.location_text ?? ''),
       price,
+      priceValue,
+      currency,
     };
   } catch {
     return null;
   }
-}
+});
 
 export async function generateMetadata({
   params,
@@ -93,6 +101,44 @@ export async function generateMetadata({
   };
 }
 
-export default function ListingLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+export default async function ListingLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const listing = await fetchListingMeta(id);
+
+  if (!listing || !listing.title) return <>{children}</>;
+
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: listing.title,
+    url: `https://www.syphglobal.com/listing/${id}`,
+    ...(listing.description ? { description: listing.description } : {}),
+    ...(listing.imageUrl ? { image: listing.imageUrl } : {}),
+    // Only advertise a numeric Offer when there's a real price — omitting it is
+    // valid, whereas a 0/empty price is flagged by Google.
+    ...(listing.priceValue != null
+      ? {
+          offers: {
+            '@type': 'Offer',
+            price: listing.priceValue,
+            priceCurrency: listing.currency,
+            availability: 'https://schema.org/InStock',
+            url: `https://www.syphglobal.com/listing/${id}`,
+          },
+        }
+      : {}),
+  };
+
+  return (
+    <>
+      <JsonLd data={jsonLd} />
+      {children}
+    </>
+  );
 }

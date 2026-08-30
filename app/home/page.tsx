@@ -1087,15 +1087,15 @@ export default function HomePage() {
   }, [searchFocused, searchQuery, searchHints.length]);
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 80 }} dir={getDir(selectedLanguage)}>
+    <div className="wide-page" style={{ minHeight: '100dvh', background: '#F0F4FF', paddingBottom: 80 }} dir={getDir(selectedLanguage)}>
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
       {/* ── Top App Bar ── */}
       <div className="sweep" style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
         padding: '14px 16px 14px',
-        position: 'sticky', top: 0, zIndex: 40,
+        position: 'sticky', top: 'var(--desktop-nav-h)', zIndex: 40,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="wide-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 600, letterSpacing: '0.5px' }}>
               {tr('tagline', selectedLanguage).toUpperCase()}
@@ -1143,7 +1143,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Body ── */}
-      <div style={{ padding: '14px 14px 0' }}>
+      <div className="wide-container" style={{ padding: '14px 14px 0' }}>
 
         {/* Location banner */}
         <div className="anim-fade-up" style={{
@@ -1554,7 +1554,7 @@ export default function HomePage() {
           </div>
 
           {exploreLoading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="explore-grid">
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="anim-fade-up" style={{ borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', animationDelay: `${i * 0.08}s` }}>
                   <div className="skeleton" style={{ paddingTop: '83.33%' }} />
@@ -1597,7 +1597,7 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="explore-grid">
                 {exploreItems.slice(0, EXPLORE_MAX).map((l) => (
                   <GridCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} verified={verifiedSellers.has(l.ownerUid)} />
                 ))}

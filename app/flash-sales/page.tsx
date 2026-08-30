@@ -188,11 +188,11 @@ export default function FlashSalesPage() {
   }, [selectedCountry]);
 
   return (
-    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 540, margin: '0 auto' }}>
+    <div dir={getDir(selectedLanguage)} className="wide-page" style={{ minHeight: '100dvh', background: '#F0F4FF' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Header */}
-      <div style={{
+      <div className="wide-container" style={{
         background: 'linear-gradient(135deg, #C62828 0%, #E53935 100%)',
         padding: '52px 20px 24px',
       }}>
@@ -210,7 +210,7 @@ export default function FlashSalesPage() {
         )}
       </div>
 
-      <div style={{ padding: '16px 7px 90px' }}>
+      <div className="wide-container" style={{ padding: '16px 7px 90px' }}>
         {loading && (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
             <div style={{ width: 36, height: 36, border: '3px solid #FFE0E0', borderTop: '3px solid #E53935', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -228,7 +228,7 @@ export default function FlashSalesPage() {
         )}
 
         {!loading && items.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+          <div className="explore-grid">
             {items.map((item) => (
               <FlashSaleCard key={item.id} item={item} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(item.id)} verified={verifiedSellers.has(item.ownerUid)} />
             ))}

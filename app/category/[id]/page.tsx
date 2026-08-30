@@ -227,9 +227,9 @@ export default function CategoryResultsPage() {
   }
 
   return (
-    <div className="app-shell" dir={getDir(selectedLanguage)} style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
+    <div className="app-shell wide-page" dir={getDir(selectedLanguage)} style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
       {/* Header */}
-      <div style={{
+      <div className="wide-container" style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
         padding: '0 16px',
         height: 56,
@@ -237,7 +237,7 @@ export default function CategoryResultsPage() {
         alignItems: 'center',
         gap: 12,
         position: 'sticky',
-        top: 0,
+        top: 'var(--desktop-nav-h)',
         zIndex: 40,
       }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
@@ -256,7 +256,7 @@ export default function CategoryResultsPage() {
       </div>
 
       {/* Content */}
-      <div style={{ padding: '12px 16px 16px' }}>
+      <div className="wide-container" style={{ padding: '12px 16px 16px' }}>
         {/* Quick filter chips */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           {[
@@ -323,7 +323,7 @@ export default function CategoryResultsPage() {
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="card-grid">
               {filtered.map((l, i) => (
                 <ResultCard key={l.id} listing={l} isSaved={savedIds.includes(l.id)} onToggleSave={() => toggleSaved(l.id)} priceDisplay={displayPrice(l)} index={i} distanceKm={distanceById.get(l.id)} verified={verifiedSellers.has(l.ownerUid)} />
               ))}

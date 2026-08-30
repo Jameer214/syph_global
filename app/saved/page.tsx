@@ -119,13 +119,13 @@ export default function SavedPage() {
   }
 
   return (
-    <div dir={getDir(selectedLanguage)} className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+    <div dir={getDir(selectedLanguage)} className="app-shell wide-page" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 40 }}>
+      <div className="wide-container" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', position: 'sticky', top: 'var(--desktop-nav-h)', zIndex: 40 }}>
         <span style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('savedListings', selectedLanguage)}</span>
       </div>
 
-      <div style={{ padding: '12px 16px', paddingBottom: 80 }}>
+      <div className="wide-container" style={{ padding: '12px 16px', paddingBottom: 80 }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#6B7A99' }}>{tr('loading', selectedLanguage)}</div>
         ) : savedListings.length === 0 ? (
@@ -136,7 +136,7 @@ export default function SavedPage() {
             <button onClick={() => router.push('/home')} style={{ padding: '12px 24px', background: '#2E5BFF', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 900, cursor: 'pointer' }}>{tr('browseListings', selectedLanguage)}</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="card-grid">
             {savedListings.map((l) => {
               const price = displayPrice(l);
               const img = l.imageUrls?.[0] ?? l.imageUrl;

@@ -83,11 +83,11 @@ export default function HappeningsPage() {
   }, [selectedCountry]);
 
   return (
-    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
+    <div dir={getDir(selectedLanguage)} className="wide-page" style={{ minHeight: '100dvh', background: '#F0F4FF' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Header */}
-      <div style={{
+      <div className="wide-container" style={{
         background: 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)',
         padding: '52px 20px 24px',
       }}>
@@ -106,7 +106,7 @@ export default function HappeningsPage() {
       </div>
 
       {/* Content */}
-      <div style={{ padding: '16px 16px 90px' }}>
+      <div className="wide-container" style={{ padding: '16px 16px 90px' }}>
         {loading && (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
             <div style={{ width: 36, height: 36, border: '3px solid #E8EDFF', borderTop: '3px solid #2E7D32', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -123,10 +123,12 @@ export default function HappeningsPage() {
           </div>
         )}
 
-        {!loading && happenings.map((item) => (
+        {!loading && happenings.length > 0 && (
+        <div className="card-grid">
+        {happenings.map((item) => (
           <div key={item.id} onClick={() => router.push(`/listing/${item.id}`)}
             style={{
-              background: '#fff', borderRadius: 20, marginBottom: 16, overflow: 'hidden',
+              background: '#fff', borderRadius: 20, overflow: 'hidden',
               cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.07)',
             }}>
             {/* Image */}
@@ -189,6 +191,8 @@ export default function HappeningsPage() {
             </div>
           </div>
         ))}
+        </div>
+        )}
       </div>
 
       <BottomNav />

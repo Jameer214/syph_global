@@ -22,6 +22,53 @@ html, body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ── Responsive desktop layout ───────────────────────────────────────────────
+   Mobile (≤767px) is untouched: the shell stays a 480px phone column and the
+   fixed bottom tab bar remains. Browse pages opt into a wide desktop layout by
+   putting `wide-page` on their root; the shell detects it with :has() and lifts
+   the cap, filling the screen up to 1440px. Detail/form pages don't add the
+   class, so they keep the phone column. */
+:root { --desktop-nav-h: 0px; }
+
+@media (min-width: 768px) {
+  /* Wide pages fill the viewport; drop the phone-frame shadow so content sits
+     edge-to-edge and the blue side gutters disappear. */
+  .app-shell:has(.wide-page) { max-width: none; box-shadow: none; }
+}
+
+/* Centres page content and caps it at 1440px on tablet+, with 24px gutters.
+   On mobile it's a passthrough so existing phone padding is unchanged. */
+.wide-container { width: 100%; }
+@media (min-width: 768px) {
+  .wide-container { width: min(100% - 48px, 1440px); margin-inline: auto; }
+}
+
+/* Shared responsive product grid: 2 cols on phone, up to 5 on wide desktop. */
+.explore-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (min-width: 768px)  { .explore-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+@media (min-width: 1024px) { .explore-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1280px) { .explore-grid { grid-template-columns: repeat(5, 1fr); } }
+
+/* Larger content cards (e.g. happenings events, saved items): single column on
+   phone, multi-column on wider screens. */
+.card-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 768px)  { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .card-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* Category subcategory grid: circular icon tiles, denser on wider screens. */
+.subcat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 8px; }
+@media (min-width: 768px)  { .subcat-grid { grid-template-columns: repeat(5, 1fr); } }
+@media (min-width: 1024px) { .subcat-grid { grid-template-columns: repeat(7, 1fr); } }
+@media (min-width: 1280px) { .subcat-grid { grid-template-columns: repeat(8, 1fr); } }
+
+/* Desktop primary nav: a full-width top bar replaces the mobile bottom bar. */
+.desktop-topnav { display: none; }
+@media (min-width: 1024px) {
+  :root { --desktop-nav-h: 54px; }
+  .desktop-topnav { display: flex; }
+  .mobile-bottomnav { display: none; }
+}
+
 /* ── Motion system ───────────────────────────────────────────────────────── */
 
 @keyframes float {

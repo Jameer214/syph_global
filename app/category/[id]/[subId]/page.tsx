@@ -188,15 +188,15 @@ export default function SubCategoryResultsPage() {
   const filterCount = [openNow, ratingFilter !== 'Any', Boolean(minPrice || maxPrice), Boolean(conditionFilter)].filter(Boolean).length;
 
   return (
-    <div className="app-shell" dir={getDir(selectedLanguage)} style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
+    <div className="app-shell wide-page" dir={getDir(selectedLanguage)} style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
+      <div className="wide-container" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 'var(--desktop-nav-h)', zIndex: 40 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><ArrowLeft size={22} /></button>
         <span style={{ color: '#fff', fontWeight: 900, fontSize: 17, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
         <button onClick={() => setShowSortSheet(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><ArrowUpDown size={20} /></button>
         <button onClick={() => { setTempMinPrice(minPrice); setTempMaxPrice(maxPrice); setTempRating(ratingFilter); setTempOpenNow(openNow); setTempCondition(conditionFilter); setShowFilterSheet(true); }} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><SlidersHorizontal size={20} />{filterCount > 0 && (<span style={{ position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, padding: '0 3px', boxSizing: 'border-box', background: '#E53935', color: '#fff', borderRadius: 999, fontSize: 10, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{filterCount}</span>)}</button>
       </div>
 
-      <div style={{ padding: '12px 16px 16px' }}>
+      <div className="wide-container" style={{ padding: '12px 16px 16px' }}>
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <button onClick={() => setOpenNow((v) => !v)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 20, background: openNow ? '#2E5BFF' : '#fff', border: `1px solid ${openNow ? '#2E5BFF' : '#e2e8f0'}`, color: openNow ? '#fff' : '#0F2B6E', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
             <Clock size={14} /> {tr('openNow', selectedLanguage)}
@@ -227,7 +227,7 @@ export default function SubCategoryResultsPage() {
           </div>
         ) : (
           <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="card-grid">
             {filtered.map((l, i) => {
               const img = l.imageUrls?.[0] ?? l.imageUrl;
               const price = displayPrice(l);

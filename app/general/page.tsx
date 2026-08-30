@@ -167,11 +167,11 @@ export default function GeneralPage() {
   };
 
   return (
-    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', maxWidth: 480, margin: '0 auto' }}>
+    <div dir={getDir(selectedLanguage)} className="wide-page" style={{ minHeight: '100dvh', background: '#F0F4FF' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Header */}
-      <div style={{
+      <div className="wide-container" style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 60%, #2E5BFF 100%)',
         padding: '52px 20px 20px',
       }}>
@@ -205,7 +205,7 @@ export default function GeneralPage() {
       </div>
 
       {/* Sort bar */}
-      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, background: '#F0F4FF', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+      <div className="wide-container" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, background: '#F0F4FF', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
         <SlidersHorizontal size={16} color="#6B7A99" />
         <span style={{ color: '#6B7A99', fontSize: 13, fontWeight: 600, marginRight: 4 }}>{tr('filters', selectedLanguage)}:</span>
         <div style={{ position: 'relative' }}>
@@ -241,7 +241,7 @@ export default function GeneralPage() {
       </div>
 
       {/* Listings grid */}
-      <div style={{ padding: '16px 16px 90px' }}>
+      <div className="wide-container" style={{ padding: '16px 16px 90px' }}>
         {searchQuery.trim() !== '' && shopResults.length > 0 && (
           <div style={{
             background: '#fff', borderRadius: 14, border: '1px solid #eef2f7',
@@ -272,7 +272,7 @@ export default function GeneralPage() {
         )}
 
         {!loading && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="explore-grid">
             {filtered.map((item) => (
               <div key={item.id} onClick={() => router.push(`/listing/${item.id}`)}
                 style={{
