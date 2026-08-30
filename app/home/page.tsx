@@ -691,6 +691,12 @@ export default function HomePage() {
   useEffect(() => {
     setRecentlyViewed(getRecentlyViewed());
   }, []);
+  // Scope personal history to the browsing country like every other rail, so a
+  // listing viewed in your home country doesn't bleed into another country's
+  // view. With no country selected, the full history still shows.
+  const recentlyViewedInCountry = selectedCountry
+    ? recentlyViewed.filter((l) => l.country === selectedCountry)
+    : recentlyViewed;
 
   // Data subscriptions — ALL sections filtered by selected country
   const filterCountry = selectedCountry || undefined;
@@ -1374,7 +1380,7 @@ export default function HomePage() {
         )}
 
         {/* ── Recently Viewed — local-only personal history ── */}
-        {recentlyViewed.length > 0 && (
+        {recentlyViewedInCountry.length > 0 && (
           <div className="anim-fade-up" style={{ marginBottom: 16 }}>
             <SectionStrip
               gradient={['#37474F', '#546E7A']}
@@ -1388,7 +1394,7 @@ export default function HomePage() {
             }}
               className="no-scrollbar rail rail-stagger"
             >
-              {recentlyViewed.map((l) => (
+              {recentlyViewedInCountry.map((l) => (
                 <FeaturedCard key={l.id} listing={l} onClick={() => goToListing(l.id)} selectedCurrency={selectedCurrency} distanceKm={distanceById.get(l.id)} verified={verifiedSellers.has(l.ownerUid)} />
               ))}
               <button
