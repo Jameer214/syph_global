@@ -698,6 +698,14 @@ export default function HomePage() {
     ? recentlyViewed.filter((l) => l.country === selectedCountry)
     : recentlyViewed;
 
+  // Scope recently-viewed to the active country like every other rail, so
+  // listings viewed in the home country don't leak through after switching to
+  // another country of interest (the "Recently viewed shows Uganda under
+  // Jamaica" bug).
+  const recentlyViewedInCountry = selectedCountry
+    ? recentlyViewed.filter((l) => l.country === selectedCountry)
+    : recentlyViewed;
+
   // Data subscriptions — ALL sections filtered by selected country
   const filterCountry = selectedCountry || undefined;
   const flashSales = useListings({ isFlashSale: true, count: 20, country: filterCountry });
@@ -1099,7 +1107,7 @@ export default function HomePage() {
       <div className="sweep" style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
         padding: '14px 16px 14px',
-        position: 'sticky', top: 'var(--desktop-nav-h)', zIndex: 40,
+        position: 'sticky', top: 0, zIndex: 40,
       }}>
         <div className="wide-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
