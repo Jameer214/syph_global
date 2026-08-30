@@ -17,6 +17,7 @@ import { getListing, getListingReviews, getRelatedListings } from '@/lib/firesto
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import Reveal from '@/components/Reveal';
 import DistanceChip from '@/components/DistanceChip';
+import DocVerifiedBadge from '@/components/DocVerifiedBadge';
 import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
 import { recordRecentlyViewed } from '@/lib/recentlyViewed';
@@ -199,6 +200,7 @@ export default function ListingDetailsPage() {
   const [messageText, setMessageText] = useState('');
   const [startingChat, setStartingChat] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [docVerified, setDocVerified] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const viewTracked = useRef(false);
@@ -243,6 +245,13 @@ export default function ListingDetailsPage() {
         try {
           const { data } = await supabase.from('sellers').select('is_verified').eq('user_id', listing.ownerUid).single();
           if (data) setIsVerified(Boolean(data.is_verified));
+          // Document-verification status — queried SEPARATELY and guarded so that
+          // if the `verification_status` column isn't migrated yet it can never
+          // break the red is_verified tick above.
+          try {
+            const { data: v } = await supabase.from('sellers').select('verification_status').eq('user_id', listing.ownerUid).single();
+            if (v) setDocVerified(v.verification_status === 'approved');
+          } catch {}
         } catch {}
       })();
     }
@@ -570,6 +579,8 @@ export default function ListingDetailsPage() {
                     <path fill="#fff" d="M10.09 16.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48z" />
                   </svg>
                 )}
+                {/* Blue document-verification badge (separate from the red tick) */}
+                <DocVerifiedBadge verified={docVerified} onDark />
               </div>
               <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {listing.locationText || tr('locationNotPublished', selectedLanguage)}

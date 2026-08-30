@@ -9,6 +9,7 @@ import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
 import { formatConverted, getCurrencySymbol } from '@/lib/currency';
 import { isPast } from '@/lib/promo';
+import DocVerifiedBadge from '@/components/DocVerifiedBadge';
 import { computeOpenNow } from '@/lib/openStatus';
 import DistanceChip from '@/components/DistanceChip';
 import ZigzagEdge from '@/components/ZigzagEdge';
@@ -30,6 +31,7 @@ interface ShopData {
   lat: number | null;
   lng: number | null;
   isVerified: boolean;
+  verificationStatus: string;
   delivers: boolean;
   bannerUrl: string | null;
   rating: number;
@@ -53,6 +55,7 @@ function parseShopData(d: Record<string, unknown>): ShopData {
     lat: typeof d.business_latitude === 'number' ? d.business_latitude : typeof d.businessLatitude === 'number' ? d.businessLatitude : null,
     lng: typeof d.business_longitude === 'number' ? d.business_longitude : typeof d.businessLongitude === 'number' ? d.businessLongitude : null,
     isVerified: Boolean(d.is_verified ?? d.isVerified),
+    verificationStatus: String(d.verification_status ?? 'none'),
     delivers: Boolean(d.delivers),
     bannerUrl: (d.shop_banner_url ?? d.shop_logo_url) ? String(d.shop_banner_url ?? d.shop_logo_url) : null,
     rating: typeof d.avg_rating === 'number' ? d.avg_rating : Number(d.avg_rating ?? 0) || 0,
@@ -395,6 +398,8 @@ export default function SellerShopPage() {
                       <path fill="#fff" d="M10.09 16.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48z" />
                     </svg>
                   )}
+                  {/* Blue document-verification badge (separate from the red tick) */}
+                  <DocVerifiedBadge verified={shop?.verificationStatus === 'approved'} onDark />
                   {shop?.delivers && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(27,138,75,0.9)', color: '#fff', fontWeight: 800, fontSize: 11, borderRadius: 999, padding: '3px 8px', flexShrink: 0 }}>
                       <Truck size={12} /> {tr('deliversChip', selectedLanguage)}

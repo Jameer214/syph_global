@@ -5,7 +5,7 @@ import {
   Store, FileText,
   Eye, MessageCircle, Bookmark, Package, Edit3, ChevronRight,
   ArrowLeft, BarChart2, Megaphone, Zap, Calendar, PlusCircle,
-  Star, CreditCard,
+  Star, CreditCard, ShieldCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -360,6 +360,7 @@ export default function DashboardPage() {
           </div>
           {[
             { icon: <Package size={26} color="#2E5BFF" />, title: tr('myListings', selectedLanguage), desc: tr('manageListingsDesc', selectedLanguage), onClick: () => router.push('/dashboard/listings') },
+            { icon: <ShieldCheck size={26} color="#2E5BFF" />, title: 'Get Verified', desc: 'Submit your national ID + a live selfie to earn the blue verified badge on your shop and listings.', onClick: () => router.push(seller ? '/dashboard/get-verified' : '/dashboard/setup') },
             { icon: <PlusCircle size={26} color="#2E5BFF" />, title: tr('sellMyItem', selectedLanguage), desc: tr('sellMyItemDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new' : '/dashboard/setup') },
             { icon: <Megaphone size={26} color="#2E5BFF" />, title: tr('featSponsorTitle', selectedLanguage), desc: tr('featSponsorDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new?type=sponsor' : '/dashboard/setup') },
             { icon: <Zap size={26} color="#2E5BFF" />, title: tr('flashSaleLabel', selectedLanguage), desc: tr('featFlashDesc', selectedLanguage), onClick: () => router.push(seller ? '/dashboard/new?type=flash' : '/dashboard/setup') },
