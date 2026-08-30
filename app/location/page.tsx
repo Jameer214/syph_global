@@ -176,7 +176,7 @@ export default function LocationPage() {
   };
 
   return (
-    <div dir={getDir(selectedLanguage)} style={{ minHeight: '100dvh', background: '#F0F4FF', display: 'flex', flexDirection: 'column' }}>
+    <div className="wide-page" dir={getDir(selectedLanguage)} style={{ minHeight: 'calc(100dvh - var(--desktop-nav-h))', background: '#F0F4FF', display: 'flex', flexDirection: 'column' }}>
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       {/* Releasing Soon modal */}
@@ -222,7 +222,7 @@ export default function LocationPage() {
         padding: '14px 16px',
         position: 'sticky', top: 0, zIndex: 40,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="wide-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 600, letterSpacing: '0.5px' }}>
               {tr('tagline', selectedLanguage).toUpperCase()}
@@ -249,7 +249,7 @@ export default function LocationPage() {
       </div>
 
       {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 110px' }}>
+      <div className="wide-container" style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 110px' }}>
 
         {/* GPS detection banner — matches Flutter's home country detection card */}
         {gpsDetectedCountry ? (
