@@ -69,6 +69,63 @@ export async function getListItemPricing(): Promise<ListItemPricing> {
   }
 }
 
+export interface VerificationFee {
+  enabled: boolean;
+  feeUgx: number; // base amount, in UGX
+  note: string;
+  freeAfterPaidListings: number;
+}
+
+const VERIFICATION_FALLBACK: VerificationFee = {
+  enabled: false,
+  feeUgx: 0,
+  note: '',
+  freeAfterPaidListings: 3,
+};
+
+/**
+ * admin_settings['payment_methods'].pricing.verification — the ID-verification
+ * fee config, read exactly like the app's `_loadFee`. Any failure leaves the fee
+ * OFF so a config hiccup never blocks a seller from getting verified.
+ */
+export async function getVerificationFee(): Promise<VerificationFee> {
+  try {
+    const { data } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('key', 'payment_methods')
+      .limit(1)
+      .maybeSingle();
+    const value = (data as Record<string, unknown> | null)?.value as Record<string, unknown> | undefined;
+    const pricing = value && typeof value === 'object' ? (value.pricing as Record<string, unknown> | undefined) : undefined;
+    const v = pricing && typeof pricing === 'object' ? (pricing.verification as Record<string, unknown> | undefined) : undefined;
+    if (!v) return VERIFICATION_FALLBACK;
+    const freeAfter = parseInt(String(v.freeAfterPaidListings ?? '3'), 10);
+    return {
+      enabled: v.enabled === true,
+      feeUgx: parseFloat(String(v.fee ?? '0').replace(/,/g, '')) || 0,
+      note: String(v.note ?? '').trim(),
+      freeAfterPaidListings: Number.isFinite(freeAfter) ? freeAfter : 3,
+    };
+  } catch {
+    return VERIFICATION_FALLBACK;
+  }
+}
+
+/** Seller's PAID-listing count (is_trial=false) — mirrors listing_repository.paidListingCount. */
+export async function getPaidListingCount(uid: string): Promise<number> {
+  try {
+    const { count } = await supabase
+      .from('listings')
+      .select('id', { count: 'exact', head: true })
+      .eq('seller_id', uid)
+      .eq('is_trial', false);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 /** Per-seller platform-fee discount % (user_privileges, else global_privilege). */
 export async function getSellerPrivilegePercent(uid: string): Promise<number> {
   try {

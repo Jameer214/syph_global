@@ -31,6 +31,8 @@ function WaitingContent() {
   const paymentId = sp.get('paymentId') ?? '';
   const amount = sp.get('amount') ?? '0';
   const currency = sp.get('currency') ?? 'USD';
+  const type = sp.get('type') ?? '';
+  const isVerification = type === 'verification';
 
   const [status, setStatus] = useState<Status>('waiting');
   const [errorMessage, setErrorMessage] = useState('');
@@ -84,9 +86,9 @@ function WaitingContent() {
         <div style={{ fontWeight: 900, fontSize: 24, color: '#182033', marginBottom: 10 }}>{tr('paymentSuccessful', lang)}</div>
         <div style={{ fontWeight: 700, fontSize: 15, color: '#1B8F4E', marginBottom: 10 }}>{currency} {Number(amount).toLocaleString()} {tr('paidLabel', lang)}</div>
         <div style={{ fontWeight: 600, fontSize: 14, color: '#6B7A99', textAlign: 'center', lineHeight: 1.5, marginBottom: 32 }}>
-          {tr('submittedForReview', lang)}
+          {isVerification ? tr('verificationSubmittedForReview', lang) : tr('submittedForReview', lang)}
         </div>
-        <button onClick={() => router.replace('/dashboard')} style={{ width: '100%', maxWidth: 360, padding: '16px', background: '#1B8F4E', border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
+        <button onClick={() => router.replace(isVerification ? '/dashboard/get-verified' : '/dashboard')} style={{ width: '100%', maxWidth: 360, padding: '16px', background: '#1B8F4E', border: 'none', borderRadius: 18, color: '#fff', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
           {tr('backToDashboard', lang)}
         </button>
       </div>
@@ -124,7 +126,7 @@ function WaitingContent() {
       <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #DCE7F5', padding: 16, width: '100%', maxWidth: 360, marginBottom: 20 }}>
         <Step done={true} label={tr('paymentRequestSent', lang)} />
         <Step done={false} pending label={tr('awaitingApproval', lang)} />
-        <Step done={false} label={tr('listingWillBeSubmitted', lang)} />
+        <Step done={false} label={isVerification ? tr('documentsWillBeSubmitted', lang) : tr('listingWillBeSubmitted', lang)} />
       </div>
 
       <div style={{ fontWeight: 600, fontSize: 12, color: '#9AA0B2' }}>

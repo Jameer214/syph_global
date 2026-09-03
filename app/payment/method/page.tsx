@@ -14,10 +14,10 @@ import { translate as tr } from '@/lib/i18n';
 const PESAPAL_CURRENCIES = new Set(['UGX', 'KES', 'TZS', 'RWF', 'MWK', 'ZMW', 'USD', 'GBP', 'EUR']);
 
 const TYPE_LABEL_KEYS: Record<string, string> = {
-  sponsored: 'sponsored', flashsale: 'flashSaleLabel', happenings: 'happenings', listing: 'listingFee',
+  sponsored: 'sponsored', flashsale: 'flashSaleLabel', happenings: 'happenings', listing: 'listingFee', verification: 'verificationFee',
 };
 const TYPE_COLORS: Record<string, string> = {
-  sponsored: '#63B3ED', flashsale: '#E53935', happenings: '#2E9B55', listing: '#2F6BFF',
+  sponsored: '#63B3ED', flashsale: '#E53935', happenings: '#2E9B55', listing: '#2F6BFF', verification: '#2F6BFF',
 };
 
 function MethodPageContent() {
@@ -31,6 +31,7 @@ function MethodPageContent() {
   const days = sp.get('days') ?? '7';
   const listingId = sp.get('listingId') ?? '';
   const listingTitle = sp.get('listingTitle') ?? '';
+  const verificationId = sp.get('verificationId') ?? '';
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -72,7 +73,9 @@ function MethodPageContent() {
           // Records-only; Pesapal's hosted page presents the country's methods.
           paymentMethod: 'pesapal',
           paymentDetails: {},
-          listingData: { uid: user.id, listingId, listingTitle, type, days: Number(days) },
+          // verificationId lets the backend flip the seller_verifications row to
+          // 'pending' on confirm (parity with the app's listingData).
+          listingData: { uid: user.id, listingId, listingTitle, verificationId, type, days: Number(days) },
         },
       });
       if (error) throw error;
@@ -110,9 +113,14 @@ function MethodPageContent() {
           <div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 13 }}>{typeLabel}</div>
             <div style={{ color: '#fff', fontWeight: 900, fontSize: 26, margin: '4px 0' }}>{currency} {Number(amount).toLocaleString()}</div>
-            {converted && canConvert
-              ? <div style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 700, fontSize: 13 }}>≈ USD {chargeAmount.toLocaleString()} · {days} {tr('daysPromotionSuffix', lang)}</div>
-              : <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 13 }}>{days} {tr('daysPromotionSuffix', lang)}</div>}
+            {(() => {
+              // Verification is a one-time fee, not a duration promotion — mirror
+              // the app, which shows "One-time verification fee" for this type.
+              const suffix = type === 'verification' ? tr('oneTimeVerificationFee', lang) : `${days} ${tr('daysPromotionSuffix', lang)}`;
+              return converted && canConvert
+                ? <div style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 700, fontSize: 13 }}>≈ USD {chargeAmount.toLocaleString()} · {suffix}</div>
+                : <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 13 }}>{suffix}</div>;
+            })()}
           </div>
           <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 14 }}>
             <CreditCard size={28} color="#fff" />

@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BadgeCheck, Camera, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Camera, Lock, Receipt, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import DocVerifiedBadge from '@/components/DocVerifiedBadge';
+import { getVerificationFee, getPaidListingCount } from '@/lib/adminSettings';
+import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
 
-type Status = 'none' | 'pending' | 'approved' | 'rejected' | 'more_info';
+type Status = 'none' | 'pending' | 'approved' | 'rejected' | 'more_info' | 'payment_pending';
 
 const BLUE = '#2E5BFF';
 
@@ -31,7 +33,20 @@ export default function GetVerifiedPage() {
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Load auth + latest submission status.
+  // Verification fee (admin-set). Charged on submit UNLESS the seller has enough
+  // PAID listings yet — mirrors the app's _loadFee / _mustPay.
+  const [feeEnabled, setFeeEnabled] = useState(false);
+  const [feeUgx, setFeeUgx] = useState(0);
+  const [feeNote, setFeeNote] = useState('');
+  const [freeAfterPaid, setFreeAfterPaid] = useState(3);
+  const [paidCount, setPaidCount] = useState(0);
+  const [sellerCountry, setSellerCountry] = useState('');
+
+  const mustPay = feeEnabled && feeUgx > 0 && paidCount < freeAfterPaid;
+  const feeCurrency = getCurrencyForCountry(sellerCountry) || 'USD';
+  const feeAmount = Math.round(convertPrice(feeUgx, 'UGX', feeCurrency));
+
+  // Load auth + latest submission status + fee config.
   useEffect(() => {
     let active = true;
     (async () => {
@@ -40,15 +55,28 @@ export default function GetVerifiedPage() {
       if (!active) return;
       setUid(id);
       if (id) {
-        const { data } = await supabase
-          .from('seller_verifications')
-          .select('state, notes, created_at')
-          .eq('seller_id', id)
-          .order('created_at', { ascending: false })
-          .limit(1);
+        const [{ data }, fee, paid, sellerRow] = await Promise.all([
+          supabase
+            .from('seller_verifications')
+            .select('state, notes, created_at')
+            .eq('seller_id', id)
+            .order('created_at', { ascending: false })
+            .limit(1),
+          getVerificationFee(),
+          getPaidListingCount(id),
+          supabase.from('sellers').select('country').eq('user_id', id).limit(1).maybeSingle(),
+        ]);
         if (active && data && data.length > 0) {
           setStatus((data[0].state as Status) ?? 'none');
           setNote((data[0].notes as string) ?? '');
+        }
+        if (active) {
+          setFeeEnabled(fee.enabled);
+          setFeeUgx(fee.feeUgx);
+          setFeeNote(fee.note);
+          setFreeAfterPaid(fee.freeAfterPaidListings);
+          setPaidCount(paid);
+          setSellerCountry(String((sellerRow.data as { country?: string } | null)?.country ?? ''));
         }
       }
       if (active) setLoading(false);
@@ -158,6 +186,41 @@ export default function GetVerifiedPage() {
         if (error) throw error;
         docs.push({ type, path });
       }
+
+      // Clear the local doc state either way — the submission is recorded now.
+      const clearDocs = () => {
+        setIdFront(null);
+        setIdBack(null);
+        setSelfie(null);
+        if (selfieUrl) URL.revokeObjectURL(selfieUrl);
+        setSelfieUrl(null);
+      };
+
+      if (mustPay) {
+        // Paid path — record as payment_pending (hidden from the admin queue
+        // until paid), then hand off to the SAME Pesapal checkout the listing
+        // fee uses. On confirm the backend flips the row to 'pending'.
+        const { data: row, error: insErr } = await supabase
+          .from('seller_verifications')
+          .insert({ seller_id: uid, state: 'payment_pending', documents: docs, fee_required: true })
+          .select('id')
+          .single();
+        if (insErr) throw insErr;
+        const verificationId = String((row as { id: string }).id);
+        clearDocs();
+        setStatus('payment_pending');
+        const params = new URLSearchParams({
+          amount: String(feeAmount),
+          currency: feeCurrency,
+          type: 'verification',
+          days: '0',
+          verificationId,
+        });
+        router.push(`/payment/method?${params}`);
+        return;
+      }
+
+      // Free path — straight into admin review.
       const { error: insErr } = await supabase.from('seller_verifications').insert({
         seller_id: uid,
         state: 'pending',
@@ -166,18 +229,14 @@ export default function GetVerifiedPage() {
       if (insErr) throw insErr;
       setStatus('pending');
       setNote('');
-      setIdFront(null);
-      setIdBack(null);
-      setSelfie(null);
-      if (selfieUrl) URL.revokeObjectURL(selfieUrl);
-      setSelfieUrl(null);
+      clearDocs();
       setMsg('Submitted for review.');
     } catch {
       setMsg('Could not submit. Please try again.');
     } finally {
       setSubmitting(false);
     }
-  }, [uid, idFront, idBack, selfie, selfieUrl]);
+  }, [uid, idFront, idBack, selfie, selfieUrl, mustPay, feeAmount, feeCurrency, router]);
 
   const statusMeta: Record<Status, { label: string; color: string; body: string }> = {
     none: {
@@ -189,6 +248,11 @@ export default function GetVerifiedPage() {
       label: 'Pending review',
       color: BLUE,
       body: 'Submitted. Our team typically reviews within 1–2 days.',
+    },
+    payment_pending: {
+      label: 'Payment needed',
+      color: '#B7791F',
+      body: 'Complete the verification payment to send your documents for review. Re-add your documents below and tap the button to pay.',
     },
     approved: {
       label: 'Verified',
@@ -304,12 +368,28 @@ export default function GetVerifiedPage() {
                 <div style={{ marginTop: 12, color: msg.startsWith('Submitted') ? '#12A150' : '#E53935', fontWeight: 700, fontSize: 13 }}>{msg}</div>
               )}
 
+              {/* Inline fee summary — states the amount + why before paying, so the
+                  payment page (same checkout as the listing fee) isn't a surprise. */}
+              {mustPay && (
+                <div style={{ marginTop: 16, background: '#EAF0FF', border: `1px solid ${BLUE}`, borderRadius: 16, padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Receipt size={20} color={BLUE} style={{ flexShrink: 0 }} />
+                    <span style={{ flex: 1, fontWeight: 800, fontSize: 13.5, color: '#1E2B45' }}>One-time verification fee</span>
+                    <span style={{ fontWeight: 900, fontSize: 18, color: BLUE }}>{feeCurrency} {feeAmount.toLocaleString()}</span>
+                  </div>
+                  <div style={{ marginTop: 8, fontWeight: 600, fontSize: 12.5, lineHeight: 1.4, color: '#6B7A99' }}>
+                    {feeNote.trim() ||
+                      `A one-time verification fee applies because you haven’t reached ${freeAfterPaid} paid listings yet. Sellers with ${freeAfterPaid} or more paid listings are verified for free.`}
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={submit}
                 disabled={submitting}
                 style={{ marginTop: 16, width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: submitting ? '#9DB4FF' : BLUE, color: '#fff', border: 'none', borderRadius: 14, padding: '14px', fontWeight: 800, cursor: submitting ? 'default' : 'pointer' }}
               >
-                <ShieldCheck size={18} /> {submitting ? 'Submitting…' : 'Submit for review'}
+                {mustPay ? <Lock size={18} /> : <ShieldCheck size={18} />} {submitting ? 'Submitting…' : mustPay ? 'Pay fee & submit' : 'Submit for review'}
               </button>
             </div>
           )}
