@@ -21,6 +21,7 @@ import DistanceChip from '@/components/DistanceChip';
 import OpenStatusChip from '@/components/OpenStatusChip';
 import ZigzagEdge from '@/components/ZigzagEdge';
 import VerifiedTick from '@/components/VerifiedTick';
+import PropertyCard, { isPropertyListing } from '@/components/PropertyCard';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
 import { useDistances } from '@/lib/useDistances';
 import type { Listing } from '@/types';
@@ -412,6 +413,11 @@ function FeaturedCard({ listing, onClick, selectedCurrency, distanceKm, verified
 
 function GridCard({ listing, onClick, selectedCurrency, distanceKm, verified }: { listing: Listing; onClick: () => void; selectedCurrency: string; distanceKm?: number; verified?: boolean }) {
   const { selectedLanguage } = useAppStore();
+  // Real Estate & Accommodation → premium full-width property card (spans the
+  // explore grid); all other listings keep the standard grid card below.
+  if (isPropertyListing(listing)) {
+    return <PropertyCard listing={listing} km={distanceKm} verified={verified} />;
+  }
   return (
     <div
       onClick={onClick}

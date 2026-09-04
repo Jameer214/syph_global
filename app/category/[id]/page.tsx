@@ -15,6 +15,7 @@ import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
 import VerifiedTick from '@/components/VerifiedTick';
+import PropertyCard, { isPropertyListing } from '@/components/PropertyCard';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -237,7 +238,7 @@ export default function CategoryResultsPage() {
         alignItems: 'center',
         gap: 12,
         position: 'sticky',
-        top: 'var(--desktop-nav-h)',
+        top: 0,
         zIndex: 40,
       }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}>
@@ -442,6 +443,12 @@ function ResultCard({ listing: l, isSaved, onToggleSave, priceDisplay, index = 0
   const selectedLanguage = useAppStore((s) => s.selectedLanguage);
   const img = l.imageUrls?.[0] ?? l.imageUrl;
   const price = priceDisplay;
+
+  // Real Estate & Accommodation listings get the premium full-width property
+  // card; every other listing keeps the standard row tile below untouched.
+  if (isPropertyListing(l)) {
+    return <PropertyCard listing={l} km={distanceKm} verified={verified} />;
+  }
 
   return (
     <div

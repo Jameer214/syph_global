@@ -15,6 +15,8 @@ import { useDistances } from '@/lib/useDistances';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
 import VerifiedTick from '@/components/VerifiedTick';
 import ShopSuggestions from '@/components/ShopSuggestions';
+import PropertyCard, { isPropertyListing } from '@/components/PropertyCard';
+import { getCategoryById } from '@/data/categories';
 import { searchSellers, type ShopHit } from '@/lib/firestore';
 import type { Listing } from '@/types';
 
@@ -37,6 +39,7 @@ function mapListing(row: Record<string, unknown>): Listing {
     currencyCode: String(row.currency ?? 'USD'),
     negotiable: Boolean(row.is_negotiable),
     mainCategoryId: String(row.category_id ?? ''),
+    subCategoryId: row.sub_category_id ? String(row.sub_category_id) : undefined,
     openNow: Boolean(row.open_now),
     isSponsored: Boolean(row.is_sponsored) && !isPast(row.sponsored_until),
     isHappening: Boolean(row.is_happening) && !isEventExpired(row.event_date),
@@ -87,6 +90,9 @@ export default function GeneralPage() {
   }, [searchQuery]);
   const [sort, setSort] = useState<SortMode>('random');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  // Selected property subcategory chip (null = "All"). Only Real Estate /
+  // Accommodation listings carry these; the chip row derives from what's present.
+  const [selectedSub, setSelectedSub] = useState<string | null>(null);
   const offsetRef = useRef<number>(0);
   const [hasMore, setHasMore] = useState(true);
   const PAGE = 20;
@@ -157,6 +163,28 @@ export default function GeneralPage() {
         l.locationText.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : listings;
+
+  // Property subcategory chips, derived from the Real Estate / Accommodation
+  // listings actually in the results (canonical category order). Tapping one
+  // narrows the grid to that subcategory; the leading "All" chip clears it.
+  const propertySubs: { id: string; title: string }[] = [];
+  {
+    const present = new Set<string>();
+    for (const l of filtered) {
+      if (isPropertyListing(l) && l.subCategoryId) present.add(l.subCategoryId);
+    }
+    if (present.size > 0) {
+      for (const mainId of ['real_estate', 'accommodation']) {
+        getCategoryById(mainId)?.children?.forEach((s) => {
+          if (present.has(s.id)) propertySubs.push({ id: s.id, title: s.title });
+        });
+      }
+    }
+  }
+  const activeSub = propertySubs.some((c) => c.id === selectedSub) ? selectedSub : null;
+  const displayed = activeSub
+    ? filtered.filter((l) => l.subCategoryId === activeSub)
+    : filtered;
 
   const sortLabels: Record<SortMode, string> = {
     random: tr('sortRandom', selectedLanguage),
@@ -236,7 +264,7 @@ export default function GeneralPage() {
           )}
         </div>
         <span style={{ marginLeft: 'auto', color: '#6B7A99', fontSize: 12, fontWeight: 600 }}>
-          {filtered.length} listings
+          {displayed.length} listings
         </span>
       </div>
 
@@ -271,9 +299,37 @@ export default function GeneralPage() {
           </div>
         )}
 
+        {!loading && propertySubs.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12, marginBottom: 4 }}>
+            {[{ id: null as string | null, title: 'All' }, ...propertySubs].map((c) => {
+              const on = activeSub === c.id;
+              return (
+                <button key={c.id ?? 'all'} onClick={() => setSelectedSub(c.id)}
+                  style={{
+                    flexShrink: 0, padding: '8px 16px', borderRadius: 999, cursor: 'pointer',
+                    fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap',
+                    background: on ? '#2E5BFF' : '#fff',
+                    color: on ? '#fff' : '#1E2B45',
+                    border: `1px solid ${on ? '#2E5BFF' : '#E0E8F0'}`,
+                  }}>
+                  {c.title}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {!loading && (
           <div className="explore-grid">
-            {filtered.map((item) => (
+            {displayed.map((item) => (
+              isPropertyListing(item) ? (
+                <PropertyCard
+                  key={item.id}
+                  listing={item}
+                  km={distanceById.get(item.id)}
+                  verified={verifiedSellers.has(item.ownerUid)}
+                />
+              ) : (
               <div key={item.id} onClick={() => router.push(`/listing/${item.id}`)}
                 style={{
                   background: '#fff', borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
@@ -317,6 +373,7 @@ export default function GeneralPage() {
                   )}
                 </div>
               </div>
+              )
             ))}
           </div>
         )}

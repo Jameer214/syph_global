@@ -15,6 +15,7 @@ import OpenStatusChip from '@/components/OpenStatusChip';
 import { useDistances } from '@/lib/useDistances';
 import { useVerifiedSellers } from '@/lib/useVerifiedSellers';
 import VerifiedTick from '@/components/VerifiedTick';
+import PropertyCard, { isPropertyListing } from '@/components/PropertyCard';
 import type { Listing } from '@/types';
 
 function mapListing(row: Record<string, unknown>): Listing {
@@ -189,7 +190,7 @@ export default function SubCategoryResultsPage() {
 
   return (
     <div className="app-shell wide-page" dir={getDir(selectedLanguage)} style={{ minHeight: '100vh', backgroundColor: '#D6ECFF' }}>
-      <div className="wide-container" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 'var(--desktop-nav-h)', zIndex: 40 }}>
+      <div className="wide-container" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><ArrowLeft size={22} /></button>
         <span style={{ color: '#fff', fontWeight: 900, fontSize: 17, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
         <button onClick={() => setShowSortSheet(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', padding: 4 }}><ArrowUpDown size={20} /></button>
@@ -231,6 +232,17 @@ export default function SubCategoryResultsPage() {
             {filtered.map((l, i) => {
               const img = l.imageUrls?.[0] ?? l.imageUrl;
               const price = displayPrice(l);
+              // Real Estate & Accommodation → premium full-width property card.
+              if (isPropertyListing(l)) {
+                return (
+                  <PropertyCard
+                    key={l.id}
+                    listing={l}
+                    km={distanceById.get(l.id)}
+                    verified={verifiedSellers.has(l.ownerUid)}
+                  />
+                );
+              }
               return (
                 <div key={l.id} onClick={() => router.push(`/listing/${l.id}`)} className="card-tap anim-fade-up card-zoom" style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', animationDelay: `${Math.min(i, 8) * 0.05}s`, animationDuration: '0.35s' }}>
                   <div className="card-media" style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, backgroundColor: '#f2f5f9', position: 'relative' }}>
