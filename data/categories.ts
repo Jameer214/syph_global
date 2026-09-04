@@ -26,7 +26,7 @@ export const CATEGORIES: CategoryNode[] = [
     gradient: 'from-sky-500 to-blue-600',
     children: [
       { id: 'rentals', title: 'Rentals' },
-      { id: 'vacation_rentals', title: 'Short Stays' },
+      { id: 'vacation_rentals', title: 'Airbnbs' },
       { id: 'hotels', title: 'Hotels' },
       { id: 'lodges', title: 'Lodges' },
       { id: 'guest_houses', title: 'Guest Houses' },
