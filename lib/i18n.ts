@@ -356,6 +356,18 @@ const T: Record<string, TranslationMap> = {
   postListing:         { en:'Post a Listing', fr:'Publier une annonce', pt:'Publicar anúncio', ar:'نشر إعلان', sw:'Weka Tangazo', zh:'发布商品', hi:'लिस्टिंग पोस्ट करें', id:'Pasang Listing', bn:'তালিকা পোস্ট করুন', ur:'فہرست پوسٹ کریں', ja:'リストを投稿', ko:'목록 게시' },
   newListing:          { en:'New Listing', fr:'Nouvelle annonce', pt:'Novo anúncio', ar:'إعلان جديد', sw:'Tangazo Jipya', zh:'新商品', hi:'नई लिस्टिंग', id:'Listing Baru', bn:'নতুন তালিকা', ur:'نئی فہرست', ja:'新しいリスト', ko:'새 목록' },
   listNewItemTitle:    { en:'List New Item' },
+  // Distance anchor selector — lets the seller choose whether buyers see this
+  // listing's distance from their business location or their live GPS.
+  distanceShownToBuyers:   { en:'Distance shown to buyers' },
+  distanceAnchorHelp:      { en:'Buyers see how far this item is from them. Measure it from your saved business location, or from exactly where you are right now.' },
+  myBusinessLocation:      { en:'My business location' },
+  myBusinessLocationSub:   { en:'The location saved in your Seller Setup' },
+  myCurrentLocation:       { en:'My current location' },
+  myCurrentLocationSub:    { en:'Tap to pin exactly where you are standing now' },
+  currentLocationSaved:    { en:'Current location saved — buyers see distance from here.' },
+  gettingLocationEllipsis: { en:'Getting your location…' },
+  locationPermissionDenied:{ en:'Location permission denied. Allow location access and try again.' },
+  couldNotGetLocation:     { en:'Could not get your location. Please try again.' },
   listItemInfoTitle:   { en:'List a New Item' },
   listItemInfoBody:    { en:'Your listing will be reviewed by our team before going live.' },
   // Paid path (quota full) — mirrors syph list_item_payment_screen banner + fee card.

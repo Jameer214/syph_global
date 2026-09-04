@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Camera, X, ChevronRight, MapPin, ImageIcon, Plus, Store, Grid, Info, BadgeCheck, History, Search, SlidersHorizontal, Receipt, Send, CreditCard, Megaphone, Zap, Star, Flame, Trophy, Tag } from 'lucide-react';
+import { ArrowLeft, Camera, X, ChevronRight, MapPin, ImageIcon, Plus, Store, Grid, Info, BadgeCheck, History, Search, SlidersHorizontal, Receipt, Send, CreditCard, Megaphone, Zap, Star, Flame, Trophy, Tag, LocateFixed, CheckCircle2, Circle } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { createListing, getSellerProfile } from '@/lib/firestore';
@@ -91,6 +91,15 @@ export default function NewListingForm() {
   const [specs, setSpecs] = useState<{ label: string; value: string }[]>([{ label: '', value: '' }]);
   const [submitting, setSubmitting] = useState(false);
 
+  // Distance anchor: 'business' (seller's saved Seller-Setup location, default)
+  // or 'current' (live GPS captured here, saved into the listing's venue coords
+  // so DistanceChip measures from it everywhere). Applies to all form types.
+  const [distanceAnchor, setDistanceAnchor] = useState<'business' | 'current'>('business');
+  const [curLat, setCurLat] = useState<number | null>(null);
+  const [curLng, setCurLng] = useState<number | null>(null);
+  const [curAddress, setCurAddress] = useState('');
+  const [fetchingLoc, setFetchingLoc] = useState(false);
+
   // Free-15 quota / paid-listing config (normal listings only) — mirrors the app.
   const [pricing, setPricing] = useState<ListItemPricing | null>(null);
   const [activeCount, setActiveCount] = useState(0);
@@ -179,6 +188,40 @@ export default function NewListingForm() {
     return adminPricing[catKey][priceKey] ?? 0;
   }
 
+  // Captures the seller's live GPS via the browser and pins it as this
+  // listing's distance anchor. On any failure/denial we fall back to the
+  // business location so a listing is never left half-set to "current".
+  function captureCurrentLocation() {
+    if (fetchingLoc || submitting) return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      toast.error(tr('couldNotGetLocation', lang));
+      setDistanceAnchor('business');
+      return;
+    }
+    setFetchingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setCurLat(latitude);
+        setCurLng(longitude);
+        setCurAddress(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        setDistanceAnchor('current');
+        setFetchingLoc(false);
+        toast.success(tr('currentLocationSaved', lang));
+      },
+      (err) => {
+        setFetchingLoc(false);
+        setDistanceAnchor('business');
+        toast.error(
+          err.code === err.PERMISSION_DENIED
+            ? tr('locationPermissionDenied', lang)
+            : tr('couldNotGetLocation', lang),
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+    );
+  }
+
   async function handleSubmit() {
     if (!uid || !seller) { toast.error(tr('completeSetupFirst', lang)); router.push('/dashboard/setup'); return; }
     // Validation order mirrors syph: title → category → description → images → price.
@@ -242,6 +285,11 @@ export default function NewListingForm() {
         isHappening: false,
         isFlashSale: formType === 'flash',
         isTrial: false,
+        // Distance anchor: pin per-listing coords only when the seller chose
+        // "current location"; else undefined → DistanceChip uses the business
+        // location from Seller Setup (unchanged default).
+        venueLatitude: distanceAnchor === 'current' && curLat != null ? curLat : undefined,
+        venueLongitude: distanceAnchor === 'current' && curLng != null ? curLng : undefined,
       }, images);
 
       if (formType !== 'listing') {
@@ -584,6 +632,50 @@ export default function NewListingForm() {
           <div style={{ position: 'relative' }}>
             <MapPin size={16} color="#6B7A99" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
             <input value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder={tr('exactAreaStreet', lang)} style={{ ...inputStyle, paddingLeft: 40 }} />
+          </div>
+        </div>
+
+        {/* Distance shown to buyers — pick business location (default) or pin
+            the seller's live GPS. Reuses venue_latitude/longitude so DistanceChip
+            on every card + listing details measures from it automatically. */}
+        <div style={sectionWrap}>
+          <SectionLabel color={accent} text={tr('distanceShownToBuyers', lang)} />
+          <div style={cardStyle}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#9AA5B8', marginBottom: 12, lineHeight: 1.4 }}>{tr('distanceAnchorHelp', lang)}</div>
+            {([
+              { val: 'business' as const, Icon: Store, title: tr('myBusinessLocation', lang), sub: tr('myBusinessLocationSub', lang) },
+              { val: 'current' as const, Icon: LocateFixed, title: tr('myCurrentLocation', lang), sub: distanceAnchor === 'current' && curAddress ? curAddress : tr('myCurrentLocationSub', lang) },
+            ]).map(({ val, Icon, title, sub }, idx) => {
+              const selected = distanceAnchor === val;
+              const isCurrent = val === 'current';
+              return (
+                <button
+                  key={val}
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => { if (isCurrent) captureCurrentLocation(); else setDistanceAnchor('business'); }}
+                  style={{
+                    width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
+                    padding: 14, marginTop: idx === 0 ? 0 : 10, borderRadius: 14,
+                    cursor: submitting ? 'default' : 'pointer',
+                    background: selected ? `${accent}0F` : '#F7FAFF',
+                    border: `${selected ? 2 : 1}px solid ${selected ? accent : '#DCE7F5'}`,
+                  }}>
+                  <Icon size={22} color={selected ? accent : '#8A97B0'} style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: selected ? accent : '#1E2B45' }}>{title}</div>
+                    <div style={{ fontWeight: 600, fontSize: 12, color: '#8A97B0', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>
+                  </div>
+                  {isCurrent && fetchingLoc ? (
+                    <div style={{ width: 18, height: 18, border: '2px solid #C7D0E0', borderTop: `2px solid ${accent}`, borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                  ) : selected ? (
+                    <CheckCircle2 size={20} color={accent} style={{ flexShrink: 0 }} />
+                  ) : (
+                    <Circle size={20} color="#B7C1D4" style={{ flexShrink: 0 }} />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
