@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import { getListingsByIds, getSavedIds, syncSavedIds, getPriceDropEvents, type PriceDropEvent } from '@/lib/firestore';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
@@ -23,7 +23,7 @@ export default function SavedPage() {
     }
     if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
-      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+      return formatPrice(listing.priceValue, listing.currencyCode);
     }
     return null;
   }
@@ -47,7 +47,7 @@ export default function SavedPage() {
     if (selectedCurrency && selectedCurrency !== listingCurrency) {
       return formatConverted(value, listingCurrency, selectedCurrency);
     }
-    return `${getCurrencySymbol(listingCurrency)}${value.toLocaleString()}`;
+    return formatPrice(value, listingCurrency);
   }
 
   // Load saved listings whenever savedIds changes
@@ -121,7 +121,7 @@ export default function SavedPage() {
   return (
     <div dir={getDir(selectedLanguage)} className="app-shell wide-page" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       {/* Header */}
-      <div className="wide-container" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', position: 'sticky', top: 'var(--desktop-nav-h)', zIndex: 40 }}>
+      <div className="wide-container" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 40 }}>
         <span style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('savedListings', selectedLanguage)}</span>
       </div>
 

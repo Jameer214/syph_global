@@ -5,7 +5,7 @@ import { Zap, Timer } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import { isPast } from '@/lib/promo';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
@@ -79,7 +79,7 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
     }
     if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
-      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+      return formatPrice(listing.priceValue, listing.currencyCode);
     }
     return 'Price not set';
   }
@@ -90,7 +90,7 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
       if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
         return `≈ ${formatConverted(listing.originalPriceValue, listing.currencyCode, selectedCurrency)}`;
       }
-      return `${getCurrencySymbol(listing.currencyCode)}${listing.originalPriceValue.toLocaleString()}`;
+      return formatPrice(listing.originalPriceValue, listing.currencyCode);
     }
     return null;
   }

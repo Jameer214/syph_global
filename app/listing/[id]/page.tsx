@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { translate as tr, getDir } from '@/lib/i18n';
 import { getListing, getListingReviews, getRelatedListings } from '@/lib/firestore';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import Reveal from '@/components/Reveal';
 import DistanceChip from '@/components/DistanceChip';
 import DocVerifiedBadge from '@/components/DocVerifiedBadge';
@@ -396,7 +396,7 @@ export default function ListingDetailsPage() {
   } else if (listing.priceText?.trim()) {
     price = listing.priceText.trim();
   } else if (listing.priceValue != null) {
-    price = `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    price = formatPrice(listing.priceValue, listing.currencyCode);
   } else {
     price = tr('priceNotSet', selectedLanguage);
   }

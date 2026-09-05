@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { tr, getDir, trCategory } from '@/lib/i18n';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import { isPast } from '@/lib/promo';
 import { getCategoryById } from '@/data/categories';
 import DistanceChip from '@/components/DistanceChip';
@@ -76,7 +76,7 @@ export default function SubCategoryResultsPage() {
     }
     if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
-      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+      return formatPrice(listing.priceValue, listing.currencyCode);
     }
     return 'Price not set';
   }

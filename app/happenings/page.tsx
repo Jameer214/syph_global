@@ -5,7 +5,7 @@ import { Zap, MapPin, Bookmark, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
 import DistanceChip from '@/components/DistanceChip';
@@ -54,7 +54,7 @@ export default function HappeningsPage() {
     }
     if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
-      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+      return formatPrice(listing.priceValue, listing.currencyCode);
     }
     return '';
   }

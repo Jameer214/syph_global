@@ -7,7 +7,7 @@ import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
 import { tr, getDir } from '@/lib/i18n';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import { isPast } from '@/lib/promo';
 import DocVerifiedBadge from '@/components/DocVerifiedBadge';
 import { computeOpenNow } from '@/lib/openStatus';
@@ -112,7 +112,7 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
     }
     if (l.priceText?.trim()) return l.priceText.trim();
     if (l.priceValue != null) {
-      return `${getCurrencySymbol(l.currencyCode)}${l.priceValue.toLocaleString()}`;
+      return formatPrice(l.priceValue, l.currencyCode);
     }
     return 'Price not set';
   }
@@ -123,7 +123,7 @@ function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; on
       if (selectedCurrency && selectedCurrency !== l.currencyCode) {
         return `≈ ${formatConverted(l.originalPriceValue, l.currencyCode, selectedCurrency)}`;
       }
-      return `${getCurrencySymbol(l.currencyCode)}${l.originalPriceValue.toLocaleString()}`;
+      return formatPrice(l.originalPriceValue, l.currencyCode);
     }
     return null;
   }

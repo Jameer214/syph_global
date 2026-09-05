@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
 import { useAppStore } from '@/store';
 import { supabase } from '@/lib/supabase';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import { tr, getDir, trCategory } from '@/lib/i18n';
 import { COUNTRY_FLAGS } from '@/data/countries';
 import BottomNav from '@/components/BottomNav';
@@ -229,7 +229,7 @@ function displayPrice(listing: Listing, selectedCurrency: string): string {
   }
   if (listing.priceText?.trim()) return listing.priceText.trim();
   if (listing.priceValue != null) {
-    return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+    return formatPrice(listing.priceValue, listing.currencyCode);
   }
   return 'Price not set';
 }

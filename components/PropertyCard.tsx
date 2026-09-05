@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Home, Heart, MapPin, Eye, Bookmark } from 'lucide-react';
 import { useAppStore } from '@/store';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import DistanceChip from '@/components/DistanceChip';
 import type { Listing } from '@/types';
 
@@ -48,7 +48,7 @@ export default function PropertyCard({
     }
     if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
-      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+      return formatPrice(listing.priceValue, listing.currencyCode);
     }
     return 'Price not set';
   }

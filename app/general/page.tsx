@@ -5,7 +5,7 @@ import { Globe, Search, X, SlidersHorizontal, MapPin, Star } from 'lucide-react'
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
-import { formatConverted, getCurrencySymbol } from '@/lib/currency';
+import { formatConverted, formatPrice } from '@/lib/currency';
 import { isPast, isEventExpired } from '@/lib/promo';
 import { tr, getDir } from '@/lib/i18n';
 import BottomNav from '@/components/BottomNav';
@@ -66,7 +66,7 @@ export default function GeneralPage() {
     }
     if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
-      return `${getCurrencySymbol(listing.currencyCode)}${listing.priceValue.toLocaleString()}`;
+      return formatPrice(listing.priceValue, listing.currencyCode);
     }
     return 'Price not set';
   }
