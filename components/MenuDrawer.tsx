@@ -10,7 +10,7 @@ import { sanitizeText } from '@/lib/sanitize';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store';
-import { CURRENCIES, getCurrencyForCountry, getCurrencySymbol } from '@/lib/currency';
+import { CURRENCIES, getCurrencyForCountry, getCurrencyFlag } from '@/lib/currency';
 import { LANGUAGES, RTL_LANGS, translate as tr } from '@/lib/i18n';
 import { getSellerProfile } from '@/lib/firestore';
 
@@ -18,12 +18,6 @@ interface Props {
   open: boolean;
   onClose: () => void;
 }
-
-const CURRENCY_FLAGS: Record<string, string> = {
-  USD: '🇺🇸', KES: '🇰🇪', NGN: '🇳🇬', ZAR: '🇿🇦', GHS: '🇬🇭',
-  TZS: '🇹🇿', UGX: '🇺🇬', ETB: '🇪🇹', EGP: '🇪🇬', XOF: '🌍',
-  MAD: '🇲🇦', EUR: '🇪🇺', GBP: '🇬🇧', RWF: '🇷🇼',
-};
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -176,7 +170,7 @@ function CurrencySheet({
             filtered.map(c => (
               <CurrencyOption
                 key={c.code}
-                flag={CURRENCY_FLAGS[c.code] ?? '💱'}
+                flag={getCurrencyFlag(c.code)}
                 title={`${c.code} (${c.symbol})`}
                 subtitle={`${tr('displayAllPricesIn', lang)} ${c.code}`}
                 selected={!isAuto && current === c.code}

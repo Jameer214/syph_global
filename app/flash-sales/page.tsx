@@ -74,24 +74,24 @@ function FlashSaleCard({ item, selectedCurrency, distanceKm, verified }: { item:
   const countdown = useCountdown();
 
   function displayPrice(listing: Listing): string {
-    if (listing.priceValue != null && selectedCurrency && selectedCurrency !== listing.currencyCode) {
-      return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
-    }
-    if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+      }
       return formatPrice(listing.priceValue, listing.currencyCode);
     }
+    if (listing.priceText?.trim()) return listing.priceText.trim();
     return 'Price not set';
   }
 
   function displayOriginalPrice(listing: Listing): string | null {
-    if (listing.originalPriceText?.trim()) return listing.originalPriceText.trim();
     if (listing.originalPriceValue != null) {
       if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
         return `≈ ${formatConverted(listing.originalPriceValue, listing.currencyCode, selectedCurrency)}`;
       }
       return formatPrice(listing.originalPriceValue, listing.currencyCode);
     }
+    if (listing.originalPriceText?.trim()) return listing.originalPriceText.trim();
     return null;
   }
 

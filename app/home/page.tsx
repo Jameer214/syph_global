@@ -224,13 +224,13 @@ function useListings(opts: {
 }
 
 function displayPrice(listing: Listing, selectedCurrency: string): string {
-  if (listing.priceValue != null && selectedCurrency && selectedCurrency !== listing.currencyCode) {
-    return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
-  }
-  if (listing.priceText?.trim()) return listing.priceText.trim();
   if (listing.priceValue != null) {
+    if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+      return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+    }
     return formatPrice(listing.priceValue, listing.currencyCode);
   }
+  if (listing.priceText?.trim()) return listing.priceText.trim();
   return 'Price not set';
 }
 

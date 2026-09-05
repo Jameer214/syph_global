@@ -18,13 +18,13 @@ export default function SavedPage() {
   const { user, savedIds, toggleSaved, isSaved, selectedCurrency, selectedLanguage } = useAppStore();
 
   function displayPrice(listing: Listing): string | null {
-    if (listing.priceValue != null && selectedCurrency && selectedCurrency !== listing.currencyCode) {
-      return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
-    }
-    if (listing.priceText?.trim()) return listing.priceText.trim();
     if (listing.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== listing.currencyCode) {
+        return `≈ ${formatConverted(listing.priceValue, listing.currencyCode, selectedCurrency)}`;
+      }
       return formatPrice(listing.priceValue, listing.currencyCode);
     }
+    if (listing.priceText?.trim()) return listing.priceText.trim();
     return null;
   }
   const uid = user?.uid ?? '';

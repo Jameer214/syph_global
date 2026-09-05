@@ -278,6 +278,40 @@ export const CURRENCIES: { code: string; symbol: string; name: string }[] = (() 
   }));
 })();
 
+// ── Currency → flag emoji (for the picker) — every supported currency ────────
+const CURRENCY_FLAGS: Record<string, string> = {
+  AED: '🇦🇪', AFN: '🇦🇫', ALL: '🇦🇱', AMD: '🇦🇲', ANG: '🇨🇼', AOA: '🇦🇴',
+  ARS: '🇦🇷', AUD: '🇦🇺', AWG: '🇦🇼', AZN: '🇦🇿', BAM: '🇧🇦', BBD: '🇧🇧',
+  BDT: '🇧🇩', BGN: '🇧🇬', BHD: '🇧🇭', BIF: '🇧🇮', BMD: '🇧🇲', BND: '🇧🇳',
+  BOB: '🇧🇴', BRL: '🇧🇷', BSD: '🇧🇸', BTN: '🇧🇹', BWP: '🇧🇼', BYN: '🇧🇾',
+  BZD: '🇧🇿', CAD: '🇨🇦', CDF: '🇨🇩', CHF: '🇨🇭', CLP: '🇨🇱', CNY: '🇨🇳',
+  COP: '🇨🇴', CRC: '🇨🇷', CUP: '🇨🇺', CVE: '🇨🇻', CZK: '🇨🇿', DJF: '🇩🇯',
+  DKK: '🇩🇰', DOP: '🇩🇴', DZD: '🇩🇿', EGP: '🇪🇬', ERN: '🇪🇷', ETB: '🇪🇹',
+  EUR: '🇪🇺', FJD: '🇫🇯', FKP: '🇫🇰', GBP: '🇬🇧', GEL: '🇬🇪', GHS: '🇬🇭',
+  GIP: '🇬🇮', GMD: '🇬🇲', GNF: '🇬🇳', GTQ: '🇬🇹', GYD: '🇬🇾', HKD: '🇭🇰',
+  HNL: '🇭🇳', HTG: '🇭🇹', HUF: '🇭🇺', IDR: '🇮🇩', ILS: '🇮🇱', INR: '🇮🇳',
+  IQD: '🇮🇶', IRR: '🇮🇷', ISK: '🇮🇸', JMD: '🇯🇲', JOD: '🇯🇴', JPY: '🇯🇵',
+  KES: '🇰🇪', KGS: '🇰🇬', KHR: '🇰🇭', KMF: '🇰🇲', KPW: '🇰🇵', KRW: '🇰🇷',
+  KWD: '🇰🇼', KYD: '🇰🇾', KZT: '🇰🇿', LAK: '🇱🇦', LBP: '🇱🇧', LKR: '🇱🇰',
+  LRD: '🇱🇷', LSL: '🇱🇸', LYD: '🇱🇾', MAD: '🇲🇦', MDL: '🇲🇩', MGA: '🇲🇬',
+  MKD: '🇲🇰', MMK: '🇲🇲', MNT: '🇲🇳', MOP: '🇲🇴', MRU: '🇲🇷', MUR: '🇲🇺',
+  MVR: '🇲🇻', MWK: '🇲🇼', MXN: '🇲🇽', MYR: '🇲🇾', MZN: '🇲🇿', NAD: '🇳🇦',
+  NGN: '🇳🇬', NIO: '🇳🇮', NOK: '🇳🇴', NPR: '🇳🇵', NZD: '🇳🇿', OMR: '🇴🇲',
+  PAB: '🇵🇦', PEN: '🇵🇪', PGK: '🇵🇬', PHP: '🇵🇭', PKR: '🇵🇰', PLN: '🇵🇱',
+  PYG: '🇵🇾', QAR: '🇶🇦', RON: '🇷🇴', RSD: '🇷🇸', RUB: '🇷🇺', RWF: '🇷🇼',
+  SAR: '🇸🇦', SBD: '🇸🇧', SCR: '🇸🇨', SDG: '🇸🇩', SEK: '🇸🇪', SGD: '🇸🇬',
+  SHP: '🇸🇭', SLE: '🇸🇱', SOS: '🇸🇴', SRD: '🇸🇷', SSP: '🇸🇸', STN: '🇸🇹',
+  SZL: '🇸🇿', SYP: '🇸🇾', THB: '🇹🇭', TJS: '🇹🇯', TMT: '🇹🇲', TND: '🇹🇳',
+  TOP: '🇹🇴', TRY: '🇹🇷', TTD: '🇹🇹', TWD: '🇹🇼', TZS: '🇹🇿', UAH: '🇺🇦',
+  UGX: '🇺🇬', USD: '🇺🇸', UYU: '🇺🇾', UZS: '🇺🇿', VES: '🇻🇪', VND: '🇻🇳',
+  VUV: '🇻🇺', WST: '🇼🇸', XAF: '🌍', XCD: '🌎', XOF: '🌍', XPF: '🇵🇫',
+  YER: '🇾🇪', ZAR: '🇿🇦', ZMW: '🇿🇲',
+};
+
+export function getCurrencyFlag(code: string): string {
+  return CURRENCY_FLAGS[code] ?? '💱';
+}
+
 // ── Exchange rates (units per 1 USD) — approximate; syph uses live rates ─────
 const RATES_FROM_USD: Record<string, number> = {
   USD: 1, EUR: 0.92, GBP: 0.79, AED: 3.67, AFN: 71, ALL: 92, AMD: 388,
@@ -339,11 +373,12 @@ export function formatConverted(amount: number, fromCurrency: string, toCurrency
  * Canonical listing price renderer — mirrors the Flutter app's
  * `CurrencyUtils.displayListingPrice`.
  *
- * When the buyer's display currency differs from the listing's currency AND a
- * numeric price exists, we convert and show an "≈" approximation. Otherwise we
- * fall back to the seller's free-form price text (which may say "Negotiable",
- * a range, etc.), then to a formatted numeric price (currency CODE prefixed),
- * then to a placeholder.
+ * Whenever a numeric price exists we build the label ourselves so the currency
+ * CODE always shows (e.g. "UGX 5,000") — matching the Flutter app, which never
+ * echoes the seller's free-form text for numeric prices. If the display
+ * currency differs we convert and show an "≈" approximation. Only when there is
+ * NO numeric price do we fall back to the seller's price text (e.g.
+ * "Negotiable", a range), then to a placeholder.
  */
 export function displayListingPrice(opts: {
   priceText?: string | null;
@@ -356,16 +391,12 @@ export function displayListingPrice(opts: {
   const currencyCode = opts.currencyCode || 'USD';
   const targetCurrency = opts.targetCurrency || '';
 
-  if (
-    priceValue != null &&
-    targetCurrency &&
-    targetCurrency !== currencyCode
-  ) {
-    return `≈ ${formatConverted(priceValue, currencyCode, targetCurrency)}`;
-  }
-  if (priceText?.trim()) return priceText.trim();
   if (priceValue != null) {
+    if (targetCurrency && targetCurrency !== currencyCode) {
+      return `≈ ${formatConverted(priceValue, currencyCode, targetCurrency)}`;
+    }
     return formatPrice(priceValue, currencyCode);
   }
+  if (priceText?.trim()) return priceText.trim();
   return fallback;
 }

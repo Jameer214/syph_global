@@ -9,6 +9,7 @@ import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { deleteListing } from '@/lib/firestore';
+import { displayListingPrice } from '@/lib/currency';
 import { useAppStore } from '@/store';
 import { translate as tr } from '@/lib/i18n';
 import type { Listing } from '@/types';
@@ -275,8 +276,8 @@ export default function MyListingsPage() {
                       <div style={{ fontWeight: 900, fontSize: 15, color: '#0F2B6E', lineHeight: 1.25, marginBottom: 8 }}>{l.title}</div>
                       {/* Chips */}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                        {l.priceText && (
-                          <span style={{ background: '#EEF4FF', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#2E5BFF' }}>{l.priceText}</span>
+                        {(l.priceValue != null || l.priceText) && (
+                          <span style={{ background: '#EEF4FF', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#2E5BFF' }}>{displayListingPrice({ priceValue: l.priceValue, priceText: l.priceText, currencyCode: l.currencyCode })}</span>
                         )}
                         {l.locationText && (
                           <span style={{ background: '#F0F4FF', borderRadius: 999, padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#4A5878' }}>{l.locationText}</span>

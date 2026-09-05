@@ -107,24 +107,24 @@ function openMaps(location: string, lat: number | null, lng: number | null) {
 function ItemCard({ listing, onClick, selectedCurrency }: { listing: Listing; onClick: () => void; selectedCurrency: string }) {
   const { selectedLanguage } = useAppStore();
   function displayPrice(l: Listing): string {
-    if (l.priceValue != null && selectedCurrency && selectedCurrency !== l.currencyCode) {
-      return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
-    }
-    if (l.priceText?.trim()) return l.priceText.trim();
     if (l.priceValue != null) {
+      if (selectedCurrency && selectedCurrency !== l.currencyCode) {
+        return `≈ ${formatConverted(l.priceValue, l.currencyCode, selectedCurrency)}`;
+      }
       return formatPrice(l.priceValue, l.currencyCode);
     }
+    if (l.priceText?.trim()) return l.priceText.trim();
     return 'Price not set';
   }
 
   function displayOriginalPrice(l: Listing): string | null {
-    if (l.originalPriceText?.trim()) return l.originalPriceText.trim();
     if (l.originalPriceValue != null) {
       if (selectedCurrency && selectedCurrency !== l.currencyCode) {
         return `≈ ${formatConverted(l.originalPriceValue, l.currencyCode, selectedCurrency)}`;
       }
       return formatPrice(l.originalPriceValue, l.currencyCode);
     }
+    if (l.originalPriceText?.trim()) return l.originalPriceText.trim();
     return null;
   }
 

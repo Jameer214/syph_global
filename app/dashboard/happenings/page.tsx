@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { sanitizeText } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import { createHappening, getSellerProfile, uploadListingImages } from '@/lib/firestore';
-import { getCurrencyForCountry, convertPrice } from '@/lib/currency';
+import { getCurrencyForCountry, convertPrice, displayListingPrice } from '@/lib/currency';
 import { getPromoPricing, getSellerPrivilegePercent, type DayPriceMap } from '@/lib/adminSettings';
 import { CATEGORIES } from '@/data/categories';
 import { useAppStore } from '@/store';
@@ -305,7 +305,7 @@ export default function HappeningsPage() {
                     </span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#2E5BFF' }}>{h.priceText || tr('freeLabel', lang)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#2E5BFF' }}>{displayListingPrice({ priceValue: h.priceValue, priceText: h.priceText, currencyCode: h.currencyCode, fallback: tr('freeLabel', lang) })}</span>
                     <span style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af' }}>{h.viewsCount} {tr('viewsWord', lang)}</span>
                   </div>
                 </div>
