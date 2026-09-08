@@ -72,9 +72,10 @@ export default function NewListingForm() {
   const [messageForBuyers, setMessageForBuyers] = useState('');
   const [price, setPrice] = useState('');
   const [negotiable, setNegotiable] = useState(false);
-  // Listing: condition is optional and starts unset (tap again clears).
-  // Sponsor/flash keep their previous default of 'New'.
-  const [condition, setCondition] = useState(formType === 'listing' ? '' : 'New');
+  // Condition (New/Used) is OPTIONAL for every form type — starts unset and a
+  // second tap clears it (matches syph, which made NEW/USED optional on the
+  // listing, sponsor AND flash screens).
+  const [condition, setCondition] = useState('');
   const [selectedMainId, setSelectedMainId] = useState('');
   const [selectedSubId, setSelectedSubId] = useState('');
   // Category bottom-sheet (listing variant): which pane is showing.
@@ -559,12 +560,12 @@ export default function NewListingForm() {
 
         {/* Item Condition */}
         <div style={sectionWrap}>
-          {/* Listing = optional label; sponsor/flash = plain "Item Condition". */}
-          <SectionLabel color={accent} text={tr(formType === 'listing' ? 'itemConditionOptional' : 'itemConditionLabel', lang)} />
+          {/* Optional label for every form type (New/Used is never required). */}
+          <SectionLabel color={accent} text={tr('itemConditionOptional', lang)} />
           <div style={cardStyle}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Info size={20} color={accent} />
-              <span style={{ fontWeight: 900, fontSize: 14.5, color: '#1E2B45' }}>{tr(formType === 'listing' ? 'itemConditionOptional' : 'itemConditionLabel', lang)}</span>
+              <span style={{ fontWeight: 900, fontSize: 14.5, color: '#1E2B45' }}>{tr('itemConditionOptional', lang)}</span>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               {CONDITION_OPTS.map(({ val, color, bg }) => {
@@ -574,8 +575,8 @@ export default function NewListingForm() {
                   <button
                     key={val}
                     type="button"
-                    // Listing is optional + tap-to-clear; sponsor/flash are non-clearing.
-                    onClick={() => setCondition((prev) => (formType === 'listing' && prev === val ? '' : val))}
+                    // Optional + tap-to-clear for all types (matches syph).
+                    onClick={() => setCondition((prev) => (prev === val ? '' : val))}
                     style={{
                       flex: 1, padding: '14px 0', borderRadius: 14, cursor: 'pointer',
                       background: selected ? bg : '#F7FAFF',
