@@ -43,7 +43,7 @@ export default function SplashScreen() {
       style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', padding: '0 24px',
-        background: '#F0F4FF',
+        background: 'radial-gradient(125% 100% at 50% 0%, #12336E 0%, #0A1C44 55%, #061024 100%)',
       }}
     >
       {/* Brand mark — the real SYPH app logo, gently scaling in. */}
@@ -71,13 +71,13 @@ export default function SplashScreen() {
       >
         <h1 style={{
           margin: 0, fontFamily: FONT_STACK, fontSize: 46, fontWeight: 900,
-          letterSpacing: '2px', color: '#0F2B6E', lineHeight: 1,
+          letterSpacing: '2px', color: '#FFFFFF', lineHeight: 1,
         }}>
           SYPH
         </h1>
         <p style={{
           margin: '12px 0 0', fontFamily: FONT_STACK, fontSize: 14.5, fontWeight: 700,
-          letterSpacing: '0.3px', color: '#6B7A99', textAlign: 'center',
+          letterSpacing: '0.3px', color: 'rgba(255,255,255,0.72)', textAlign: 'center',
         }}>
           {tr('tagline', lang)}
         </p>
@@ -92,7 +92,7 @@ export default function SplashScreen() {
       >
         <div style={{
           width: 24, height: 24, borderRadius: '50%',
-          border: '2.4px solid rgba(46,91,255,0.22)', borderTopColor: '#2E5BFF',
+          border: '2.4px solid rgba(255,255,255,0.2)', borderTopColor: '#8FB4FF',
           animation: 'spin 0.75s linear infinite',
         }} />
       </motion.div>
