@@ -40,6 +40,7 @@ export default function SplashScreen() {
   return (
     <div
       dir={getDir(lang)}
+      className="wide-page"
       style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', padding: '0 24px',

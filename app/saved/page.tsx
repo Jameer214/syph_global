@@ -101,11 +101,11 @@ export default function SavedPage() {
 
   if (!uid) {
     return (
-      <div dir={getDir(selectedLanguage)} className="app-shell" style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
-        <div style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center' }}>
+      <div dir={getDir(selectedLanguage)} className="wide-page" style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
+        <div className="wide-container" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center' }}>
           <span style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('savedListings', selectedLanguage)}</span>
         </div>
-        <div style={{ padding: '16px 16px 80px' }}>
+        <div className="wide-container" style={{ padding: '16px 16px 80px' }}>
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 24, textAlign: 'center' }}>
             <Bookmark size={40} color="#9ca3af" />
             <p style={{ fontWeight: 900, margin: '10px 0 6px', color: '#0f172a' }}>{tr('signInToViewSaved', selectedLanguage)}</p>
@@ -119,7 +119,7 @@ export default function SavedPage() {
   }
 
   return (
-    <div dir={getDir(selectedLanguage)} className="app-shell wide-page" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+    <div dir={getDir(selectedLanguage)} className="wide-page" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       {/* Header */}
       <div className="wide-container" style={{ background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 40 }}>
         <span style={{ color: '#fff', fontWeight: 900, fontSize: 18 }}>{tr('savedListings', selectedLanguage)}</span>

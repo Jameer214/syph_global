@@ -217,7 +217,7 @@ function CategoriesBrowser() {
   }, []);
 
   return (
-    <div className="app-shell wide-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--desktop-nav-h))', overflow: 'hidden', backgroundColor: '#D6ECFF' }} dir={getDir(selectedLanguage)}>
+    <div className="wide-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--desktop-nav-h))', overflow: 'hidden', backgroundColor: '#D6ECFF' }} dir={getDir(selectedLanguage)}>
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
