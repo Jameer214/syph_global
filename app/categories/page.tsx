@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, LayoutGrid } from 'lucide-react';
 import { CATEGORIES } from '@/data/categories';
@@ -35,6 +35,25 @@ const CATEGORY_COLORS: Record<string, string> = {
 const CATEGORY_IMAGE_BASE =
   'https://phkkmxlkvflozsyxafsq.supabase.co/storage/v1/object/public/category-images';
 const subImageUrl = (subId: string) => `${CATEGORY_IMAGE_BASE}/${subId}.jpg`;
+
+// ── Thumbnail prefetch ────────────────────────────────────────────────────────
+// The tiles are tiny (~15 KB) JPGs that Supabase serves with a long cache
+// lifetime, so the only wait is the first network fetch. We warm the browser
+// cache — the open category immediately, the rest quietly during idle time, and
+// any category the moment its rail item is hovered/focused — so tiles show up
+// instantly instead of streaming in on first view or category switch.
+const prefetchedCats = new Set<string>();
+function prefetchCategoryImages(catId: string) {
+  if (typeof window === 'undefined' || prefetchedCats.has(catId)) return;
+  prefetchedCats.add(catId);
+  const cat = CATEGORIES.find((c) => c.id === catId);
+  if (!cat) return;
+  for (const sub of cat.children) {
+    const img = new window.Image();
+    img.decoding = 'async';
+    img.src = subImageUrl(sub.id);
+  }
+}
 
 // Subcategory emoji icons by sub id
 const SUB_ICONS: Record<string, string> = {
@@ -146,7 +165,8 @@ function SubThumb({ subId, icon, color }: { subId: string; icon: string; color: 
         <img
           src={subImageUrl(subId)}
           alt=""
-          loading="lazy"
+          loading="eager"
+          decoding="async"
           onError={() => setFailed(true)}
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
@@ -173,6 +193,28 @@ function CategoriesBrowser() {
 
   const selectedMain = CATEGORIES[selectedIndex];
   const mainColor = CATEGORY_COLORS[selectedMain.id] ?? '#2E5BFF';
+
+  // Warm thumbnails: the open category first, then the rest during idle time so
+  // switching to any other category is instant. Runs once on mount.
+  useEffect(() => {
+    prefetchCategoryImages(CATEGORIES[initialIndex]?.id ?? CATEGORIES[0].id);
+    const ric: ((cb: () => void) => number) | undefined =
+      (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    let i = 0;
+    let handle: number | undefined;
+    const warmNext = () => {
+      if (i >= CATEGORIES.length) return;
+      prefetchCategoryImages(CATEGORIES[i++].id);
+      handle = ric ? ric(warmNext) : (setTimeout(warmNext, 150) as unknown as number);
+    };
+    warmNext();
+    return () => {
+      const cancel = (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback;
+      if (handle == null) return;
+      if (ric && cancel) cancel(handle); else clearTimeout(handle);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="app-shell wide-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--desktop-nav-h))', overflow: 'hidden', backgroundColor: '#D6ECFF' }} dir={getDir(selectedLanguage)}>
@@ -211,6 +253,8 @@ function CategoriesBrowser() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedIndex(index)}
+                onMouseEnter={() => prefetchCategoryImages(cat.id)}
+                onFocus={() => prefetchCategoryImages(cat.id)}
                 style={{
                   width: '100%',
                   minHeight: 72,
