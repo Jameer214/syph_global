@@ -21,63 +21,139 @@ const CATEGORY_COLORS: Record<string, string> = {
   events_tickets: '#d946ef',
   agriculture: '#22c55e',
   health_wellness: '#ef4444',
-  leisure_travel: '#14b8a6',
+  leisure_activities: '#14b8a6',
+  business_industrial: '#64748b',
   baby_kids: '#facc15',
   pets: '#a16207',
+  raw_materials: '#78716c',
 };
+
+// Curated subcategory thumbnails live in our own Supabase Storage bucket
+// (category-images/<sub_id>.jpg) — the same source syph's Flutter app uses, so
+// both show identical realistic photos. The emoji below is only a fallback for
+// any thumbnail that hasn't been uploaded yet.
+const CATEGORY_IMAGE_BASE =
+  'https://phkkmxlkvflozsyxafsq.supabase.co/storage/v1/object/public/category-images';
+const subImageUrl = (subId: string) => `${CATEGORY_IMAGE_BASE}/${subId}.jpg`;
 
 // Subcategory emoji icons by sub id
 const SUB_ICONS: Record<string, string> = {
   // real estate
   land: '🏞️', plots_estates: '📐', houses_sale: '🏠', apartments_sale: '🏢',
   commercial_sale: '🏪', warehouses: '🏭', office_space: '🏗️', farmland: '🌿',
+  student_housing: '🎓',
   // accommodation
   rentals: '🔑', vacation_rentals: '🌴', hotels: '🏨', lodges: '🏕️',
-  guest_houses: '🏡', hostels: '🛏️', resorts: '🌊',
+  guest_houses: '🏡', hostels: '🛏️', resorts: '🌊', serviced_apartments: '🛎️',
+  camping_sites: '⛺',
   // vehicles
   sedans: '🚗', suvs: '🚙', pickup_trucks: '🛻', vans_buses: '🚌',
   trucks: '🚛', motorcycles: '🏍️', bicycles: '🚲', boats: '⛵', spare_parts: '⚙️',
+  tuk_tuks: '🛺', electric_vehicles: '🔋',
   // phones
   smartphones: '📱', feature_phones: '📟', tablets: '📲', phone_accessories: '🎧',
   smartwatches: '⌚', chargers_cables: '🔌', earbuds_headsets: '🎵', phone_repairs: '🔧',
+  screen_protectors: '🛡️',
   // electronics
   laptops: '💻', desktops: '🖥️', tv_audio: '📺', gaming: '🎮',
   cameras: '📸', printers: '🖨️', networking: '📡', computer_accessories: '🖱️',
+  drones: '🛸', solar_power: '☀️',
   // fashion
   mens_clothing: '👔', womens_clothing: '👗', kids_clothing: '👕', shoes: '👟',
   bags: '👜', jewelry_watches: '💍', beauty_products: '💄', salon_equipment: '✂️',
+  wigs_extensions: '💇', perfumes: '🌸', sunglasses: '🕶️',
   // home
   sofas: '🛋️', beds_mattresses: '🛏️', tables_chairs: '🪑', wardrobes_storage: '🗄️',
   appliances: '🍳', kitchen_dining: '🍽️', home_decor: '🖼️', lighting: '💡',
+  curtains_blinds: '🪟', garden_outdoor: '🌳',
   // food
   restaurants: '🍴', cafes: '☕', bakeries: '🥖', takeaways: '🥡',
   street_food: '🌮', catering: '🎂', bars_lounges: '🍹', water_drinks: '💧',
+  groceries: '🛒', juices_smoothies: '🥤',
   // services
-  transport_delivery: '🚚', cleaning: '🧹', construction: '🏗️', repair_maintenance: '🔨',
-  plumbing: '🔧', electrical: '⚡', it_services: '💻', graphics_design: '🎨',
-  photography_video: '📷',
+  transport_delivery: '🚚', cleaning: '🧹', laundry: '🧺', construction: '🏗️',
+  repair_maintenance: '🔨', plumbing: '🔧', electrical: '⚡', carpentry: '🪚',
+  it_services: '💻', graphics_design: '🎨', printing_branding: '🖨️',
+  photography_video: '📷', beauty_spa: '💆', barber_salon: '💈', moving_services: '📦',
+  digital_marketing: '📈', consulting: '🗣️', legal: '⚖️', accounting: '🧮',
+  insurance: '🛡️', security_services: '🔒', tutoring: '📖', event_planning: '🎊',
+  catering_services: '🍱', pest_control: '🐜', interior_design: '🎨', tailoring: '🧵',
+  courier: '🛵', welding: '🔥', gardening: '🌿',
   // jobs
   full_time: '💼', part_time: '⏰', contract: '📋', internships: '🎓',
   remote: '🏠', hospitality_jobs: '🍽️', driver_jobs: '🚗', sales_jobs: '📊',
+  tech_jobs: '💻', healthcare_jobs: '⚕️', teaching_jobs: '👩‍🏫',
   // events
   concerts: '🎸', conferences: '🎤', workshops: '🛠️', weddings: '💒',
   parties: '🎉', nightlife: '🌙', sports_events: '⚽', tickets: '🎟️',
+  comedy_shows: '😂', exhibitions: '🖼️', cultural_events: '🎭', religious_events: '⛪',
+  kids_events: '🎈', food_festivals: '🍢', fashion_shows: '💃', film_screenings: '🎬',
+  charity_events: '🤝', graduation_events: '🎓',
   // agriculture
   farm_inputs: '🌱', livestock: '🐄', poultry: '🐓', fresh_produce: '🥦',
   agri_equipment: '🚜', animal_feed: '🌾', seeds_seedlings: '🌿', dairy_products: '🥛',
+  fish_aquaculture: '🐟', honey_beeswax: '🍯',
   // health
   pharmacy: '💊', medical_services: '🏥', fitness: '💪', sports: '🏃',
   wellness_products: '🧴', nutrition: '🥗', therapy_support: '🧘', gym_equipment: '🏋️',
+  mental_health: '🧠', dental: '🦷', optical: '👓',
   // leisure
   travel: '✈️', hotspots: '📍', entertainment: '🎭', outdoor: '🏔️',
   gaming_centers: '🕹️', tour_packages: '🗺️', beaches_resorts: '🏖️', clubs_hangouts: '🎵',
+  hiking_camping: '🥾', water_sports: '🏄', cycling_tours: '🚴', kids_activities: '🛝',
+  kids_parties: '🎂', theme_parks: '🎢', swimming_pools: '🏊', art_crafts: '🎨',
+  music_dance: '🎶', spa_relaxation: '💆', cinema: '🎬', escape_rooms: '🔐',
+  // business & industrial
+  machinery: '⚙️', tools: '🔧', safety_equipment: '🦺', industrial_supplies: '🏭',
+  office_supplies: '📎', shops_showrooms: '🏬', wholesale: '📦', retail_stock: '🛍️',
+  packaging: '📦', cleaning_supplies: '🧴',
   // baby
   baby_products: '👶', toys_games: '🧸', kids_fashion: '👗', school_items: '📚',
-  strollers: '🛺', baby_furniture: '🪑',
+  strollers: '🛺', baby_furniture: '🪑', kids_electronics: '📱', kids_books: '📖',
+  kids_sports: '⚽', baby_food: '🍼', diapers_hygiene: '🧷', maternity: '🤰',
   // pets
   pets_for_sale: '🐕', pet_food: '🦴', pet_accessories: '🎀', pet_services: '🐾',
-  aquariums: '🐠', bird_supplies: '🦜',
+  aquariums: '🐠', bird_supplies: '🦜', vet_services: '💉', pet_grooming: '✂️',
+  // raw materials
+  chemicals: '🧪', fuels_energy: '🛢️', wood_forestry: '🪵', textile_fibers: '🧵',
+  plastics_polymers: '♳', agri_raw_materials: '🌾', minerals_ores: '⛏️',
+  glass_ceramics: '🏺', water_natural: '💧', recyclable_materials: '♻️',
 };
+
+// Circular subcategory thumbnail: shows the curated Supabase photo, falling
+// back to the coloured emoji tile if the image is missing or fails to load.
+// Mirrors the syph Flutter SubcategoriesScreen look.
+function SubThumb({ subId, icon, color }: { subId: string; icon: string; color: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div style={{
+      width: 82,
+      height: 82,
+      borderRadius: '50%',
+      overflow: 'hidden',
+      backgroundColor: color + '1F',
+      border: `2px solid ${color}4D`,
+      boxShadow: `0 2px 8px ${color}40`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 36,
+    }}>
+      {failed ? (
+        icon
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={subImageUrl(subId)}
+          alt=""
+          loading="lazy"
+          onError={() => setFailed(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function CategoriesPage() {
   return (
@@ -230,20 +306,7 @@ function CategoriesBrowser() {
                       animationDelay: `${(i + 1) * 0.04}s`,
                     }}
                   >
-                    <div style={{
-                      width: 82,
-                      height: 82,
-                      borderRadius: '50%',
-                      backgroundColor: color + '1F',
-                      border: `2px solid ${color}4D`,
-                      boxShadow: `0 2px 8px ${color}40`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 36,
-                    }}>
-                      {icon}
-                    </div>
+                    <SubThumb subId={sub.id} icon={icon} color={color} />
                     <span style={{
                       fontSize: 12,
                       fontWeight: 600,

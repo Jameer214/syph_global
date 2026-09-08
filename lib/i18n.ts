@@ -1288,9 +1288,11 @@ const CATEGORY_T: Record<string, TranslationMap> = {
   events_tickets:     { en:'Events & Tickets', fr:'Événements et billets', pt:'Eventos e ingressos', ar:'الفعاليات والتذاكر', sw:'Matukio na Tiketi', zh:'活动与门票', hi:'इवेंट और टिकट', id:'Acara & Tiket', bn:'ইভেন্ট ও টিকিট', ur:'ایونٹس اور ٹکٹس', ja:'イベント・チケット', ko:'이벤트 & 티켓' },
   agriculture:        { en:'Agriculture', fr:'Agriculture', pt:'Agricultura', ar:'الزراعة', sw:'Kilimo', zh:'农业', hi:'कृषि', id:'Pertanian', bn:'কৃষি', ur:'زراعت', ja:'農業', ko:'농업' },
   health_wellness:    { en:'Health & Wellness', fr:'Santé et bien-être', pt:'Saúde e bem-estar', ar:'الصحة والعافية', sw:'Afya na Ustawi', zh:'健康养生', hi:'स्वास्थ्य और कल्याण', id:'Kesehatan & Kebugaran', bn:'স্বাস্থ্য ও সুস্থতা', ur:'صحت اور تندرستی', ja:'健康・ウェルネス', ko:'건강 & 웰니스' },
-  leisure_travel:     { en:'Leisure & Travel', fr:'Loisirs et voyages', pt:'Lazer e viagens', ar:'الترفيه والسفر', sw:'Burudani na Usafiri', zh:'休闲旅行', hi:'मनोरंजन और यात्रा', id:'Rekreasi & Perjalanan', bn:'অবসর ও ভ্রমণ', ur:'تفریح اور سفر', ja:'レジャー・旅行', ko:'레저 & 여행' },
+  leisure_activities: { en:'Leisure & Activities', fr:'Loisirs et activités', pt:'Lazer e atividades', ar:'الترفيه والأنشطة', sw:'Burudani na Shughuli', zh:'休闲与活动', hi:'मनोरंजन और गतिविधियाँ', id:'Rekreasi & Aktivitas', bn:'অবসর ও কার্যক্রম', ur:'تفریح اور سرگرمیاں', ja:'レジャー・アクティビティ', ko:'레저 & 액티비티' },
+  business_industrial:{ en:'Business & Industrial', fr:'Entreprise et industrie', pt:'Negócios e indústria', ar:'الأعمال والصناعة', sw:'Biashara na Viwanda', zh:'商业与工业', hi:'व्यवसाय और औद्योगिक', id:'Bisnis & Industri', bn:'ব্যবসা ও শিল্প', ur:'کاروبار اور صنعت', ja:'ビジネス・産業', ko:'비즈니스 & 산업' },
   baby_kids:          { en:'Baby & Kids', fr:'Bébés et enfants', pt:'Bebês e crianças', ar:'الأطفال والرضع', sw:'Watoto na Wachanga', zh:'母婴儿童', hi:'शिशु और बच्चे', id:'Bayi & Anak', bn:'শিশু ও বাচ্চা', ur:'بچے', ja:'ベビー・キッズ', ko:'유아 & 아동' },
   pets:               { en:'Pets', fr:'Animaux', pt:'Animais de estimação', ar:'الحيوانات الأليفة', sw:'Wanyama Vipenzi', zh:'宠物', hi:'पालतू जानवर', id:'Hewan Peliharaan', bn:'পোষা প্রাণী', ur:'پالتو جانور', ja:'ペット', ko:'반려동물' },
+  raw_materials:      { en:'Raw Materials', fr:'Matières premières', pt:'Matérias-primas', ar:'المواد الخام', sw:'Malighafi', zh:'原材料', hi:'कच्चा माल', id:'Bahan Baku', bn:'কাঁচামাল', ur:'خام مال', ja:'原材料', ko:'원자재' },
 };
 
 /** Translate a main category title by its data/categories.ts id; falls back to the English title from the data file. */
