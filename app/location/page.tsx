@@ -874,8 +874,12 @@ export default function LocationPage() {
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7A99', letterSpacing: '1.5px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>{tr('availableOn', selectedLanguage)}</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+            {/* iOS app not out yet → keep the "coming soon" modal. */}
             <Image src="/apple-badge.svg" alt="Download on the App Store" width={160} height={53} onClick={() => setShowAppModal(true)} className="btn-tap" style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
-            <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} onClick={() => setShowAppModal(true)} className="btn-tap" style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
+            {/* Android app is live → go straight to the Play Store listing. */}
+            <a href="https://play.google.com/store/apps/details?id=com.syph.app" target="_blank" rel="noopener noreferrer" className="btn-tap" style={{ display: 'inline-flex' }}>
+              <Image src="/google-play-badge.svg" alt="Get it on Google Play" width={160} height={53} style={{ height: 50, width: 'auto', borderRadius: 8, cursor: 'pointer' }} />
+            </a>
           </div>
         </div>
         </Reveal>

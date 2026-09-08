@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Globe } from 'lucide-react';
+import Image from 'next/image';
 import { useAppStore } from '@/store';
 import { translate as tr, getDir } from '@/lib/i18n';
 
@@ -46,19 +46,20 @@ export default function SplashScreen() {
         background: '#F0F4FF',
       }}
     >
-      {/* Brand mark — soft rounded tile with the global glyph, gently scaling in. */}
+      {/* Brand mark — the real SYPH app logo, gently scaling in. */}
       <motion.div
         initial={{ opacity: 0, scale: 0.82 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        style={{
-          width: 96, height: 96, borderRadius: 28,
-          background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 16px 40px rgba(30,77,217,0.28)',
-        }}
       >
-        <Globe size={46} color="#fff" strokeWidth={2.2} />
+        <Image
+          src="/syph-logo.png"
+          alt="SYPH"
+          width={132}
+          height={132}
+          priority
+          style={{ width: 132, height: 132, objectFit: 'contain' }}
+        />
       </motion.div>
 
       {/* Wordmark + tagline */}
