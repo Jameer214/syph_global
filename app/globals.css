@@ -289,6 +289,30 @@ html, body {
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* Welcome — laptop split: brand on the left, auth in a glass panel on the
+   right. Below 1024px these classes are inert, so the phone layout is unchanged. */
+@media (min-width: 1024px) {
+  .welcome-layout {
+    max-width: 1180px !important;
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 72px;
+    align-items: center;
+    padding: 48px 56px !important;
+  }
+  .welcome-title { font-size: 68px !important; }
+  .welcome-panel {
+    border-radius: 28px;
+    padding: 34px 32px 26px;
+    background: rgba(6, 15, 46, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  }
+}
+
 /* Image fade-in on load: start hidden, JS flips opacity via onLoad */
 .img-fade { opacity: 0; transition: opacity 0.4s ease; }
 .img-fade.img-loaded { opacity: 1; }

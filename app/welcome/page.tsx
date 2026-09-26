@@ -112,6 +112,7 @@ export default function WelcomePage() {
 
   return (
     <div
+      className="wide-page"
       dir={getDir(selectedLanguage)}
       style={{
         minHeight: '100dvh',
@@ -147,7 +148,9 @@ export default function WelcomePage() {
         <span key={i} className="star" style={{ top: s.top, left: s.left, width: s.size, height: s.size, animationDelay: `${s.delay}s` }} />
       ))}
 
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 520, margin: '0 auto', padding: '30px 22px 26px' }}>
+      <div className="welcome-layout" style={{ position: 'relative', zIndex: 1, maxWidth: 520, margin: '0 auto', padding: '30px 22px 26px' }}>
+        {/* Brand side (left column on laptop) */}
+        <div className="welcome-hero">
 
         {/* Live badge */}
         <div className="anim-fade-up" style={{ display: 'flex', justifyContent: 'center' }}>
@@ -162,7 +165,7 @@ export default function WelcomePage() {
         <div style={{ height: 22 }} />
 
         {/* Title */}
-        <p className="text-shimmer anim-fade-up" style={{ textAlign: 'center', fontSize: 44, fontWeight: 900, lineHeight: 1, margin: 0, animationDelay: '0.08s' }}>
+        <p className="text-shimmer anim-fade-up welcome-title" style={{ textAlign: 'center', fontSize: 44, fontWeight: 900, lineHeight: 1, margin: 0, animationDelay: '0.08s' }}>
           {tr('welcome', selectedLanguage)}
         </p>
         <div style={{ height: 8 }} />
@@ -207,7 +210,10 @@ export default function WelcomePage() {
         </div>
 
         <div style={{ height: 28 }} />
+        </div>
 
+        {/* Auth side (right-hand glass panel on laptop) */}
+        <div className="welcome-panel">
         {/* Google button */}
         <button onClick={handleGoogle} disabled={loading} className="btn-tap anim-fade-up" style={{
           width: '100%', height: 52, borderRadius: 26, border: 'none',
@@ -287,6 +293,7 @@ export default function WelcomePage() {
         </p>
 
         <div style={{ height: 10 }} />
+        </div>
       </div>
     </div>
   );
