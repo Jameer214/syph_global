@@ -29,6 +29,9 @@ const STARS = [
   { top: '57%', left: '94%', size: 2, delay: 1.1 },
 ];
 
+// Background slideshow: slow cross-fading seller photos.
+const SLIDES = [1, 2, 3, 4, 5].map((n) => `/welcome/seller-${n}.jpg`);
+
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48">
@@ -44,6 +47,12 @@ export default function WelcomePage() {
   const router = useRouter();
   const { setUser, locationSet, selectedCountry, selectedLanguage } = useAppStore();
   const [loading, setLoading] = useState(false);
+  const [slide, setSlide] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setSlide((s) => (s + 1) % SLIDES.length), 4000);
+    return () => clearInterval(t);
+  }, []);
 
   const afterAuth = () => {
     if (locationSet && selectedCountry) {
@@ -110,6 +119,24 @@ export default function WelcomePage() {
         overflowY: 'auto', overflowX: 'hidden', position: 'relative',
       }}
     >
+      {/* Seller photo slideshow (fixed so it fills the viewport while content scrolls) */}
+      <div aria-hidden style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        {SLIDES.map((src, i) => {
+          const active = i === slide;
+          return (
+            <div key={src} style={{
+              position: 'absolute', inset: 0,
+              backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center',
+              opacity: active ? 1 : 0,
+              transform: active ? 'scale(1)' : 'scale(1.08)',
+              transition: active ? 'opacity 1.2s ease, transform 5s ease-out' : 'opacity 1.2s ease, transform 0s linear 1.2s',
+            }} />
+          );
+        })}
+        {/* Navy wash so the existing white text and glass cards stay readable */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(6,15,46,0.62) 0%, rgba(10,29,82,0.74) 45%, rgba(6,15,46,0.92) 100%)' }} />
+      </div>
+
       {/* Drifting aurora glow */}
       <div className="aurora-blob" style={{ width: 360, height: 360, top: -100, left: -110, background: 'rgba(46,91,255,0.42)' }} />
       <div className="aurora-blob" style={{ width: 300, height: 300, top: '32%', right: -130, background: 'rgba(108,99,255,0.36)', animationDelay: '-5s' }} />
