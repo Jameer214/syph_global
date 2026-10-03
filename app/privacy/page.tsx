@@ -147,6 +147,19 @@ export default function PrivacyPage() {
         ))}
 
         <div style={{ color: '#6B7A99', fontWeight: 700, fontSize: 13, marginTop: 4 }}>{tr('lastUpdatedLabel', lang)} June 9, 2026</div>
+
+        {/* ADDED: Founder footer */}
+        <div style={{ marginTop: 28, padding: '28px 20px 24px', borderRadius: 20, background: 'linear-gradient(135deg, #0F2B6E 0%, #1E4DD9 100%)', boxShadow: '0 6px 16px rgba(46,103,245,0.35)', textAlign: 'center' }}>
+          <div style={{ width: 40, height: 3, background: 'rgba(255,255,255,0.5)', borderRadius: 4, margin: '0 auto 14px' }} />
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase' }}>Founded by</div>
+          <div style={{ color: '#fff', fontWeight: 900, fontSize: 22, letterSpacing: 2, marginTop: 6 }}>KINTU HASSAN</div>
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.2)', margin: '18px auto 14px', maxWidth: 220 }} />
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>Also founder of</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <a href="https://scervi.com" target="_blank" rel="noopener noreferrer" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 800, fontSize: 13, padding: '8px 16px', borderRadius: 999, textDecoration: 'none' }}>Scervi</a>
+            <a href="https://ovehla.com" target="_blank" rel="noopener noreferrer" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 800, fontSize: 13, padding: '8px 16px', borderRadius: 999, textDecoration: 'none' }}>Ovehla</a>
+          </div>
+        </div>
       </div>
     </div>
   );
